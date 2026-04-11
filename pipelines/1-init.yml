@@ -1,0 +1,97 @@
+trigger: none
+
+name: 1-init-${{ parameters.env }}-${{ parameters.region }}
+
+parameters:
+- name: workload
+  displayName: Workload
+  type: string
+  default: uvsupplychain
+  values:
+  - uvsupplychain
+
+- name: env
+  displayName: Environment
+  type: string
+  default: dev
+  values:
+  - dev
+  - prd
+
+- name: region
+  displayName: Region
+  type: string
+  default: ne
+  values:
+  - ne
+  - eus
+
+variables:
+- group: ${{ parameters.workload }}.infra
+
+- name: service_connection_name
+  value: sp-${{ parameters.workload }}-${{ parameters.env }}
+
+- name: resource_group_workload
+  value: rg-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: resource_group_tfstate
+  value: rg-tfs-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: storage_account_tfstate
+  value: sttfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
+
+- name: container_tfstate
+  value: tfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }} 
+
+- name: key_tfstate
+  value: ${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.tfs    
+
+- name: region
+  value: ${{ parameters.region }}
+
+- name: location
+  value: northeurope
+
+- ${{ if eq(parameters.region, 'eus') }}:
+  - name: location
+    value: eastus
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: TFState
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      displayName: Login to Azure Public Cloud
+      inputs:
+        azureSubscription: $(service_connection_name)
+        inlineScript: |
+          echo "Creating resource group workload"
+          az group create \
+            --name $(resource_group_workload) \
+            --location $(location)
+
+          echo "Creating resource group tfstate"
+          az group create \
+            --name $(resource_group_tfstate) \
+            --location $(location)
+
+          echo "Creating tfstate storage account"
+          az storage account create \
+            --resource-group $(resource_group_tfstate) \
+            --name $(storage_account_tfstate) \
+            --sku Standard_LRS \
+            --encryption-services blob \
+            --location $(location)
+
+          echo "Creating tfstate container"
+          az storage container create \
+            --name $(container_tfstate) \
+            --account-name $(storage_account_tfstate)     
+        scriptLocation: 'inlineScript'
+        scriptType: 'bash' 
+

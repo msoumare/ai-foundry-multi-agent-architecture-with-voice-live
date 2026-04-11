@@ -1,0 +1,7 @@
+env                             = "dev"
+workload                        = "uvsupplychain"
+region                          = "ne"
+location                        = "northeurope"
+resource_group_workload         = "rg-uvsupplychain-dev-ne"
+log_analytics_workspace  = "log-uvsupplychain-dev-ne"
+subscription_id                 = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
