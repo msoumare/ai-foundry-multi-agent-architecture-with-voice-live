@@ -1,0 +1,178 @@
+trigger: none
+
+name: 3-devops-${{ parameters.env }}-${{ parameters.region }}
+
+parameters:
+- name: workload
+  displayName: Workload
+  type: string
+  default: uvsupplychain
+  values:
+  - uvsupplychain
+
+- name: env
+  displayName: Environment
+  type: string
+  default: dev
+  values:
+  - dev
+  - prd
+
+- name: region
+  displayName: Region
+  type: string
+  default: ne
+  values:
+  - ne
+  - eus
+
+variables:
+- group: ${{ parameters.workload }}.infra
+
+- name: service_connection_name
+  value: sp-${{ parameters.workload }}-${{ parameters.env }}
+
+- name: resource_group_workload
+  value: rg-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: resource_group_tfstate
+  value: rg-tfs-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: storage_account_tfstate
+  value: sttfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
+
+- name: container_tfstate
+  value: tfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
+
+- name: key_tfstate
+  value: tfs${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.key
+
+# Default region → NE
+- name: location
+  value: northeurope
+
+# Override → East US
+- ${{ if eq(parameters.region, 'eus') }}:
+  - name: location
+    value: eastus
+
+- name: terraform_version
+  value: '1.11.3'
+
+- name: terraform_working_directory
+  value: '$(System.DefaultWorkingDirectory)'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+########################################
+# STAGE 1 - PLAN DEVOPS
+########################################
+- stage: Plan
+  displayName: "Terraform Plan - DevOps Infrastructure"
+  jobs:
+  - job: TerraformPlan
+    displayName: "Plan DevOps (Build Agents, Identity)"
+    steps:
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      displayName: "Install Terraform"
+      inputs:
+        terraformVersion: $(terraform_version)
+
+    - task: AzureCLI@2
+      displayName: "Terraform Init"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### Terraform INIT (DevOps Plan) ###"
+          terraform init \
+            -backend-config="resource_group_name=$(resource_group_tfstate)" \
+            -backend-config="storage_account_name=$(storage_account_tfstate)" \
+            -backend-config="container_name=$(container_tfstate)" \
+            -backend-config="key=$(key_tfstate)"
+
+    - task: AzureCLI@2
+      displayName: "Terraform Plan - DevOps"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### TERRAFORM PLAN - DevOps Infrastructure ###"
+          # Target only DevOps infrastructure
+          terraform plan \
+            -target=module.devops_identity \
+            -target=module.identity \
+            -target=module.devops \
+            -target=random_password.devops_admin \
+            -target=azurerm_key_vault_secret.devops_admin_password \
+            -var-file="./environments/${{ parameters.env }}.tfvars" \
+            -out=tfplan-devops \
+            --refresh=false
+
+    - task: PublishPipelineArtifact@1
+      displayName: "Publish DevOps plan"
+      inputs:
+        artifactName: "tfplan-devops"
+        targetPath: "$(terraform_working_directory)/tfplan-devops"
+
+########################################
+# STAGE 2 — APPLY DEVOPS
+########################################
+- stage: Apply
+  displayName: "Terraform Apply - DevOps Infrastructure"
+  dependsOn: Plan
+  condition: succeeded()
+  jobs:
+  - deployment: TerraformApply
+    displayName: "Apply DevOps Infrastructure"
+    environment: "Infra-${{ parameters.env }}-DevOps"
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: $(terraform_version)
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifactName: "tfplan-devops"
+              downloadPath: "$(terraform_working_directory)"
+
+          - task: AzureCLI@2
+            displayName: "Terraform Init"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### Terraform INIT (DevOps Apply) ###"
+                terraform init \
+                  -backend-config="resource_group_name=$(resource_group_tfstate)" \
+                  -backend-config="storage_account_name=$(storage_account_tfstate)" \
+                  -backend-config="container_name=$(container_tfstate)" \
+                  -backend-config="key=$(key_tfstate)" \
+                  -lockfile=readonly
+
+          - task: AzureCLI@2
+            displayName: "Terraform Apply - DevOps"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### APPLY DevOps Infrastructure ###"
+                terraform apply -input=false tfplan-devops

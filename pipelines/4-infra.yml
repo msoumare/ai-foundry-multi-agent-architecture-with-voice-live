@@ -1,11 +1,6 @@
 trigger: none
-# If you later want auto-trigger on main:
-# trigger:
-#   branches:
-#     include:
-#     - main
 
-name: 2-infra-${{ parameters.env }}-${{ parameters.region }}
+name: 4-infra-${{ parameters.env }}-${{ parameters.region }}
 
 parameters:
 - name: workload
@@ -64,29 +59,21 @@ variables:
 - name: terraform_version
   value: '1.11.3'
 
-# Where your .tf live. If TF is in a subfolder (e.g. infra/),
-# change this to '$(System.DefaultWorkingDirectory)/infra'
 - name: terraform_working_directory
   value: '$(System.DefaultWorkingDirectory)'
 
 pool:
   vmImage: ubuntu-latest
 
-# For private agents (after VMSS is deployed):
-# pool:
-#   name: 'your-private-pool-name'
-#   demands:
-#   - agent.name -equals your-private-agent-name
-
 stages:
 ########################################
-# STAGE 1 - PLAN
+# STAGE 1 - PLAN INFRASTRUCTURE
 ########################################
 - stage: Plan
-  displayName: "Terraform Plan"
+  displayName: "Terraform Plan - Core Infrastructure"
   jobs:
   - job: TerraformPlan
-    displayName: "Plan Infrastructure"
+    displayName: "Plan Core Infrastructure"
     steps:
     - checkout: self
 
@@ -103,7 +90,7 @@ stages:
         scriptLocation: inlineScript
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
-          echo "### Terraform INIT (Plan) ###"
+          echo "### Terraform INIT (Infra Plan) ###"
           terraform init \
             -backend-config="resource_group_name=$(resource_group_tfstate)" \
             -backend-config="storage_account_name=$(storage_account_tfstate)" \
@@ -111,43 +98,38 @@ stages:
             -backend-config="key=$(key_tfstate)"
 
     - task: AzureCLI@2
-      displayName: "Terraform Plan"
+      displayName: "Terraform Plan - Core Infrastructure"
       inputs:
         azureSubscription: $(service_connection_name)
         scriptType: bash
         scriptLocation: inlineScript
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
-          echo "### TERRAFORM PLAN ###"
+          echo "### TERRAFORM PLAN - Core Infrastructure ###"
+          # Plan all remaining infrastructure
+          # Excludes: vnet, keyvault, devops, identity modules (already deployed)
           terraform plan \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
-            -out=tfplan \
+            -out=tfplan-infra \
             --refresh=false
 
     - task: PublishPipelineArtifact@1
-      displayName: "Publish plan + lock"
+      displayName: "Publish Infra plan"
       inputs:
-        artifactName: "tfplan"
-        targetPath: "$(terraform_working_directory)/tfplan"
-
-    - task: PublishPipelineArtifact@1
-      displayName: "Publish lock file"
-      inputs:
-        artifactName: "tfplan-lock"
-        targetPath: "$(terraform_working_directory)/.terraform.lock.hcl"    
+        artifactName: "tfplan-infra"
+        targetPath: "$(terraform_working_directory)/tfplan-infra"
 
 ########################################
-# STAGE 2 — APPLY (only on main)
+# STAGE 2 — APPLY INFRASTRUCTURE
 ########################################
 - stage: Apply
-  displayName: "Terraform Apply"
+  displayName: "Terraform Apply - Core Infrastructure"
   dependsOn: Plan
-  condition: 
-    and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  condition: succeeded()
   jobs:
   - deployment: TerraformApply
-    displayName: "Apply Infrastructure"
-    environment: "Infra-${{ parameters.env }}"   # configure approvals on this environment in DevOps
+    displayName: "Apply Core Infrastructure"
+    environment: "Infra-${{ parameters.env }}-Infra"
     strategy:
       runOnce:
         deploy:
@@ -161,13 +143,8 @@ stages:
 
           - task: DownloadPipelineArtifact@2
             inputs:
-              artifactName: "tfplan"
+              artifactName: "tfplan-infra"
               downloadPath: "$(terraform_working_directory)"
-
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              artifactName: "tfplan-lock"
-              downloadPath: "$(terraform_working_directory)"    
 
           - task: AzureCLI@2
             displayName: "Terraform Init"
@@ -177,7 +154,7 @@ stages:
               scriptLocation: inlineScript
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
-                echo "### Terraform INIT (Apply) with lockfile=readonly ###"
+                echo "### Terraform INIT (Infra Apply) ###"
                 terraform init \
                   -backend-config="resource_group_name=$(resource_group_tfstate)" \
                   -backend-config="storage_account_name=$(storage_account_tfstate)" \
@@ -186,12 +163,12 @@ stages:
                   -lockfile=readonly
 
           - task: AzureCLI@2
-            displayName: "Terraform Apply"
+            displayName: "Terraform Apply - Core Infrastructure"
             inputs:
               azureSubscription: $(service_connection_name)
               scriptType: bash
               scriptLocation: inlineScript
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
-                echo "### APPLY ###"
-                terraform apply -input=false tfplan
+                echo "### APPLY Core Infrastructure ###"
+                terraform apply -input=false tfplan-infra

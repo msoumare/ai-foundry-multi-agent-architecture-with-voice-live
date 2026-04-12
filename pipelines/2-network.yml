@@ -1,0 +1,176 @@
+trigger: none
+
+name: 2-network-${{ parameters.env }}-${{ parameters.region }}
+
+parameters:
+- name: workload
+  displayName: Workload
+  type: string
+  default: uvsupplychain
+  values:
+  - uvsupplychain
+
+- name: env
+  displayName: Environment
+  type: string
+  default: dev
+  values:
+  - dev
+  - prd
+
+- name: region
+  displayName: Region
+  type: string
+  default: ne
+  values:
+  - ne
+  - eus
+
+variables:
+- group: ${{ parameters.workload }}.infra
+
+- name: service_connection_name
+  value: sp-${{ parameters.workload }}-${{ parameters.env }}
+
+- name: resource_group_workload
+  value: rg-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: resource_group_tfstate
+  value: rg-tfs-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+
+- name: storage_account_tfstate
+  value: sttfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
+
+- name: container_tfstate
+  value: tfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
+
+- name: key_tfstate
+  value: tfs${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.key
+
+# Default region → NE
+- name: location
+  value: northeurope
+
+# Override → East US
+- ${{ if eq(parameters.region, 'eus') }}:
+  - name: location
+    value: eastus
+
+- name: terraform_version
+  value: '1.11.3'
+
+- name: terraform_working_directory
+  value: '$(System.DefaultWorkingDirectory)'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+########################################
+# STAGE 1 - PLAN NETWORK
+########################################
+- stage: Plan
+  displayName: "Terraform Plan - Network Infrastructure"
+  jobs:
+  - job: TerraformPlan
+    displayName: "Plan Network (vnet, keyvault)"
+    steps:
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      displayName: "Install Terraform"
+      inputs:
+        terraformVersion: $(terraform_version)
+
+    - task: AzureCLI@2
+      displayName: "Terraform Init"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### Terraform INIT (Network Plan) ###"
+          terraform init \
+            -backend-config="resource_group_name=$(resource_group_tfstate)" \
+            -backend-config="storage_account_name=$(storage_account_tfstate)" \
+            -backend-config="container_name=$(container_tfstate)" \
+            -backend-config="key=$(key_tfstate)"
+
+    - task: AzureCLI@2
+      displayName: "Terraform Plan - Network"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### TERRAFORM PLAN - Network Infrastructure ###"
+          # Target only network infrastructure
+          terraform plan \
+            -target=azurerm_resource_group.main \
+            -target=module.vnet \
+            -target=module.keyvault \
+            -var-file="./environments/${{ parameters.env }}.tfvars" \
+            -out=tfplan-network \
+            --refresh=false
+
+    - task: PublishPipelineArtifact@1
+      displayName: "Publish Network plan"
+      inputs:
+        artifactName: "tfplan-network"
+        targetPath: "$(terraform_working_directory)/tfplan-network"
+
+########################################
+# STAGE 2 — APPLY NETWORK
+########################################
+- stage: Apply
+  displayName: "Terraform Apply - Network Infrastructure"
+  dependsOn: Plan
+  condition: succeeded()
+  jobs:
+  - deployment: TerraformApply
+    displayName: "Apply Network Infrastructure"
+    environment: "Infra-${{ parameters.env }}-Network"
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: $(terraform_version)
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifactName: "tfplan-network"
+              downloadPath: "$(terraform_working_directory)"
+
+          - task: AzureCLI@2
+            displayName: "Terraform Init"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### Terraform INIT (Network Apply) ###"
+                terraform init \
+                  -backend-config="resource_group_name=$(resource_group_tfstate)" \
+                  -backend-config="storage_account_name=$(storage_account_tfstate)" \
+                  -backend-config="container_name=$(container_tfstate)" \
+                  -backend-config="key=$(key_tfstate)" \
+                  -lockfile=readonly
+
+          - task: AzureCLI@2
+            displayName: "Terraform Apply - Network"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### APPLY Network Infrastructure ###"
+                terraform apply -input=false tfplan-network

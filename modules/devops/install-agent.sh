@@ -45,12 +45,24 @@ AGENT_VERSION="3.236.1"
 wget https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
 tar zxvf vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
 
-# Note: In production, configure the agent with PAT and URL from Key Vault or environment variables
-# Example: ./config.sh --unattended --url https://dev.azure.com/org --auth pat --token $PAT --pool default --agent $(hostname) --acceptTeeEula
+# Configure the Azure DevOps self-hosted agent automatically from environment variables.
+# Required values should be passed securely (for example, via VMSS extension protected settings or Key Vault)
+if [ -z "${AZDO_URL:-}" ] || [ -z "${AZDO_PAT:-}" ]; then
+  echo "ERROR: AZDO_URL and AZDO_PAT must be set to configure the Azure DevOps agent."
+  echo "Set AZDO_URL to your Azure DevOps organization URL and AZDO_PAT to a PAT with agent pool registration rights."
+  exit 1
+fi
 
-# For now, placeholder - replace with actual config
-echo "Agent downloaded. Configure manually or via automation."
+AZDO_POOL="${AZDO_POOL:-default}"
+AZDO_AGENT_NAME="${AZDO_AGENT_NAME:-$(hostname)}"
 
-# Start agent (uncomment when configured)
-# sudo ./svc.sh install
-# sudo ./svc.sh start
+./config.sh --unattended \
+  --url "$AZDO_URL" \
+  --auth pat \
+  --token "$AZDO_PAT" \
+  --pool "$AZDO_POOL" \
+  --agent "$AZDO_AGENT_NAME" \
+  --acceptteeeula
+
+sudo ./svc.sh install
+sudo ./svc.sh start
