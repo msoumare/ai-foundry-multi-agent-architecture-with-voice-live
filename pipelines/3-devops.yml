@@ -73,7 +73,7 @@ stages:
   displayName: "Terraform Plan - DevOps Infrastructure"
   jobs:
   - job: TerraformPlan
-    displayName: "Plan DevOps (Build Agents, Identity)"
+    displayName: "Plan DevOps (Key Vault, Build Agents, Identity)"
     steps:
     - checkout: self
 
@@ -106,8 +106,9 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - DevOps Infrastructure ###"
-          # Target only DevOps infrastructure
+          # Target Key Vault + DevOps infrastructure
           terraform plan \
+            -target=module.keyvault \
             -target=module.devops_identity \
             -target=module.identity \
             -target=module.devops \

@@ -73,7 +73,7 @@ stages:
   displayName: "Terraform Plan - Network Infrastructure"
   jobs:
   - job: TerraformPlan
-    displayName: "Plan Network (vnet, keyvault)"
+    displayName: "Plan Network (vnet)"
     steps:
     - checkout: self
 
@@ -110,7 +110,6 @@ stages:
           terraform plan \
             -target=azurerm_resource_group.main \
             -target=module.vnet \
-            -target=module.keyvault \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network \
             --refresh=false
