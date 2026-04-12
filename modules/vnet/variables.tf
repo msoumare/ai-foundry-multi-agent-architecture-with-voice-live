@@ -23,6 +23,11 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "name" {
+  description = "Virtual network name"
+  type        = string
+}
+
 variable "address_space" {
   description = "Address space for the virtual network"
   type        = list(string)
