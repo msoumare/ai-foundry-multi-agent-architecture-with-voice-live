@@ -23,6 +23,11 @@ output "devops_subnet_id" {
   value       = azurerm_subnet.workload_devops.id
 }
 
+output "bastion_subnet_id" {
+  description = "Azure Bastion subnet resource ID"
+  value       = azurerm_subnet.bastion.id
+}
+
 output "keyvault_dns_zone_id" {
   description = "Key Vault private DNS zone ID"
   value       = azurerm_private_dns_zone.keyvault.id

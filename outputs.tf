@@ -78,6 +78,26 @@ output "private_endpoints_subnet_id" {
   value       = module.vnet.private_endpoints_subnet_id
 }
 
+output "bastion_subnet_id" {
+  description = "Azure Bastion subnet resource ID"
+  value       = module.vnet.bastion_subnet_id
+}
+
+output "bastion_host_name" {
+  description = "Azure Bastion host name"
+  value       = azurerm_bastion_host.main.name
+}
+
+output "bastion_public_ip" {
+  description = "Azure Bastion public IP address"
+  value       = azurerm_public_ip.bastion.ip_address
+}
+
+output "devops_ssh_private_key_secret_name" {
+  description = "Key Vault secret name containing the DevOps VMSS SSH private key"
+  value       = azurerm_key_vault_secret.devops_ssh_private_key.name
+}
+
 output "app_insights_connection_string" {
   description = "Application Insights connection string"
   value       = module.monitoring.app_insights_connection_string

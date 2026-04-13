@@ -27,6 +27,13 @@ resource "azurerm_subnet" "workload_devops" {
   address_prefixes     = var.devops_subnet_prefixes
 }
 
+resource "azurerm_subnet" "bastion" {
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.workload.name
+  address_prefixes     = var.bastion_subnet_prefixes
+}
+
 # Private DNS Zones
 resource "azurerm_private_dns_zone" "keyvault" {
   name                = "privatelink.vaultcore.azure.net"

@@ -25,6 +25,44 @@ module "vnet" {
   })
 }
 
+# --- Azure Bastion ---
+resource "azurerm_public_ip" "bastion" {
+  name                = "pip-bastion-${var.workload}-${var.environment}-${var.location}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
+resource "azurerm_bastion_host" "main" {
+  name                = "bas-${var.workload}-${var.environment}-${var.location}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "Standard"
+  copy_paste_enabled  = true
+  file_copy_enabled   = false
+  ip_connect_enabled  = true
+  shareable_link_enabled = false
+  tunneling_enabled   = true
+
+  ip_configuration {
+    name                 = "bastion-ipconfig"
+    subnet_id            = module.vnet.bastion_subnet_id
+    public_ip_address_id = azurerm_public_ip.bastion.id
+  }
+
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
 # --- Key Vault ---
 module "keyvault" {
   source = "./modules/keyvault"
@@ -37,6 +75,18 @@ module "keyvault" {
     workload    = var.workload
     managed-by  = "terraform"
   })
+}
+
+# --- SSH Key for DevOps VMSS ---
+resource "tls_private_key" "devops" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
+  name         = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.location}"
+  value        = tls_private_key.devops.private_key_pem
+  key_vault_id = module.keyvault.id
 }
 
 # --- DevOps Identity (Minimal) ---
@@ -55,17 +105,6 @@ module "devops_identity" {
 }
 
 # --- DevOps VMSS (Build Agent) ---
-resource "random_password" "devops_admin" {
-  length  = 16
-  special = true
-}
-
-resource "azurerm_key_vault_secret" "devops_admin_password" {
-  name         = "devops-admin-password-${var.workload}-${var.environment}-${var.location}"
-  value        = random_password.devops_admin.result
-  key_vault_id = module.keyvault.id
-}
-
 module "devops" {
   source = "./modules/devops"
 
@@ -74,7 +113,7 @@ module "devops" {
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.devops_subnet_id
   admin_username      = "build_agent_user"
-  admin_password      = random_password.devops_admin.result
+  ssh_public_key      = tls_private_key.devops.public_key_openssh
   identity_ids        = [module.devops_identity.id]
   tags = merge(var.tags, {
     environment = var.environment

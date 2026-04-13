@@ -52,6 +52,12 @@ variable "devops_subnet_prefixes" {
   default     = ["10.0.3.0/24"]
 }
 
+variable "bastion_subnet_prefixes" {
+  description = "Address prefixes for the Azure Bastion subnet; Azure requires the subnet to be named AzureBastionSubnet and be at least /26"
+  type        = list(string)
+  default     = ["10.0.4.0/26"]
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)
