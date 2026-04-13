@@ -92,7 +92,8 @@ jobs:
           echo "Creating tfstate container"
           az storage container create \
             --name $(container_tfstate) \
-            --account-name $(storage_account_tfstate)     
+            --account-name $(storage_account_tfstate) \
+            --auth-mode login     
         scriptLocation: 'inlineScript'
         scriptType: 'bash' 
 
