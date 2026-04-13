@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "main" {
-  name     = "rg-${var.workload}-${var.environment}-${var.location}"
+  name     = "rg-${var.workload}-${var.environment}-${var.region}"
   location = var.location
   tags = merge(var.tags, {
     environment = var.environment
@@ -12,7 +12,7 @@ resource "azurerm_resource_group" "main" {
 module "vnet" {
   source = "./modules/vnet"
 
-  name                = "vnet-${var.workload}-${var.environment}-${var.location}"
+  name                = "vnet-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   workload            = var.workload
@@ -27,7 +27,7 @@ module "vnet" {
 
 # --- Azure Bastion ---
 resource "azurerm_public_ip" "bastion" {
-  name                = "pip-bastion-${var.workload}-${var.environment}-${var.location}"
+  name                = "pip-bastion-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   allocation_method   = "Static"
@@ -40,7 +40,7 @@ resource "azurerm_public_ip" "bastion" {
 }
 
 resource "azurerm_bastion_host" "main" {
-  name                = "bas-${var.workload}-${var.environment}-${var.location}"
+  name                = "bas-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "Standard"
@@ -67,7 +67,7 @@ resource "azurerm_bastion_host" "main" {
 module "keyvault" {
   source = "./modules/keyvault"
 
-  name                = substr("kv-${var.workload}-${var.environment}-${var.location}", 0, 24)
+  name                = substr("kv-${var.workload}-${var.environment}-${var.region}", 0, 24)
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
@@ -84,7 +84,7 @@ resource "tls_private_key" "devops" {
 }
 
 resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
-  name         = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.location}"
+  name         = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.region}"
   value        = tls_private_key.devops.private_key_pem
   key_vault_id = module.keyvault.id
 }
@@ -93,7 +93,7 @@ resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
 module "devops_identity" {
   source = "./modules/devops_identity"
 
-  name                = "id-devops-${var.workload}-${var.environment}-${var.location}"
+  name                = "id-devops-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
@@ -108,7 +108,7 @@ module "devops_identity" {
 module "devops" {
   source = "./modules/devops"
 
-  name                = "vmss-devops-${var.workload}-${var.environment}-${var.location}"
+  name                = "vmss-devops-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.devops_subnet_id
@@ -130,8 +130,8 @@ module "devops" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  name                = "la-${var.workload}-${var.environment}-${var.location}"
-  app_insights_name   = "appi-${var.workload}-${var.environment}-${var.location}"
+  name                = "la-${var.workload}-${var.environment}-${var.region}"
+  app_insights_name   = "appi-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
@@ -145,7 +145,7 @@ module "monitoring" {
 module "acr" {
   source = "./modules/acr"
 
-  name                = "acr-${var.workload}-${var.environment}-${var.location}"
+  name                = "acr-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
@@ -157,7 +157,7 @@ module "acr" {
 
 # --- ACR Private Endpoint ---
 resource "azurerm_private_endpoint" "acr" {
-  name                = "pe-acr-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-acr-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -170,7 +170,7 @@ resource "azurerm_private_endpoint" "acr" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-acr-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-acr-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.acr_dns_zone_id]
   }
 
@@ -185,7 +185,7 @@ resource "azurerm_private_endpoint" "acr" {
 module "cosmosdb" {
   source = "./modules/cosmosdb"
 
-  name                = "cosmos-${var.workload}-${var.environment}-${var.location}"
+  name                = "cosmos-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   database_name       = var.cosmos_database_name
@@ -199,7 +199,7 @@ module "cosmosdb" {
 
 # --- Cosmos DB Private Endpoint ---
 resource "azurerm_private_endpoint" "cosmosdb" {
-  name                = "pe-cosmos-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-cosmos-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -212,7 +212,7 @@ resource "azurerm_private_endpoint" "cosmosdb" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-cosmos-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-cosmos-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.cosmosdb_dns_zone_id]
   }
 
@@ -227,7 +227,7 @@ resource "azurerm_private_endpoint" "cosmosdb" {
 module "redis" {
   source = "./modules/redis"
 
-  name                = "redis-${var.workload}-${var.environment}-${var.location}"
+  name                = "redis-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   sku_name            = var.redis_sku_name
@@ -242,7 +242,7 @@ module "redis" {
 
 # --- Redis Private Endpoint ---
 resource "azurerm_private_endpoint" "redis" {
-  name                = "pe-redis-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-redis-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -255,7 +255,7 @@ resource "azurerm_private_endpoint" "redis" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-redis-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-redis-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.redis_dns_zone_id]
   }
 
@@ -270,10 +270,10 @@ resource "azurerm_private_endpoint" "redis" {
 module "ai_foundry" {
   source = "./modules/ai_foundry"
 
-  hub_name             = "af-hub-${var.workload}-${var.environment}-${var.location}"
-  project_name         = "af-proj-${var.workload}-${var.environment}-${var.location}"
-  ai_services_name     = "ai-${var.workload}-${var.environment}-${var.location}"
-  storage_account_name = substr(replace("st${var.workload}${var.environment}${var.location}", "-", ""), 0, 24)
+  hub_name             = "af-hub-${var.workload}-${var.environment}-${var.region}"
+  project_name         = "af-proj-${var.workload}-${var.environment}-${var.region}"
+  ai_services_name     = "ai-${var.workload}-${var.environment}-${var.region}"
+  storage_account_name = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
   location             = var.location
   resource_group_name  = azurerm_resource_group.main.name
   key_vault_id         = module.keyvault.id
@@ -287,7 +287,7 @@ module "ai_foundry" {
 
 # --- AI Services Private Endpoint ---
 resource "azurerm_private_endpoint" "ai_services" {
-  name                = "pe-ai-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-ai-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -300,7 +300,7 @@ resource "azurerm_private_endpoint" "ai_services" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-ai-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-ai-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.ai_services_dns_zone_id]
   }
 
@@ -313,7 +313,7 @@ resource "azurerm_private_endpoint" "ai_services" {
 
 # --- Storage Account Private Endpoint ---
 resource "azurerm_private_endpoint" "storage_blob" {
-  name                = "pe-st-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-st-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -326,7 +326,7 @@ resource "azurerm_private_endpoint" "storage_blob" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-st-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-st-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.storage_dns_zone_id]
   }
 
@@ -341,7 +341,7 @@ resource "azurerm_private_endpoint" "storage_blob" {
 module "ai_search" {
   source = "./modules/ai_search"
 
-  name                = "search-${var.workload}-${var.environment}-${var.location}"
+  name                = "search-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "basic"
@@ -355,7 +355,7 @@ module "ai_search" {
 
 # --- AI Search Private Endpoint ---
 resource "azurerm_private_endpoint" "ai_search" {
-  name                = "pe-search-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-search-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -368,7 +368,7 @@ resource "azurerm_private_endpoint" "ai_search" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-search-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-search-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.search_dns_zone_id]
   }
 
@@ -383,7 +383,7 @@ resource "azurerm_private_endpoint" "ai_search" {
 module "identity" {
   source = "./modules/identity"
 
-  name                = "id-${var.workload}-${var.environment}-${var.location}"
+  name                = "id-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
@@ -403,7 +403,7 @@ module "identity" {
 module "aks" {
   source = "./modules/aks"
 
-  name                       = "aks-${var.workload}-${var.environment}-${var.location}"
+  name                       = "aks-${var.workload}-${var.environment}-${var.region}"
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
   log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
@@ -422,7 +422,7 @@ module "aks" {
 
 # --- Log Analytics Private Endpoint ---
 resource "azurerm_private_endpoint" "log_analytics" {
-  name                = "pe-la-${var.workload}-${var.environment}-${var.location}"
+  name                = "pe-la-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.private_endpoints_subnet_id
@@ -435,7 +435,7 @@ resource "azurerm_private_endpoint" "log_analytics" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-la-${var.workload}-${var.environment}-${var.location}"
+    name                 = "dns-la-${var.workload}-${var.environment}-${var.region}"
     private_dns_zone_ids = [module.vnet.log_analytics_dns_zone_id]
   }
 

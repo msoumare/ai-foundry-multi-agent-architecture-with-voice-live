@@ -57,13 +57,15 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "devops" {
     type                       = "CustomScript"
     type_handler_version       = "2.1"
 
-    settings = jsonencode({
-      "fileUris" = []
-    })
-
     protected_settings = jsonencode({
-      "script"           = base64encode(file("${path.module}/install-agent.sh"))
-      "commandToExecute" = "AZDO_URL='${var.azdo_url}' AZDO_POOL='${var.azdo_pool}' AZDO_AGENT_NAME='${var.azdo_agent_name}' AZDO_PAT='${var.azdo_pat_token}' bash /var/lib/waagent/custom-script/download/0/install-agent.sh"
+      "script" = base64encode(join("\n", [
+        "#!/bin/bash",
+        "export AZDO_URL='${var.azdo_url}'",
+        "export AZDO_POOL='${var.azdo_pool}'",
+        "export AZDO_AGENT_NAME='${var.azdo_agent_name}'",
+        "export AZDO_PAT='${var.azdo_pat_token}'",
+        file("${path.module}/install-agent.sh")
+      ]))
     })
   }
 }

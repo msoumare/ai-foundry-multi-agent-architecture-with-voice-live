@@ -71,10 +71,10 @@ jobs:
       inputs:
         azureSubscription: $(service_connection_name)
         inlineScript: |
-          echo "Creating resource group workload"
-          az group create \
-            --name $(resource_group_workload) \
-            --location $(location)
+          # echo "Creating resource group workload"
+          # az group create \
+          #   --name $(resource_group_workload) \
+          #   --location $(location)
 
           echo "Creating resource group tfstate"
           az group create \
