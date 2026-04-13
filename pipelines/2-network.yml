@@ -166,8 +166,7 @@ stages:
                   -backend-config="storage_account_name=$(storage_account_tfstate)" \
                   -backend-config="container_name=$(container_tfstate)" \
                   -backend-config="key=$(key_tfstate)" \
-                  -backend-config="use_azuread_auth=true" \
-                  -lockfile=readonly
+                  -backend-config="use_azuread_auth=true"
 
           - task: AzureCLI@2
             displayName: "Terraform Apply - Network"
