@@ -21,6 +21,31 @@ variable "log_analytics_workspace" {
   default     = ""
 }
 
+variable "azdo_url" {
+  description = "Azure DevOps organization URL"
+  type        = string
+  default     = ""
+}
+
+variable "azdo_pool" {
+  description = "Azure DevOps agent pool name"
+  type        = string
+  default     = "default"
+}
+
+variable "azdo_agent_name" {
+  description = "Azure DevOps agent name override"
+  type        = string
+  default     = ""
+}
+
+variable "azdo_pat_token" {
+  description = "Azure DevOps PAT token for self-hosted agent registration"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "location" {
   description = "Azure region for all resources"
   type        = string

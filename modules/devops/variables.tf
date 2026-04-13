@@ -75,3 +75,28 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "azdo_url" {
+  description = "Azure DevOps organization URL"
+  type        = string
+  default     = ""
+}
+
+variable "azdo_pool" {
+  description = "Azure DevOps agent pool name"
+  type        = string
+  default     = "default"
+}
+
+variable "azdo_agent_name" {
+  description = "Azure DevOps agent name"
+  type        = string
+  default     = ""
+}
+
+variable "azdo_pat_token" {
+  description = "Azure DevOps PAT token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

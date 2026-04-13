@@ -108,6 +108,10 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - DevOps Infrastructure ###"
+          export TF_VAR_azdo_url="$(AZDO_URL)"
+          export TF_VAR_azdo_pool="$(AZDO_POOL)"
+          export TF_VAR_azdo_agent_name="$(AZDO_AGENT_NAME)"
+          export TF_VAR_azdo_pat_token="$(AZDO_PAT_TOKEN)"
           # Target Key Vault + DevOps infrastructure
           terraform plan \
             -target=module.keyvault \
@@ -179,4 +183,8 @@ stages:
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
                 echo "### APPLY DevOps Infrastructure ###"
+                export TF_VAR_azdo_url="$(AZDO_URL)"
+                export TF_VAR_azdo_pool="$(AZDO_POOL)"
+                export TF_VAR_azdo_agent_name="$(AZDO_AGENT_NAME)"
+                export TF_VAR_azdo_pat_token="$(AZDO_PAT_TOKEN)"
                 terraform apply -input=false tfplan-devops

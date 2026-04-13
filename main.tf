@@ -114,6 +114,10 @@ module "devops" {
   subnet_id           = module.vnet.devops_subnet_id
   admin_username      = "build_agent_user"
   ssh_public_key      = tls_private_key.devops.public_key_openssh
+  azdo_url            = var.azdo_url
+  azdo_pool           = var.azdo_pool
+  azdo_agent_name     = var.azdo_agent_name
+  azdo_pat_token      = var.azdo_pat_token
   identity_ids        = [module.devops_identity.id]
   tags = merge(var.tags, {
     environment = var.environment

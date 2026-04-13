@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 # Install Azure DevOps Agent and required tools for AKS and Terraform
 set -e
 
@@ -45,11 +44,19 @@ AGENT_VERSION="3.236.1"
 wget https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
 tar zxvf vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
 
-# Configure the Azure DevOps self-hosted agent automatically from environment variables.
-# Required values should be passed securely (for example, via VMSS extension protected settings or Key Vault)
-if [ -z "${AZDO_URL:-}" ] || [ -z "${AZDO_PAT:-}" ]; then
-  echo "ERROR: AZDO_URL and AZDO_PAT must be set to configure the Azure DevOps agent."
-  echo "Set AZDO_URL to your Azure DevOps organization URL and AZDO_PAT to a PAT with agent pool registration rights."
+# Configure the Azure DevOps self-hosted agent from environment variables.
+# This script uses a PAT for unattended agent registration.
+if [ -z "${AZDO_URL:-}" ]; then
+  echo "ERROR: AZDO_URL must be set to configure the Azure DevOps agent."
+  echo "Example: AZDO_URL=https://dev.azure.com/mosoum"
+  exit 1
+fi
+
+if [ -z "${AZDO_PAT:-}" ]; then
+  echo "ERROR: AZDO_PAT is required to configure the Azure DevOps agent."
+  echo "Create a PAT in Azure DevOps: User settings -> Personal access tokens"
+  echo "Use at least scope: Agent Pools (Read & manage)"
+  echo "Store it as secret variable AZDO_PAT in your variable group"
   exit 1
 fi
 
@@ -62,7 +69,7 @@ AZDO_AGENT_NAME="${AZDO_AGENT_NAME:-$(hostname)}"
   --token "$AZDO_PAT" \
   --pool "$AZDO_POOL" \
   --agent "$AZDO_AGENT_NAME" \
-  --acceptteeeula
+  --acceptTeeEula
 
 sudo ./svc.sh install
 sudo ./svc.sh start
