@@ -6,9 +6,9 @@ parameters:
 - name: workload
   displayName: Workload
   type: string
-  default: aiagenthubspoke
+  default: agenthubspoke
   values:
-  - aiagenthubspoke
+  - agenthubspoke
 
 - name: env
   displayName: Environment
