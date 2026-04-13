@@ -6,9 +6,9 @@ parameters:
 - name: workload
   displayName: Workload
   type: string
-  default: uvsupplychain
+  default: aiagenthubspoke
   values:
-  - uvsupplychain
+  - aiagenthubspoke
 
 - name: env
   displayName: Environment
