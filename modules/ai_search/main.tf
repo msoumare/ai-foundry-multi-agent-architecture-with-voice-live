@@ -6,7 +6,7 @@ resource "azurerm_search_service" "this" {
   tags                = var.tags
 }
 
-resource "azurerm_search_service_shared_private_link" "ai_foundry" {
+resource "azurerm_search_shared_private_link_service" "ai_foundry" {
   name               = "spl-ai-foundry"
   search_service_id  = azurerm_search_service.this.id
   subresource_name   = "searchService"

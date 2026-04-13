@@ -3,6 +3,24 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "region" {
+  description = "Short region code (ne, eus)"
+  type        = string
+  default     = "ne"
+}
+
+variable "resource_group_workload" {
+  description = "Name of the workload resource group"
+  type        = string
+  default     = ""
+}
+
+variable "log_analytics_workspace" {
+  description = "Name of the shared Log Analytics workspace"
+  type        = string
+  default     = ""
+}
+
 variable "location" {
   description = "Azure region for all resources"
   type        = string
