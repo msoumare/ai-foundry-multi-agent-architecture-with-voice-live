@@ -91,6 +91,7 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### Terraform INIT (DevOps Plan) ###"
+          rm -rf .terraform
           terraform init \
             -backend-config="resource_group_name=$(resource_group_tfstate)" \
             -backend-config="storage_account_name=$(storage_account_tfstate)" \
@@ -161,6 +162,7 @@ stages:
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
                 echo "### Terraform INIT (DevOps Apply) ###"
+                rm -rf .terraform
                 terraform init \
                   -backend-config="resource_group_name=$(resource_group_tfstate)" \
                   -backend-config="storage_account_name=$(storage_account_tfstate)" \
