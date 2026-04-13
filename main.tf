@@ -91,7 +91,7 @@ resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
 
 # --- DevOps Identity (Minimal) ---
 module "devops_identity" {
-  source = "./modules/identity"
+  source = "./modules/devops_identity"
 
   name                = "id-devops-${var.workload}-${var.environment}-${var.location}"
   location            = var.location
