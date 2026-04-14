@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.workload}-${var.environment}-${var.region}"
   location = var.location
@@ -77,6 +79,13 @@ module "keyvault" {
   })
 }
 
+# --- Key Vault RBAC: Secrets Officer for deploying principal ---
+resource "azurerm_role_assignment" "deployer_kv_secrets_officer" {
+  scope                = module.keyvault.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 # --- SSH Key for DevOps VMSS ---
 resource "tls_private_key" "devops" {
   algorithm = "RSA"
@@ -87,6 +96,8 @@ resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
   name         = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.region}"
   value        = tls_private_key.devops.private_key_pem
   key_vault_id = module.keyvault.id
+
+  depends_on = [azurerm_role_assignment.deployer_kv_secrets_officer]
 }
 
 # --- DevOps Identity (Minimal) ---
