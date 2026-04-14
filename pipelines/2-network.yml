@@ -91,6 +91,7 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### Terraform INIT (Network Plan) ###"
+          terraform force-unlock -force a454ae9b-ee73-0a21-d0f8-ac9656e17311
           rm -rf .terraform
           terraform init \
             -backend-config="resource_group_name=$(resource_group_tfstate)" \
@@ -160,6 +161,7 @@ stages:
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
                 echo "### Terraform INIT (Network Apply) ###"
+                          terraform force-unlock -force a454ae9b-ee73-0a21-d0f8-ac9656e17311
                 rm -rf .terraform
                 terraform init \
                   -backend-config="resource_group_name=$(resource_group_tfstate)" \

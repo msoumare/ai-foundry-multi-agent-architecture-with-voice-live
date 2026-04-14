@@ -42,10 +42,10 @@ variables:
   value: sttfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
 
 - name: container_tfstate
-  value: tfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }} 
+  value: tfs${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}
 
 - name: key_tfstate
-  value: ${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.tfs    
+  value: tfs${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.key
 
 - name: region
   value: ${{ parameters.region }}
