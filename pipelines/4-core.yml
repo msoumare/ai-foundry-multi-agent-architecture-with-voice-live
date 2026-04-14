@@ -112,8 +112,7 @@ stages:
           # Excludes: vnet, keyvault, devops, identity modules (already deployed)
           terraform plan \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
-            -out=tfplan-infra \
-            --refresh=false
+            -out=tfplan-infra 
 
     - task: PublishPipelineArtifact@1
       displayName: "Publish Infra plan"
