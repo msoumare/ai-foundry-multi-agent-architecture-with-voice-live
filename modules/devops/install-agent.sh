@@ -88,7 +88,8 @@ if [ -z "${AZDO_POOL:-}" ]; then
 fi
 
 if [ -z "${AZDO_AGENT_NAME:-}" ]; then
-  echo "ERROR: AZDO_AGENT_NAME must be set to the target agent name."
+  AZDO_AGENT_NAME="$(hostname)"
+  echo "AZDO_AGENT_NAME not set. "
   exit 1
 fi
 

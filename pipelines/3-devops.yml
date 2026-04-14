@@ -108,10 +108,20 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - DevOps Infrastructure ###"
-          export TF_VAR_azdo_url="$(AZDO_URL)"
-          export TF_VAR_azdo_pool="$(AZDO_POOL)"
-          export TF_VAR_azdo_agent_name="$(AZDO_AGENT_NAME)"
-          export TF_VAR_azdo_pat_token="$(AZDO_PAT_TOKEN)"
+          AZDO_URL_VAL="$(AZDO_URL)"
+          AZDO_POOL_VAL="$(AZDO_POOL)"
+          AZDO_AGENT_NAME_VAL="$(AZDO_AGENT_NAME)"
+          AZDO_PAT_TOKEN_VAL="$(AZDO_PAT_TOKEN)"
+
+          if [ -z "${AZDO_URL_VAL}" ] || [ -z "${AZDO_POOL_VAL}" ] || [ -z "${AZDO_AGENT_NAME_VAL}" ] || [ -z "${AZDO_PAT_TOKEN_VAL}" ]; then
+            echo "ERROR: AZDO_URL, AZDO_POOL, AZDO_PAT_TOKEN, and AZDO_AGENT_NAME must be set in variable group '${{ parameters.workload }}.infra'."
+            exit 1
+          fi
+
+          export TF_VAR_azdo_url="${AZDO_URL_VAL}"
+          export TF_VAR_azdo_pool="${AZDO_POOL_VAL}"
+          export TF_VAR_azdo_agent_name="${AZDO_AGENT_NAME_VAL}"
+          export TF_VAR_azdo_pat_token="${AZDO_PAT_TOKEN_VAL}"
           # Target Key Vault + DevOps infrastructure
           terraform plan \
             -target=module.keyvault \
@@ -181,8 +191,23 @@ stages:
               workingDirectory: "$(terraform_working_directory)"
               inlineScript: |
                 echo "### APPLY DevOps Infrastructure ###"
-                export TF_VAR_azdo_url="$(AZDO_URL)"
-                export TF_VAR_azdo_pool="$(AZDO_POOL)"
-                export TF_VAR_azdo_agent_name="$(AZDO_AGENT_NAME)"
-                export TF_VAR_azdo_pat_token="$(AZDO_PAT_TOKEN)"
+                    AZDO_URL_VAL="$(AZDO_URL)"
+                    AZDO_POOL_VAL="$(AZDO_POOL)"
+                    AZDO_AGENT_NAME_VAL="$(AZDO_AGENT_NAME)"
+                    AZDO_PAT_TOKEN_VAL="$(AZDO_PAT_TOKEN)"
+
+                    if [ -z "${AZDO_URL_VAL}" ] || [ -z "${AZDO_POOL_VAL}" ] || [ -z "${AZDO_PAT_TOKEN_VAL}" ]; then
+                      echo "ERROR: AZDO_URL, AZDO_POOL, and AZDO_PAT_TOKEN must be set in variable group '${{ parameters.workload }}.infra'."
+                      exit 1
+                    fi
+
+                    if [ -z "${AZDO_AGENT_NAME_VAL}" ]; then
+                      AZDO_AGENT_NAME_VAL="agent-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}-$(Build.BuildId)"
+                      echo "AZDO_AGENT_NAME not provided. Using generated name: ${AZDO_AGENT_NAME_VAL}"
+                    fi
+
+                    export TF_VAR_azdo_url="${AZDO_URL_VAL}"
+                    export TF_VAR_azdo_pool="${AZDO_POOL_VAL}"
+                    export TF_VAR_azdo_agent_name="${AZDO_AGENT_NAME_VAL}"
+                    export TF_VAR_azdo_pat_token="${AZDO_PAT_TOKEN_VAL}"
                 terraform apply -input=false tfplan-devops
