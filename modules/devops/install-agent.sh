@@ -2,9 +2,17 @@
 # Install Azure DevOps Agent and required tools for AKS and Terraform
 set -e
 
+# This VMSS subnet uses NAT-based IPv4 egress; disable IPv6 preference for apt.
+cat >/etc/apt/apt.conf.d/99force-ipv4 <<'EOF'
+Acquire::ForceIPv4 "true";
+Acquire::Retries "5";
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+EOF
+
 # Update system
-apt-get update
-apt-get install -y wget unzip jq curl build-essential
+apt-get update -o Acquire::ForceIPv4=true
+apt-get install -y wget unzip jq curl build-essential --fix-missing -o Acquire::ForceIPv4=true
 
 # Install Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | bash
@@ -32,8 +40,8 @@ kubelogin --version
 # Install Terraform
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com jammy main" | tee /etc/apt/sources.list.d/hashicorp.list
-apt-get update
-apt-get install -y terraform
+apt-get update -o Acquire::ForceIPv4=true
+apt-get install -y terraform --fix-missing -o Acquire::ForceIPv4=true
 
 # Create agent directory
 mkdir -p /opt/azure-devops-agent
