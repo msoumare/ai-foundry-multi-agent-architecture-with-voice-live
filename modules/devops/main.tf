@@ -41,11 +41,13 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "devops" {
       primary   = true
       subnet_id = var.subnet_id
 
-      dynamic "public_ip_address_configuration" {
+      dynamic "public_ip_address" {
         for_each = var.enable_public_ip ? [1] : []
         content {
-          name              = "pip-devops"
+          name                    = "pip-devops"
           idle_timeout_in_minutes = 10
+          version                 = "IPv4"
+          sku_name                = "Standard_Regional"
         }
       }
     }
@@ -72,6 +74,7 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "devops" {
         "export AZDO_POOL='${var.azdo_pool}'",
         "export AZDO_AGENT_NAME='${var.azdo_agent_name}'",
         "export AZDO_PAT='${var.azdo_pat_token}'",
+        "export VMSS_ADMIN_USERNAME='${var.admin_username}'",
         file("${path.module}/install-agent.sh")
       ]))
     })

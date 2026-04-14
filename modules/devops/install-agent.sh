@@ -46,6 +46,8 @@ apt-get install -y terraform --fix-missing -o Acquire::ForceIPv4=true
 
 # Create agent directory
 mkdir -p /opt/azure-devops-agent
+AGENT_USER="${VMSS_ADMIN_USERNAME:-azureuser}"
+chown -R "${AGENT_USER}:${AGENT_USER}" /opt/azure-devops-agent
 cd /opt/azure-devops-agent
 
 # Download agent with fallback URLs and retries to avoid transient DNS/endpoint issues
@@ -91,7 +93,9 @@ fi
 AZDO_POOL="${AZDO_POOL:-default}"
 AZDO_AGENT_NAME="${AZDO_AGENT_NAME:-$(hostname)}"
 
-./config.sh --unattended \
+chown -R "${AGENT_USER}:${AGENT_USER}" /opt/azure-devops-agent
+
+runuser -u "${AGENT_USER}" -- ./config.sh --unattended \
   --url "$AZDO_URL" \
   --auth pat \
   --token "$AZDO_PAT" \
@@ -99,5 +103,5 @@ AZDO_AGENT_NAME="${AZDO_AGENT_NAME:-$(hostname)}"
   --agent "$AZDO_AGENT_NAME" \
   --acceptTeeEula
 
-sudo ./svc.sh install
+sudo ./svc.sh install "${AGENT_USER}"
 sudo ./svc.sh start
