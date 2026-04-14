@@ -3,14 +3,6 @@
 set -e
 export DEBIAN_FRONTEND=noninteractive
 
-# This VMSS subnet uses NAT-based IPv4 egress; disable IPv6 preference for apt.
-cat >/etc/apt/apt.conf.d/99force-ipv4 <<'EOF'
-Acquire::ForceIPv4 "true";
-Acquire::Retries "5";
-Acquire::http::Timeout "30";
-Acquire::https::Timeout "30";
-EOF
-
 # Update system
 apt-get update -o Acquire::ForceIPv4=true
 apt-get install -y wget unzip jq curl build-essential --fix-missing -o Acquire::ForceIPv4=true
@@ -90,8 +82,38 @@ if [ -z "${AZDO_PAT:-}" ]; then
   exit 1
 fi
 
-AZDO_POOL="${AZDO_POOL:-default}"
-AZDO_AGENT_NAME="${AZDO_AGENT_NAME:-$(hostname)}"
+if [ -z "${AZDO_POOL:-}" ]; then
+  echo "ERROR: AZDO_POOL must be set to the target Azure DevOps agent pool name."
+  exit 1
+fi
+
+if [ -z "${AZDO_AGENT_NAME:-}" ]; then
+  echo "ERROR: AZDO_AGENT_NAME must be set to the target agent name."
+  exit 1
+fi
+
+AZDO_URL_BASE="${AZDO_URL%/}"
+
+echo "Attempting to create Azure DevOps pool: ${AZDO_POOL}"
+CREATE_BODY=$(jq -n --arg pool_name "${AZDO_POOL}" '{name: $pool_name, autoProvision: false, autoUpdate: true, poolType: "automation"}')
+CREATE_RESPONSE_FILE=$(mktemp)
+CREATE_HTTP_CODE=$(curl -sS --retry 5 --retry-all-errors -u ":${AZDO_PAT}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d "${CREATE_BODY}" \
+  -o "${CREATE_RESPONSE_FILE}" \
+  -w "%{http_code}" \
+  "${AZDO_URL_BASE}/_apis/distributedtask/pools?api-version=7.1-preview.1")
+
+if [ "${CREATE_HTTP_CODE}" = "200" ] || [ "${CREATE_HTTP_CODE}" = "201" ]; then
+  POOL_ID=$(jq -r '.id // empty' "${CREATE_RESPONSE_FILE}")
+  echo "Created pool '${AZDO_POOL}' with id ${POOL_ID}."
+else
+  echo "Pool create call returned HTTP ${CREATE_HTTP_CODE}. Continuing assuming pool already exists."
+  cat "${CREATE_RESPONSE_FILE}"
+fi
+
+rm -f "${CREATE_RESPONSE_FILE}"
 
 chown -R "${AGENT_USER}:${AGENT_USER}" /opt/azure-devops-agent
 
