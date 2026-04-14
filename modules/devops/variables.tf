@@ -18,6 +18,12 @@ variable "subnet_id" {
   type        = string
 }
 
+variable "enable_public_ip" {
+  description = "Assign a public IP per VMSS instance for temporary outbound connectivity"
+  type        = bool
+  default     = false
+}
+
 variable "admin_username" {
   description = "Admin username for VMs"
   type        = string

@@ -40,6 +40,14 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "devops" {
       name      = "ipconfig"
       primary   = true
       subnet_id = var.subnet_id
+
+      dynamic "public_ip_address_configuration" {
+        for_each = var.enable_public_ip ? [1] : []
+        content {
+          name              = "pip-devops"
+          idle_timeout_in_minutes = 10
+        }
+      }
     }
   }
 

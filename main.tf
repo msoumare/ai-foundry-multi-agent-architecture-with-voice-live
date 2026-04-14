@@ -123,6 +123,7 @@ module "devops" {
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.devops_subnet_id
+  enable_public_ip    = true
   admin_username      = "build_agent_user"
   ssh_public_key      = tls_private_key.devops.public_key_openssh
   azdo_url            = var.azdo_url
