@@ -1,6 +1,7 @@
 #!/bin/bash
 # Install Azure DevOps Agent and required tools for AKS and Terraform
 set -e
+export DEBIAN_FRONTEND=noninteractive
 
 # This VMSS subnet uses NAT-based IPv4 egress; disable IPv6 preference for apt.
 cat >/etc/apt/apt.conf.d/99force-ipv4 <<'EOF'
@@ -47,10 +48,29 @@ apt-get install -y terraform --fix-missing -o Acquire::ForceIPv4=true
 mkdir -p /opt/azure-devops-agent
 cd /opt/azure-devops-agent
 
-# Download latest agent (adjust version as needed)
+# Download agent with fallback URLs and retries to avoid transient DNS/endpoint issues
 AGENT_VERSION="3.236.1"
-wget https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
-tar zxvf vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz
+AGENT_TARBALL="vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz"
+AGENT_URLS=(
+  "https://download.agent.dev.azure.com/agent/${AGENT_VERSION}/${AGENT_TARBALL}"
+  "https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/${AGENT_TARBALL}"
+)
+
+DOWNLOAD_OK=0
+for AGENT_URL in "${AGENT_URLS[@]}"; do
+  echo "Attempting Azure DevOps agent download from: ${AGENT_URL}"
+  if curl -fL --retry 5 --retry-all-errors --connect-timeout 20 --max-time 180 -o "${AGENT_TARBALL}" "${AGENT_URL}"; then
+    DOWNLOAD_OK=1
+    break
+  fi
+done
+
+if [ "$DOWNLOAD_OK" -ne 1 ]; then
+  echo "ERROR: Unable to download Azure DevOps agent from all known endpoints."
+  exit 1
+fi
+
+tar zxvf "${AGENT_TARBALL}"
 
 # Configure the Azure DevOps self-hosted agent from environment variables.
 # This script uses a PAT for unattended agent registration.
