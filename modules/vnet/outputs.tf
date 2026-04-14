@@ -67,3 +67,13 @@ output "log_analytics_dns_zone_id" {
   description = "Log Analytics private DNS zone ID"
   value       = azurerm_private_dns_zone.log_analytics.id
 }
+
+output "nat_gateway_id" {
+  description = "NAT Gateway resource ID"
+  value       = azurerm_nat_gateway.devops.id
+}
+
+output "nat_gateway_public_ip" {
+  description = "NAT Gateway public IP address"
+  value       = azurerm_public_ip.nat_gateway.ip_address
+}

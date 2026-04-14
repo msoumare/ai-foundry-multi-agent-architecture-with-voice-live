@@ -139,3 +139,30 @@ resource "azurerm_private_dns_zone_virtual_network_link" "log_analytics" {
   private_dns_zone_name = azurerm_private_dns_zone.log_analytics.name
   virtual_network_id    = azurerm_virtual_network.workload.id
 }
+
+# NAT Gateway for DevOps subnet egress
+resource "azurerm_public_ip" "nat_gateway" {
+  name                = "pip-nat-${var.workload}-${var.env}-${var.region}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
+
+resource "azurerm_nat_gateway" "devops" {
+  name                = "nat-${var.workload}-${var.env}-${var.region}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "devops" {
+  nat_gateway_id       = azurerm_nat_gateway.devops.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "devops" {
+  subnet_id      = azurerm_subnet.workload_devops.id
+  nat_gateway_id = azurerm_nat_gateway.devops.id
+}
