@@ -111,34 +111,8 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - Core Infrastructure ###"
-          SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-
-          STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/$(resource_group_workload)/providers/Microsoft.Storage/storageAccounts/st${{ parameters.workload }}${{ parameters.env }}${{ parameters.region }}"
-          SEARCH_SERVICE_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/$(resource_group_workload)/providers/Microsoft.Search/searchServices/search-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-          REDIS_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/$(resource_group_workload)/providers/Microsoft.Cache/redis/redis-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-
-          if ! terraform state show module.ai_foundry.azurerm_storage_account.ai >/dev/null 2>&1; then
-            if az resource show --ids "${STORAGE_ACCOUNT_ID}" >/dev/null 2>&1; then
-              echo "Importing existing Storage Account into Terraform state..."
-              terraform import module.ai_foundry.azurerm_storage_account.ai "${STORAGE_ACCOUNT_ID}"
-            fi
-          fi
-
-          if ! terraform state show module.ai_search.azurerm_search_service.this >/dev/null 2>&1; then
-            if az resource show --ids "${SEARCH_SERVICE_ID}" >/dev/null 2>&1; then
-              echo "Importing existing Azure AI Search service into Terraform state..."
-              terraform import module.ai_search.azurerm_search_service.this "${SEARCH_SERVICE_ID}"
-            fi
-          fi
-
-          if ! terraform state show module.redis.azurerm_redis_cache.this >/dev/null 2>&1; then
-            if az resource show --ids "${REDIS_ID}" >/dev/null 2>&1; then
-              echo "Importing existing Redis cache into Terraform state..."
-              terraform import module.redis.azurerm_redis_cache.this "${REDIS_ID}"
-            fi
-          fi
-
-          # Plan only remaining core resources to avoid modifying network/devops bootstrap.
+          # Plan remaining core modules/resources explicitly.
+          # Excludes resources already handled in earlier pipelines (network/devops bootstrap).
           terraform plan \
             -target=module.monitoring \
             -target=module.acr \
