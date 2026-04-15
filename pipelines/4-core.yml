@@ -63,7 +63,7 @@ variables:
   value: '$(System.DefaultWorkingDirectory)'
 
 pool:
-  vmImage: ubuntu-latest
+  name: private-pool-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
 
 stages:
 ########################################
