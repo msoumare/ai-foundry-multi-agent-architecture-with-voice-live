@@ -62,8 +62,11 @@ variables:
 - name: terraform_working_directory
   value: '$(System.DefaultWorkingDirectory)'
 
+- name: agent_pool_name
+  value: ${{ format('private-pool-{0}-{1}-{2}', parameters.workload, parameters.env, parameters.region) }}
+
 pool:
-  name: private-pool-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}
+  name: $(agent_pool_name)
 
 stages:
 ########################################
