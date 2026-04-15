@@ -152,7 +152,7 @@ module "monitoring" {
 module "acr" {
   source = "./modules/acr"
 
-  name                = "acr-${var.workload}-${var.environment}-${var.region}"
+  name                = "acr${var.workload}${var.environment}${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
