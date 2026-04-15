@@ -60,6 +60,9 @@ variables:
 - name: terraform_working_directory
   value: '$(System.DefaultWorkingDirectory)'
 
+- name: agent_pool_name
+  value: ${{ format('private-pool-{0}-{1}-{2}', parameters.workload, parameters.env, parameters.region) }}
+
 pool:
   vmImage: ubuntu-latest
 
@@ -340,6 +343,8 @@ stages:
   jobs:
   - job: TerraformPlan
     displayName: "Plan Core (ACR, Cosmos, Redis, AI Services)"
+    pool:
+      name: $(agent_pool_name)
     steps:
     - checkout: self
 
@@ -403,6 +408,8 @@ stages:
   jobs:
   - deployment: TerraformApply
     displayName: "Apply Core Infrastructure"
+    pool:
+      name: $(agent_pool_name)
     environment: "Infra-${{ parameters.env }}-Core"
     strategy:
       runOnce:
