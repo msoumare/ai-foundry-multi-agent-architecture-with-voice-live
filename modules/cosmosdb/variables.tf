@@ -30,3 +30,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet ID for the private endpoint"
+  type        = string
+}
+
+variable "cosmosdb_dns_zone_id" {
+  description = "Private DNS zone ID for Cosmos DB (privatelink.documents.azure.com)"
+  type        = string
+}

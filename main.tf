@@ -137,10 +137,12 @@ module "devops" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  name                = "la-${var.workload}-${var.environment}-${var.region}"
-  app_insights_name   = "appi-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
+  name                        = "la-${var.workload}-${var.environment}-${var.region}"
+  app_insights_name           = "appi-${var.workload}-${var.environment}-${var.region}"
+  location                    = var.location
+  resource_group_name         = azurerm_resource_group.main.name
+  private_endpoint_subnet_id  = module.vnet.private_endpoints_subnet_id
+  log_analytics_dns_zone_id   = module.vnet.log_analytics_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -152,35 +154,11 @@ module "monitoring" {
 module "acr" {
   source = "./modules/acr"
 
-  name                = "acr${var.workload}${var.environment}${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- ACR Private Endpoint ---
-resource "azurerm_private_endpoint" "acr" {
-  name                = "pe-acr-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "acr-connection"
-    private_connection_resource_id = module.acr.id
-    subresource_names              = ["registry"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-acr-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.acr_dns_zone_id]
-  }
-
+  name                       = "acr${var.workload}${var.environment}${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  acr_dns_zone_id            = module.vnet.acr_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -192,37 +170,13 @@ resource "azurerm_private_endpoint" "acr" {
 module "cosmosdb" {
   source = "./modules/cosmosdb"
 
-  name                = "cosmos-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  database_name       = var.cosmos_database_name
-  container_name      = var.cosmos_container_name
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- Cosmos DB Private Endpoint ---
-resource "azurerm_private_endpoint" "cosmosdb" {
-  name                = "pe-cosmos-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "cosmosdb-connection"
-    private_connection_resource_id = module.cosmosdb.id
-    subresource_names              = ["Sql"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-cosmos-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.cosmosdb_dns_zone_id]
-  }
-
+  name                       = "cosmos-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  database_name              = var.cosmos_database_name
+  container_name             = var.cosmos_container_name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  cosmosdb_dns_zone_id       = module.vnet.cosmosdb_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -234,38 +188,14 @@ resource "azurerm_private_endpoint" "cosmosdb" {
 module "redis" {
   source = "./modules/redis"
 
-  name                = "redis-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku_name            = var.redis_sku_name
-  family              = var.redis_family
-  capacity            = var.redis_capacity
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- Redis Private Endpoint ---
-resource "azurerm_private_endpoint" "redis" {
-  name                = "pe-redis-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "redis-connection"
-    private_connection_resource_id = module.redis.id
-    subresource_names              = ["redisCache"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-redis-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.redis_dns_zone_id]
-  }
-
+  name                       = "redis-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  sku_name                   = var.redis_sku_name
+  family                     = var.redis_family
+  capacity                   = var.redis_capacity
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  redis_dns_zone_id          = module.vnet.redis_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -277,66 +207,17 @@ resource "azurerm_private_endpoint" "redis" {
 module "ai_foundry" {
   source = "./modules/ai_foundry"
 
-  hub_name             = "af-hub-${var.workload}-${var.environment}-${var.region}"
-  project_name         = "af-proj-${var.workload}-${var.environment}-${var.region}"
-  ai_services_name     = "ai-${var.workload}-${var.environment}-${var.region}"
-  storage_account_name = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
-  location             = var.location
-  resource_group_name  = azurerm_resource_group.main.name
-  key_vault_id         = module.keyvault.id
-  app_insights_id      = module.monitoring.app_insights_id
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- AI Services Private Endpoint ---
-resource "azurerm_private_endpoint" "ai_services" {
-  name                = "pe-ai-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "ai-services-connection"
-    private_connection_resource_id = module.ai_foundry.ai_services_id
-    subresource_names              = ["account"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-ai-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.ai_services_dns_zone_id]
-  }
-
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- Storage Account Private Endpoint ---
-resource "azurerm_private_endpoint" "storage_blob" {
-  name                = "pe-st-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "storage-blob-connection"
-    private_connection_resource_id = module.ai_foundry.storage_account_id
-    subresource_names              = ["blob"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-st-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.storage_dns_zone_id]
-  }
-
+  hub_name                   = "af-hub-${var.workload}-${var.environment}-${var.region}"
+  project_name               = "af-proj-${var.workload}-${var.environment}-${var.region}"
+  ai_services_name           = "ai-${var.workload}-${var.environment}-${var.region}"
+  storage_account_name       = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  key_vault_id               = module.keyvault.id
+  app_insights_id            = module.monitoring.app_insights_id
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
+  storage_dns_zone_id        = module.vnet.storage_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -348,37 +229,13 @@ resource "azurerm_private_endpoint" "storage_blob" {
 module "ai_search" {
   source = "./modules/ai_search"
 
-  name                = "search-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "basic"
-  ai_foundry_hub_id   = module.ai_foundry.hub_id
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- AI Search Private Endpoint ---
-resource "azurerm_private_endpoint" "ai_search" {
-  name                = "pe-search-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "ai-search-connection"
-    private_connection_resource_id = module.ai_search.id
-    subresource_names              = ["searchService"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-search-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.search_dns_zone_id]
-  }
-
+  name                       = "search-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  sku                        = "basic"
+  ai_foundry_hub_id          = module.ai_foundry.hub_id
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  search_dns_zone_id         = module.vnet.search_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -420,32 +277,6 @@ module "aks" {
   user_node_count            = var.aks_user_node_count
   vnet_subnet_id             = module.vnet.aks_subnet_id
   private_cluster_enabled    = true
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- Log Analytics Private Endpoint ---
-resource "azurerm_private_endpoint" "log_analytics" {
-  name                = "pe-la-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = module.vnet.private_endpoints_subnet_id
-
-  private_service_connection {
-    name                           = "log-analytics-connection"
-    private_connection_resource_id = module.monitoring.log_analytics_workspace_id
-    subresource_names              = ["azuremonitor"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-la-${var.workload}-${var.environment}-${var.region}"
-    private_dns_zone_ids = [module.vnet.log_analytics_dns_zone_id]
-  }
-
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

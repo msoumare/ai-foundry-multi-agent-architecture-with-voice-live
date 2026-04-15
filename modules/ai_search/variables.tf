@@ -29,3 +29,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet ID for the private endpoint"
+  type        = string
+}
+
+variable "search_dns_zone_id" {
+  description = "Private DNS zone ID for AI Search (privatelink.search.windows.net)"
+  type        = string
+}

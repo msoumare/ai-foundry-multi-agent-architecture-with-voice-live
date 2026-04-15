@@ -99,4 +99,46 @@ resource "azapi_resource" "project" {
   }
 }
 
+resource "azurerm_private_endpoint" "ai_services" {
+  name                = "pe-ai-${var.ai_services_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "ai-services-connection"
+    private_connection_resource_id = azurerm_cognitive_account.ai_services.id
+    subresource_names              = ["account"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-ai-${var.ai_services_name}"
+    private_dns_zone_ids = [var.ai_services_dns_zone_id]
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_private_endpoint" "storage_blob" {
+  name                = "pe-st-${var.storage_account_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "storage-blob-connection"
+    private_connection_resource_id = azurerm_storage_account.ai.id
+    subresource_names              = ["blob"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-st-${var.storage_account_name}"
+    private_dns_zone_ids = [var.storage_dns_zone_id]
+  }
+
+  tags = var.tags
+}
+
 data "azurerm_client_config" "current" {}

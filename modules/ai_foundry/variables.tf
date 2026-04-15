@@ -43,3 +43,18 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet ID for private endpoints"
+  type        = string
+}
+
+variable "ai_services_dns_zone_id" {
+  description = "Private DNS zone ID for AI Services (privatelink.cognitiveservices.azure.com)"
+  type        = string
+}
+
+variable "storage_dns_zone_id" {
+  description = "Private DNS zone ID for Storage Blob (privatelink.blob.core.windows.net)"
+  type        = string
+}

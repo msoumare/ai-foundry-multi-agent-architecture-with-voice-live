@@ -111,6 +111,7 @@ stages:
           # Target Key Vault + DevOps infrastructure
           terraform plan \
             -target=module.keyvault \
+            -target=azurerm_role_assignment.deployer_kv_secrets_officer \
             -target=tls_private_key.devops \
             -target=azurerm_key_vault_secret.devops_ssh_private_key \
             -target=module.devops_identity \

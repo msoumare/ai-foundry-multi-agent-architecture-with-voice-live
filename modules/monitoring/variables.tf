@@ -23,3 +23,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet ID for the private endpoint"
+  type        = string
+}
+
+variable "log_analytics_dns_zone_id" {
+  description = "Private DNS zone ID for Log Analytics (privatelink.oms.opinsights.azure.com)"
+  type        = string
+}

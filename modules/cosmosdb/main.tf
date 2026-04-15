@@ -47,3 +47,24 @@ resource "azurerm_cosmosdb_sql_container" "this" {
     }
   }
 }
+
+resource "azurerm_private_endpoint" "this" {
+  name                = "pe-cosmos-${var.name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "cosmosdb-connection"
+    private_connection_resource_id = azurerm_cosmosdb_account.this.id
+    subresource_names              = ["Sql"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-cosmos-${var.name}"
+    private_dns_zone_ids = [var.cosmosdb_dns_zone_id]
+  }
+
+  tags = var.tags
+}
