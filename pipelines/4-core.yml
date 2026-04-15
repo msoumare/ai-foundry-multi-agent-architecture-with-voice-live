@@ -111,9 +111,24 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - Core Infrastructure ###"
-          # Plan all remaining infrastructure
-          # Excludes: vnet, keyvault, devops, identity modules (already deployed)
+          # Plan only remaining core resources to avoid modifying network/devops bootstrap.
           terraform plan \
+            -target=module.monitoring \
+            -target=module.acr \
+            -target=module.cosmosdb \
+            -target=module.redis \
+            -target=module.ai_foundry \
+            -target=module.ai_search \
+            -target=module.identity \
+            -target=module.aks \
+            -target=azurerm_private_endpoint.acr \
+            -target=azurerm_private_endpoint.cosmosdb \
+            -target=azurerm_private_endpoint.redis \
+            -target=azurerm_private_endpoint.ai_services \
+            -target=azurerm_private_endpoint.storage_blob \
+            -target=azurerm_private_endpoint.ai_search \
+            -target=azurerm_private_endpoint.log_analytics \
+            -target=azurerm_role_assignment.aks_acr_pull \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-infra 
 
