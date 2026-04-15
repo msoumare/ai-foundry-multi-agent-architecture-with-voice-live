@@ -47,12 +47,6 @@ variables:
 - name: key_tfstate
   value: tfs${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.key
 
-- name: azdo_pool
-  value: private-pool-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region}}
-
-- name: azdo_agent_name
-  value: private-agent-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region}} 
-
 # Default region → NE
 - name: location
   value: northeurope

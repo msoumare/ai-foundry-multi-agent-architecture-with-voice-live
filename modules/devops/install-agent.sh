@@ -88,33 +88,13 @@ if [ -z "${AZDO_POOL:-}" ]; then
 fi
 
 if [ -z "${AZDO_AGENT_NAME:-}" ]; then
-  AZDO_AGENT_NAME="$(hostname)"
-  echo "AZDO_AGENT_NAME not set. "
+  echo "ERROR: AZDO_AGENT_NAME must be set to the target agent name."
   exit 1
 fi
 
 AZDO_URL_BASE="${AZDO_URL%/}"
 
-echo "Attempting to create Azure DevOps pool: ${AZDO_POOL}"
-CREATE_BODY=$(jq -n --arg pool_name "${AZDO_POOL}" '{name: $pool_name, autoProvision: false, autoUpdate: true, poolType: "automation"}')
-CREATE_RESPONSE_FILE=$(mktemp)
-CREATE_HTTP_CODE=$(curl -sS --retry 5 --retry-all-errors -u ":${AZDO_PAT}" \
-  -H "Content-Type: application/json" \
-  -X POST \
-  -d "${CREATE_BODY}" \
-  -o "${CREATE_RESPONSE_FILE}" \
-  -w "%{http_code}" \
-  "${AZDO_URL_BASE}/_apis/distributedtask/pools?api-version=7.1-preview.1")
-
-if [ "${CREATE_HTTP_CODE}" = "200" ] || [ "${CREATE_HTTP_CODE}" = "201" ]; then
-  POOL_ID=$(jq -r '.id // empty' "${CREATE_RESPONSE_FILE}")
-  echo "Created pool '${AZDO_POOL}' with id ${POOL_ID}."
-else
-  echo "Pool create call returned HTTP ${CREATE_HTTP_CODE}. Continuing assuming pool already exists."
-  cat "${CREATE_RESPONSE_FILE}"
-fi
-
-rm -f "${CREATE_RESPONSE_FILE}"
+echo "Registering agent '${AZDO_AGENT_NAME}' to pool '${AZDO_POOL}' at ${AZDO_URL_BASE}"
 
 chown -R "${AGENT_USER}:${AGENT_USER}" /opt/azure-devops-agent
 
