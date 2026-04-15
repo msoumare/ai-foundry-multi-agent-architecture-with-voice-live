@@ -60,4 +60,10 @@ resource "azurerm_linux_virtual_machine_scale_set" "devops" {
       "script" = base64encode(file("${path.module}/install-agent.sh"))
     })
   }
+
+  # Extend timeout to 60min for CustomScript extension to complete
+  timeouts {
+    create = "60m"
+    update = "60m"
+  }
 }
