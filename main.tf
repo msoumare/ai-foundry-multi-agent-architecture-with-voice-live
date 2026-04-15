@@ -69,7 +69,7 @@ resource "azurerm_bastion_host" "main" {
 module "keyvault" {
   source = "./modules/keyvault"
 
-  name                = substr("kv-${var.workload}-${var.environment}-${var.region}", 0, 24)
+  name                = substr("akv-${var.workload}-${var.environment}-${var.region}", 0, 24)
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
