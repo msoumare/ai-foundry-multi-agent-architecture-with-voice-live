@@ -18,12 +18,6 @@ variable "subnet_id" {
   type        = string
 }
 
-variable "enable_public_ip" {
-  description = "Assign a public IP per VMSS instance for temporary outbound connectivity"
-  type        = bool
-  default     = false
-}
-
 variable "admin_username" {
   description = "Admin username for VMs"
   type        = string
@@ -80,29 +74,4 @@ variable "tags" {
   description = "Resource tags"
   type        = map(string)
   default     = {}
-}
-
-variable "azdo_url" {
-  description = "Azure DevOps organization URL"
-  type        = string
-  default     = ""
-}
-
-variable "azdo_pool" {
-  description = "Azure DevOps agent pool name"
-  type        = string
-  default     = "default"
-}
-
-variable "azdo_agent_name" {
-  description = "Azure DevOps agent name"
-  type        = string
-  default     = ""
-}
-
-variable "azdo_pat_token" {
-  description = "Azure DevOps PAT token"
-  type        = string
-  default     = ""
-  sensitive   = true
 }
