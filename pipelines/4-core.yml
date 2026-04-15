@@ -133,7 +133,7 @@ stages:
   jobs:
   - deployment: TerraformApply
     displayName: "Apply Core Infrastructure"
-    environment: "Infra-${{ parameters.env }}-Infra"
+    environment: "Infra-${{ parameters.env }}-Core"
     strategy:
       runOnce:
         deploy:
