@@ -22,11 +22,12 @@ resource "azurerm_storage_account" "ai" {
 }
 
 # Grant the hub workspace system-assigned managed identity access to storage
-resource "azurerm_role_assignment" "hub_storage_access" {
-  scope              = azurerm_storage_account.ai.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id       = azapi_resource.hub.identity[0].principal_id
-}
+# TODO: role assignment exists in Azure (ID: 7d32d0d1c560486cb38af2a8d3b27624) — import before re-enabling
+# resource "azurerm_role_assignment" "hub_storage_access" {
+#   scope                = azurerm_storage_account.ai.id
+#   role_definition_name = "Storage Blob Data Contributor"
+#   principal_id         = azapi_resource.hub.identity[0].principal_id
+# }
 
 resource "azurerm_cognitive_account" "ai_services" {
   name                  = var.ai_services_name
