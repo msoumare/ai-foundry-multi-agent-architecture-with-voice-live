@@ -205,105 +205,105 @@ module "redis" {
 }
 
 # --- AI Foundry (AI Services + Hub + Project + Storage) ---
-# module "ai_foundry" {
-#   source = "./modules/ai_foundry"
+module "ai_foundry" {
+  source = "./modules/ai_foundry"
 
-#   hub_name                            = "af-hub-${var.workload}-${var.environment}-${var.region}"
-#   project_name                        = "af-proj-${var.workload}-${var.environment}-${var.region}"
-#   ai_services_name                    = "ai-${var.workload}-${var.environment}-${var.region}"
-#   storage_account_name                = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
-#   location                            = var.location
-#   resource_group_name                 = azurerm_resource_group.main.name
-#   key_vault_id                        = module.keyvault.id
-#   app_insights_id                     = module.monitoring.app_insights_id
-#   private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
-#   ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
-#   storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
-#   user_assigned_identity_id           = module.identity.id
-#   user_assigned_identity_principal_id = module.identity.principal_id
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  hub_name                            = "af-hub-${var.workload}-${var.environment}-${var.region}"
+  project_name                        = "af-proj-${var.workload}-${var.environment}-${var.region}"
+  ai_services_name                    = "ai-${var.workload}-${var.environment}-${var.region}"
+  storage_account_name                = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
+  location                            = var.location
+  resource_group_name                 = azurerm_resource_group.main.name
+  key_vault_id                        = module.keyvault.id
+  app_insights_id                     = module.monitoring.app_insights_id
+  private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
+  ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
+  storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
+  user_assigned_identity_id           = module.identity.id
+  user_assigned_identity_principal_id = module.identity.principal_id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # --- Azure AI Search ---
-# module "ai_search" {
-#   source = "./modules/ai_search"
+module "ai_search" {
+  source = "./modules/ai_search"
 
-#   name                       = "search-${var.workload}-${var.environment}-${var.region}"
-#   location                   = var.location
-#   resource_group_name        = azurerm_resource_group.main.name
-#   sku                        = "basic"
-#   ai_foundry_hub_id          = module.ai_foundry.hub_id
-#   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
-#   search_dns_zone_id         = module.vnet.search_dns_zone_id
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                       = "search-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  sku                        = "basic"
+  ai_foundry_hub_id          = module.ai_foundry.hub_id
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  search_dns_zone_id         = module.vnet.search_dns_zone_id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # # --- Platform Identity (AI Foundry Hub/Project) ---
-# module "identity" {
-#   source = "./modules/identity"
+module "identity" {
+  source = "./modules/identity"
 
-#   name                = "id-${var.workload}-${var.environment}-${var.region}"
-#   location            = var.location
-#   resource_group_name = azurerm_resource_group.main.name
-#   key_vault_id        = module.keyvault.id
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                = "id-${var.workload}-${var.environment}-${var.region}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  key_vault_id        = module.keyvault.id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # # --- AKS Compute Identity ---
-# module "aks_identity" {
-#   source = "./modules/aks_identity"
+module "aks_identity" {
+  source = "./modules/aks_identity"
 
-#   name                 = "id-aks-${var.workload}-${var.environment}-${var.region}"
-#   location             = var.location
-#   resource_group_name  = azurerm_resource_group.main.name
-#   key_vault_id         = module.keyvault.id
-#   acr_id               = module.acr.id
-#   cosmos_db_account_id = module.cosmosdb.id
-#   ai_search_id         = module.ai_search.id
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                 = "id-aks-${var.workload}-${var.environment}-${var.region}"
+  location             = var.location
+  resource_group_name  = azurerm_resource_group.main.name
+  key_vault_id         = module.keyvault.id
+  acr_id               = module.acr.id
+  cosmos_db_account_id = module.cosmosdb.id
+  ai_search_id         = module.ai_search.id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # # --- AKS ---
-# module "aks" {
-#   source = "./modules/aks"
+module "aks" {
+  source = "./modules/aks"
 
-#   name                       = "aks-${var.workload}-${var.environment}-${var.region}"
-#   location                   = var.location
-#   resource_group_name        = azurerm_resource_group.main.name
-#   log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
-#   user_assigned_identity_id  = module.aks_identity.id
-#   system_node_vm_size        = var.aks_system_node_vm_size
-#   user_node_vm_size          = var.aks_user_node_vm_size
-#   user_node_count            = var.aks_user_node_count
-#   vnet_subnet_id             = module.vnet.aks_subnet_id
-#   private_cluster_enabled    = true
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                       = "aks-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
+  user_assigned_identity_id  = module.aks_identity.id
+  system_node_vm_size        = var.aks_system_node_vm_size
+  user_node_vm_size          = var.aks_user_node_vm_size
+  user_node_count            = var.aks_user_node_count
+  vnet_subnet_id             = module.vnet.aks_subnet_id
+  private_cluster_enabled    = true
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # # --- ACR Pull role for AKS kubelet identity ---
-# resource "azurerm_role_assignment" "aks_acr_pull" {
-#   scope                = module.acr.id
-#   role_definition_name = "AcrPull"
-#   principal_id         = module.aks.kubelet_identity_object_id
-#   principal_type       = "ServicePrincipal"
-# }
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = module.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = module.aks.kubelet_identity_object_id
+  principal_type       = "ServicePrincipal"
+}
