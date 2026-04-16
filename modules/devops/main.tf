@@ -47,4 +47,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "devops" {
     type         = "UserAssigned"
     identity_ids = var.identity_ids
   }
+
+  # Bootstrap build tools at first boot without using a VM extension,
+  # so Azure DevOps can manage its own VMSS agent extension lifecycle.
+  custom_data = base64encode(file("${path.module}/install-agent.sh"))
 }
