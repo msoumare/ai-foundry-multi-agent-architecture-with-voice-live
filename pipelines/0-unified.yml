@@ -353,14 +353,6 @@ stages:
     steps:
     - checkout: self
 
-    # - task: Bash@3
-    #   displayName: "Install build tools on private agent"
-    #   inputs:
-    #     targetType: inline
-    #     script: |
-    #       set -e
-    #       bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
-
     - task: TerraformInstaller@1
       displayName: "Install Terraform"
       inputs:
@@ -429,14 +421,6 @@ stages:
         deploy:
           steps:
           - checkout: self
-
-          - task: Bash@3
-            displayName: "Install build tools on private agent"
-            inputs:
-              targetType: inline
-              script: |
-                set -e
-                bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
 
           - task: TerraformInstaller@1
             displayName: "Install Terraform"
