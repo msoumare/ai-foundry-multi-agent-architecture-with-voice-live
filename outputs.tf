@@ -114,7 +114,7 @@ output "app_insights_connection_string" {
 #   value       = module.ai_foundry.project_name
 # }
 
-output "managed_identity_client_id" {
-  description = "Client ID of the User Assigned Managed Identity"
-  value       = module.identity.client_id
-}
+# output "managed_identity_client_id" {
+#   description = "Client ID of the User Assigned Managed Identity"
+#   value       = module.identity.client_id
+# }
