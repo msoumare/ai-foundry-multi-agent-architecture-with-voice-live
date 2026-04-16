@@ -49,15 +49,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "devops" {
     identity_ids = var.identity_ids
   }
 
-  extension {
-    name                       = "install-build-tools"
-    publisher                  = "Microsoft.Azure.Extensions"
-    type                       = "CustomScript"
-    type_handler_version       = "2.1"
-    auto_upgrade_minor_version = true
-
-    protected_settings = jsonencode({
-      "script" = base64encode(file("${path.module}/install-agent.sh"))
-    })
-  }
+  # Bootstrap build tools at first boot without using a VM extension,
+  # so Azure DevOps can manage its own VMSS agent extension lifecycle.
+  custom_data = base64encode(file("${path.module}/install-agent.sh"))
 }
