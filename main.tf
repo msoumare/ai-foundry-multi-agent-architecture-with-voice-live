@@ -205,28 +205,28 @@ module "redis" {
 }
 
 # --- AI Foundry (AI Services + Hub + Project + Storage) ---
-module "ai_foundry" {
-  source = "./modules/ai_foundry"
+# module "ai_foundry" {
+#   source = "./modules/ai_foundry"
 
-  hub_name                            = "af-hub-${var.workload}-${var.environment}-${var.region}"
-  project_name                        = "af-proj-${var.workload}-${var.environment}-${var.region}"
-  ai_services_name                    = "ai-${var.workload}-${var.environment}-${var.region}"
-  storage_account_name                = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
-  location                            = var.location
-  resource_group_name                 = azurerm_resource_group.main.name
-  key_vault_id                        = module.keyvault.id
-  app_insights_id                     = module.monitoring.app_insights_id
-  private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
-  ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
-  storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
-  user_assigned_identity_id           = module.identity.id
-  user_assigned_identity_principal_id = module.identity.principal_id
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
+#   hub_name                            = "af-hub-${var.workload}-${var.environment}-${var.region}"
+#   project_name                        = "af-proj-${var.workload}-${var.environment}-${var.region}"
+#   ai_services_name                    = "ai-${var.workload}-${var.environment}-${var.region}"
+#   storage_account_name                = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
+#   location                            = var.location
+#   resource_group_name                 = azurerm_resource_group.main.name
+#   key_vault_id                        = module.keyvault.id
+#   app_insights_id                     = module.monitoring.app_insights_id
+#   private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
+#   ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
+#   storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
+#   user_assigned_identity_id           = module.identity.id
+#   user_assigned_identity_principal_id = module.identity.principal_id
+#   tags = merge(var.tags, {
+#     environment = var.environment
+#     workload    = var.workload
+#     managed-by  = "terraform"
+#   })
+# }
 
 # --- Azure AI Search ---
 module "ai_search" {
