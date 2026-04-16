@@ -275,7 +275,7 @@ stages:
             -target=module.devops_identity \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-devops 
-
+ 
     - task: PublishPipelineArtifact@1
       displayName: "Publish DevOps plan"
       inputs:
