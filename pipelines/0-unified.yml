@@ -26,6 +26,11 @@ parameters:
   - ne
   - eus
 
+- name: deploy_core
+  displayName: Deploy Core (requires private pool ready)
+  type: boolean
+  default: false
+
 variables:
 - group: ${{ parameters.workload }}.infra
 
@@ -339,7 +344,7 @@ stages:
 - stage: PlanCore
   displayName: "Terraform Plan - Core Infrastructure"
   dependsOn: ApplyDevOps
-  condition: succeeded()
+  condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
   jobs:
   - job: TerraformPlan
     displayName: "Plan Core (ACR, Cosmos, Redis, AI Services)"
@@ -404,7 +409,7 @@ stages:
 - stage: ApplyCore
   displayName: "Terraform Apply - Core Infrastructure"
   dependsOn: PlanCore
-  condition: succeeded()
+  condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
   jobs:
   - deployment: TerraformApply
     displayName: "Apply Core Infrastructure"
