@@ -17,7 +17,15 @@ resource "azurerm_storage_account" "ai" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   min_tls_version          = "TLS1_2"
+  shared_access_key_enabled = false
   tags                     = var.tags
+}
+
+# Grant the hub workspace system-assigned managed identity access to storage
+resource "azurerm_role_assignment" "hub_storage_access" {
+  scope              = azurerm_storage_account.ai.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id       = azapi_resource.hub.identity[0].principal_id
 }
 
 resource "azurerm_cognitive_account" "ai_services" {
