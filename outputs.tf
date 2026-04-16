@@ -3,15 +3,15 @@ output "resource_group_name" {
   value       = azurerm_resource_group.main.name
 }
 
-output "aks_cluster_name" {
-  description = "Name of the AKS cluster"
-  value       = module.aks.cluster_name
-}
+# output "aks_cluster_name" {
+#   description = "Name of the AKS cluster"
+#   value       = module.aks.cluster_name
+# }
 
-output "aks_kube_config_command" {
-  description = "Command to get AKS credentials"
-  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${module.aks.cluster_name}"
-}
+# output "aks_kube_config_command" {
+#   description = "Command to get AKS credentials"
+#   value       = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${module.aks.cluster_name}"
+# }
 
 output "acr_login_server" {
   description = "ACR login server URL"
@@ -48,15 +48,15 @@ output "redis_port" {
   value       = module.redis.ssl_port
 }
 
-output "ai_search_name" {
-  description = "Azure AI Search service name"
-  value       = module.ai_search.name
-}
+# output "ai_search_name" {
+#   description = "Azure AI Search service name"
+#   value       = module.ai_search.name
+# }
 
-output "ai_search_id" {
-  description = "Azure AI Search service resource ID"
-  value       = module.ai_search.id
-}
+# output "ai_search_id" {
+#   description = "Azure AI Search service resource ID"
+#   value       = module.ai_search.id
+# }
 
 output "vnet_id" {
   description = "Virtual network resource ID"
@@ -104,15 +104,15 @@ output "app_insights_connection_string" {
   sensitive   = true
 }
 
-output "ai_foundry_hub_name" {
-  description = "AI Foundry Hub name"
-  value       = module.ai_foundry.hub_name
-}
+# output "ai_foundry_hub_name" {
+#   description = "AI Foundry Hub name"
+#   value       = module.ai_foundry.hub_name
+# }
 
-output "ai_foundry_project_name" {
-  description = "AI Foundry Project name"
-  value       = module.ai_foundry.project_name
-}
+# output "ai_foundry_project_name" {
+#   description = "AI Foundry Project name"
+#   value       = module.ai_foundry.project_name
+# }
 
 output "managed_identity_client_id" {
   description = "Client ID of the User Assigned Managed Identity"
