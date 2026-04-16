@@ -58,3 +58,13 @@ variable "storage_dns_zone_id" {
   description = "Private DNS zone ID for Storage Blob (privatelink.blob.core.windows.net)"
   type        = string
 }
+
+variable "user_assigned_identity_id" {
+  description = "Resource ID of the platform user-assigned managed identity (AI Foundry hub/project)"
+  type        = string
+}
+
+variable "user_assigned_identity_principal_id" {
+  description = "Principal ID of the platform user-assigned managed identity (for role assignments)"
+  type        = string
+}

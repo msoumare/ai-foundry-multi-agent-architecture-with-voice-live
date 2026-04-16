@@ -21,13 +21,21 @@ resource "azurerm_storage_account" "ai" {
   tags                     = var.tags
 }
 
-# Grant the hub workspace system-assigned managed identity access to storage
-# TODO: role assignment exists in Azure (ID: 7d32d0d1c560486cb38af2a8d3b27624) — import before re-enabling
-# resource "azurerm_role_assignment" "hub_storage_access" {
-#   scope                = azurerm_storage_account.ai.id
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = azapi_resource.hub.identity[0].principal_id
-# }
+# Grant the user-assigned identity access to AI Foundry storage
+resource "azurerm_role_assignment" "uai_storage_access" {
+  scope                = azurerm_storage_account.ai.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Grant the user-assigned identity access to AI Services
+resource "azurerm_role_assignment" "uai_cognitive_services_user" {
+  scope                = azurerm_cognitive_account.ai_services.id
+  role_definition_name = "Cognitive Services User"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
 
 resource "azurerm_cognitive_account" "ai_services" {
   name                  = var.ai_services_name
@@ -47,7 +55,8 @@ resource "azapi_resource" "hub" {
   tags      = var.tags
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [var.user_assigned_identity_id]
   }
 
   body = {
@@ -92,7 +101,8 @@ resource "azapi_resource" "project" {
   tags      = var.tags
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [var.user_assigned_identity_id]
   }
 
   body = {

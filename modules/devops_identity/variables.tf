@@ -1,5 +1,5 @@
 variable "name" {
-  description = "User Assigned Identity name"
+  description = "DevOps User Assigned Identity name"
   type        = string
 }
 
@@ -15,6 +15,11 @@ variable "resource_group_name" {
 
 variable "key_vault_id" {
   description = "Key Vault resource ID for role assignment"
+  type        = string
+}
+
+variable "acr_id" {
+  description = "Container Registry resource ID for AcrPush role"
   type        = string
 }
 

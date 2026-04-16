@@ -1,5 +1,5 @@
 variable "name" {
-  description = "User Assigned Identity name"
+  description = "Platform User Assigned Identity name (for AI Foundry hub/project)"
   type        = string
 }
 
@@ -15,31 +15,6 @@ variable "resource_group_name" {
 
 variable "key_vault_id" {
   description = "Key Vault resource ID for role assignment"
-  type        = string
-}
-
-variable "acr_id" {
-  description = "Container Registry resource ID for AcrPull role"
-  type        = string
-}
-
-variable "cosmos_db_account_id" {
-  description = "Cosmos DB account resource ID for role assignment"
-  type        = string
-}
-
-variable "ai_services_id" {
-  description = "AI Services account resource ID for role assignment"
-  type        = string
-}
-
-variable "storage_account_id" {
-  description = "Storage Account resource ID for role assignment"
-  type        = string
-}
-
-variable "ai_search_id" {
-  description = "Azure AI Search service resource ID"
   type        = string
 }
 
