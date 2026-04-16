@@ -6,10 +6,10 @@ resource "azurerm_kubernetes_cluster" "this" {
   tags                = var.tags
 
   default_node_pool {
-    name                = "system"
-    node_count          = 1
-    vm_size             = var.system_node_vm_size
-    vnet_subnet_id      = var.vnet_subnet_id
+    name                 = "system"
+    node_count           = 1
+    vm_size              = var.system_node_vm_size
+    vnet_subnet_id       = var.vnet_subnet_id
     type                 = "VirtualMachineScaleSets"
     auto_scaling_enabled = false
   }

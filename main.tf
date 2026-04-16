@@ -42,15 +42,15 @@ resource "azurerm_public_ip" "bastion" {
 }
 
 resource "azurerm_bastion_host" "main" {
-  name                = "bas-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "Standard"
-  copy_paste_enabled  = true
-  file_copy_enabled   = false
-  ip_connect_enabled  = true
+  name                   = "bas-${var.workload}-${var.environment}-${var.region}"
+  location               = var.location
+  resource_group_name    = azurerm_resource_group.main.name
+  sku                    = "Standard"
+  copy_paste_enabled     = true
+  file_copy_enabled      = false
+  ip_connect_enabled     = true
   shareable_link_enabled = false
-  tunneling_enabled   = true
+  tunneling_enabled      = true
 
   ip_configuration {
     name                 = "bastion-ipconfig"
@@ -116,33 +116,33 @@ module "devops_identity" {
 }
 
 # --- DevOps VMSS (Build Agent) ---
-# module "devops" {
-#   source = "./modules/devops"
+module "devops" {
+  source = "./modules/devops"
 
-#   name                = "vmss-devops-${var.workload}-${var.environment}-${var.region}"
-#   location            = var.location
-#   resource_group_name = azurerm_resource_group.main.name
-#   subnet_id           = module.vnet.devops_subnet_id
-#   admin_username      = "build_agent_user"
-#   ssh_public_key      = tls_private_key.devops.public_key_openssh
-#   identity_ids        = [module.devops_identity.id]
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                = "vmss-devops-${var.workload}-${var.environment}-${var.region}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  subnet_id           = module.vnet.devops_subnet_id
+  admin_username      = "build_agent_user"
+  ssh_public_key      = tls_private_key.devops.public_key_openssh
+  identity_ids        = [module.devops_identity.id]
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # --- Monitoring ---
 module "monitoring" {
   source = "./modules/monitoring"
 
-  name                        = "la-${var.workload}-${var.environment}-${var.region}"
-  app_insights_name           = "appi-${var.workload}-${var.environment}-${var.region}"
-  location                    = var.location
-  resource_group_name         = azurerm_resource_group.main.name
-  private_endpoint_subnet_id  = module.vnet.private_endpoints_subnet_id
-  log_analytics_dns_zone_id   = module.vnet.log_analytics_dns_zone_id
+  name                       = "la-${var.workload}-${var.environment}-${var.region}"
+  app_insights_name          = "appi-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  log_analytics_dns_zone_id  = module.vnet.log_analytics_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -247,15 +247,15 @@ module "ai_search" {
 module "identity" {
   source = "./modules/identity"
 
-  name                = "id-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  key_vault_id        = module.keyvault.id
-  acr_id              = module.acr.id
+  name                 = "id-${var.workload}-${var.environment}-${var.region}"
+  location             = var.location
+  resource_group_name  = azurerm_resource_group.main.name
+  key_vault_id         = module.keyvault.id
+  acr_id               = module.acr.id
   cosmos_db_account_id = module.cosmosdb.id
-  ai_services_id      = module.ai_foundry.ai_services_id
-  storage_account_id  = module.ai_foundry.storage_account_id
-  ai_search_id        = module.ai_search.id
+  ai_services_id       = module.ai_foundry.ai_services_id
+  storage_account_id   = module.ai_foundry.storage_account_id
+  ai_search_id         = module.ai_search.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

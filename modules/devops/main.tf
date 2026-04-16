@@ -2,16 +2,16 @@
 # Link this VMSS to an agent pool via: Azure DevOps → Project Settings → Agent pools → New pool → Azure Virtual Machine Scale Set.
 # Azure DevOps will automatically install, register, and deregister the agent on each instance.
 resource "azurerm_linux_virtual_machine_scale_set" "devops" {
-  name                = var.name
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  sku                 = var.vm_size
-  instances           = var.instance_count
-  admin_username      = var.admin_username
+  name                   = var.name
+  location               = var.location
+  resource_group_name    = var.resource_group_name
+  sku                    = var.vm_size
+  instances              = var.instance_count
+  admin_username         = var.admin_username
   single_placement_group = false
   # Manual upgrade mode is required for Azure DevOps VMSS pool integration.
-  upgrade_mode        = "Manual"
-  tags                = var.tags
+  upgrade_mode = "Manual"
+  tags         = var.tags
 
   disable_password_authentication = true
 

@@ -44,9 +44,9 @@ resource "azapi_resource" "hub" {
   body = {
     kind = "Hub"
     properties = {
-      friendlyName      = var.hub_name
-      storageAccount    = azurerm_storage_account.ai.id
-      keyVault          = var.key_vault_id
+      friendlyName        = var.hub_name
+      storageAccount      = azurerm_storage_account.ai.id
+      keyVault            = var.key_vault_id
       applicationInsights = var.app_insights_id
     }
     sku = {
