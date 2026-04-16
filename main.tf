@@ -226,6 +226,8 @@ module "ai_foundry" {
     workload    = var.workload
     managed-by  = "terraform"
   })
+
+  depends_on = [module.identity]
 }
 
 # --- Azure AI Search ---
@@ -246,11 +248,11 @@ module "ai_search" {
   })
 }
 
-# # --- Platform Identity (AI Foundry Hub/Project) ---
+# --- Platform Identity (AI Foundry Hub/Project) ---
 module "identity" {
   source = "./modules/identity"
 
-  name                = "id-${var.workload}-${var.environment}-${var.region}"
+  name                = "id-foundry-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
@@ -261,7 +263,7 @@ module "identity" {
   })
 }
 
-# # --- AKS Compute Identity ---
+# --- AKS Compute Identity ---
 module "aks_identity" {
   source = "./modules/aks_identity"
 
@@ -279,7 +281,7 @@ module "aks_identity" {
   })
 }
 
-# # --- AKS ---
+# --- AKS ---
 module "aks" {
   source = "./modules/aks"
 
@@ -300,7 +302,7 @@ module "aks" {
   })
 }
 
-# # --- ACR Pull role for AKS kubelet identity ---
+# --- ACR Pull role for AKS kubelet identity ---
 resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                = module.acr.id
   role_definition_name = "AcrPull"

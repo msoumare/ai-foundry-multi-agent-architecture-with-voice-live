@@ -72,6 +72,11 @@ resource "azapi_resource" "hub" {
       tier = "Basic"
     }
   }
+
+  depends_on = [
+    azurerm_role_assignment.uai_storage_access,
+    azurerm_role_assignment.uai_cognitive_services_user
+  ]
 }
 
 resource "azapi_resource" "ai_services_connection" {
@@ -116,6 +121,8 @@ resource "azapi_resource" "project" {
       tier = "Basic"
     }
   }
+
+  depends_on = [azapi_resource.hub]
 }
 
 resource "azurerm_private_endpoint" "ai_services" {
