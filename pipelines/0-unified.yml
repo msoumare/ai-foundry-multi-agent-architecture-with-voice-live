@@ -273,7 +273,6 @@ stages:
             -target=azurerm_role_assignment.deployer_kv_secrets_officer \
             -target=azurerm_key_vault_secret.devops_ssh_private_key \
             -target=module.devops_identity \
-            -target=module.devops \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-devops 
 
