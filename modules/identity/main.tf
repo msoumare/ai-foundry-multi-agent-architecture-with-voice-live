@@ -15,3 +15,12 @@ resource "azurerm_role_assignment" "kv_secrets_user" {
   principal_id         = azurerm_user_assigned_identity.this.principal_id
   principal_type       = "ServicePrincipal"
 }
+
+# Reader role is required for management-plane read on the vault resource
+# (Microsoft.KeyVault/vaults/read), which AI Foundry validates during workspace/project provisioning.
+resource "azurerm_role_assignment" "kv_reader" {
+  scope                = var.key_vault_id
+  role_definition_name = "Reader"
+  principal_id         = azurerm_user_assigned_identity.this.principal_id
+  principal_type       = "ServicePrincipal"
+}
