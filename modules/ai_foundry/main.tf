@@ -66,6 +66,7 @@ resource "azapi_resource" "hub" {
       storageAccount      = azurerm_storage_account.ai.id
       keyVault            = var.key_vault_id
       applicationInsights = var.app_insights_id
+      primaryUserAssignedIdentity = var.user_assigned_identity_id
     }
     sku = {
       name = "Basic"
@@ -113,8 +114,9 @@ resource "azapi_resource" "project" {
   body = {
     kind = "Project"
     properties = {
-      friendlyName  = var.project_name
-      hubResourceId = azapi_resource.hub.id
+      friendlyName                = var.project_name
+      hubResourceId               = azapi_resource.hub.id
+      primaryUserAssignedIdentity = var.user_assigned_identity_id
     }
     sku = {
       name = "Basic"
