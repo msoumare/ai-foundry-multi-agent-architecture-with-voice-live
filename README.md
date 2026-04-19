@@ -77,6 +77,10 @@ You can also run each pipeline separately in sequence. This is often easier for 
 
 If step 2 is skipped, Terraform plan/apply may fail with 403 errors while creating role assignments.
 
+Network pipeline conditional behavior:
+- In `pipelines/0-unified.yml` and `pipelines/2-network.yml`, the network plan conditionally includes `module.p2s_vpn[0]` only when `enable_p2s_vpn = true` in the selected environment tfvars file.
+- If `enable_p2s_vpn = false`, the P2S module is intentionally skipped during network plan/apply.
+
 ## Destroy Pipeline
 
 Use `pipelines/5-destroy.yml` to tear down all Terraform-managed resources for a selected environment.

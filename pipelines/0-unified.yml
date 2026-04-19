@@ -154,11 +154,18 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - Network Infrastructure ###"
+          P2S_TARGET=""
+          if grep -E '^enable_p2s_vpn\s*=\s*true' "./environments/${{ parameters.env }}.tfvars" >/dev/null; then
+            echo "P2S VPN is enabled in tfvars; including module.p2s_vpn[0] in target plan."
+            P2S_TARGET="-target=module.p2s_vpn[0]"
+          fi
+
           terraform plan \
             -target=azurerm_resource_group.main \
             -target=module.vnet \
             -target=azurerm_public_ip.bastion \
             -target=azurerm_bastion_host.main \
+            ${P2S_TARGET} \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network 
 
