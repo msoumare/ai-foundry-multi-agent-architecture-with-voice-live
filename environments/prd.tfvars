@@ -11,3 +11,7 @@ aks_subnet_prefixes              = ["10.1.1.0/24"]
 private_endpoints_subnet_prefixes = ["10.1.2.0/24"]
 devops_subnet_prefixes           = ["10.1.3.0/24"]
 bastion_subnet_prefixes          = ["10.1.4.0/26"]
+
+enable_p2s_vpn               = false
+gateway_subnet_prefixes      = ["10.1.5.0/27"]
+p2s_vpn_client_address_space = ["172.16.20.0/24"]

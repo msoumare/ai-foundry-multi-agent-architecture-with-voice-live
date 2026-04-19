@@ -95,6 +95,24 @@ variable "bastion_subnet_prefixes" {
   type        = list(string)
 }
 
+variable "enable_p2s_vpn" {
+  description = "Enable Point-to-Site VPN gateway for local development access"
+  type        = bool
+  default     = false
+}
+
+variable "gateway_subnet_prefixes" {
+  description = "Address prefixes for the GatewaySubnet used by the VPN gateway"
+  type        = list(string)
+  default     = []
+}
+
+variable "p2s_vpn_client_address_space" {
+  description = "Client address pool for Point-to-Site VPN clients"
+  type        = list(string)
+  default     = ["172.16.201.0/24"]
+}
+
 variable "aks_system_node_vm_size" {
   description = "VM size for AKS system node pool"
   type        = string

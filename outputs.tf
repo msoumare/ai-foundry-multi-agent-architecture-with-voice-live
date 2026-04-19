@@ -118,3 +118,13 @@ output "managed_identity_client_id" {
   description = "Client ID of the User Assigned Managed Identity"
   value       = module.identity.client_id
 }
+
+output "p2s_vpn_gateway_id" {
+  description = "Point-to-Site VPN gateway resource ID"
+  value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_id : null
+}
+
+output "p2s_vpn_gateway_public_ip" {
+  description = "Point-to-Site VPN gateway public IP address"
+  value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_public_ip : null
+}

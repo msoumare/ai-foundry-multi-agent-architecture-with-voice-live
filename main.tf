@@ -32,6 +32,27 @@ module "vnet" {
   })
 }
 
+# --- Point-to-Site VPN (Optional) ---
+module "p2s_vpn" {
+  count = var.enable_p2s_vpn ? 1 : 0
+
+  source = "./modules/p2s_vpn"
+
+  workload                     = var.workload
+  env                          = var.environment
+  region                       = var.region
+  location                     = var.location
+  resource_group_name          = azurerm_resource_group.main.name
+  virtual_network_name         = module.vnet.name
+  gateway_subnet_prefixes      = var.gateway_subnet_prefixes
+  p2s_vpn_client_address_space = var.p2s_vpn_client_address_space
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
 # --- Azure Bastion ---
 resource "azurerm_public_ip" "bastion" {
   name                = "pip-bastion-${var.workload}-${var.environment}-${var.region}"
