@@ -87,9 +87,9 @@ resource "azapi_resource" "ai_services_connection" {
 
   timeouts {
     create = "30m"
-    delete = "30m"  # Add this
+    delete = "60m"  # Add this
   }
-  
+
   body = {
     properties = {
       category      = "AIServices"

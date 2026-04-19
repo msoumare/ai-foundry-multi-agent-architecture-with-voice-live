@@ -59,6 +59,22 @@ For a brand-new environment, run pipelines in this order:
 Important:
 - Do not run the Core pipeline/stage until the private VMSS agent pool is online and has at least one available agent.
 
+Recommended first-run sequence:
+1. Run `pipelines/0-unified.yml` with `Deploy Core = false`.
+2. Complete DevOps stage and create/link the VMSS private agent pool in Azure DevOps.
+3. Verify at least one private agent is online.
+4. Re-run `pipelines/0-unified.yml` with `Deploy Core = true`.
+
+Alternative: Run Pipelines Separately (Sequential)
+
+You can also run each pipeline separately in sequence. This is often easier for first-time setup and troubleshooting.
+
+1. Run `pipelines/1-init.yml`.
+2. Run `pipelines/2-network.yml`.
+3. Run `pipelines/3-devops.yml`.
+4. Create/link the Azure DevOps private VMSS agent pool and verify at least one agent is online.
+5. Run `pipelines/4-core.yml`.
+
 If step 2 is skipped, Terraform plan/apply may fail with 403 errors while creating role assignments.
 
 ## Destroy Pipeline
