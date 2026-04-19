@@ -19,7 +19,8 @@ module "vnet" {
   resource_group_name               = azurerm_resource_group.main.name
   workload                          = var.workload
   env                               = var.environment
-  region                            = var.region
+  # Keep legacy naming suffix aligned with existing deployed resources to avoid forced subnet replacement.
+  region                            = var.location
   address_space                     = var.address_space
   aks_subnet_prefixes               = var.aks_subnet_prefixes
   private_endpoints_subnet_prefixes = var.private_endpoints_subnet_prefixes
