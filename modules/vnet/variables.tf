@@ -31,31 +31,31 @@ variable "name" {
 variable "address_space" {
   description = "Address space for the virtual network"
   type        = list(string)
-  default     = ["10.0.0.0/16"]
+  default     = ["10.1.0.0/16"]
 }
 
 variable "aks_subnet_prefixes" {
   description = "Address prefixes for the AKS subnet"
   type        = list(string)
-  default     = ["10.0.1.0/24"]
+  default     = ["10.1.1.0/24"]
 }
 
 variable "private_endpoints_subnet_prefixes" {
   description = "Address prefixes for the private endpoints subnet"
   type        = list(string)
-  default     = ["10.0.2.0/24"]
+  default     = ["10.1.2.0/24"]
 }
 
 variable "devops_subnet_prefixes" {
   description = "Address prefixes for the devops subnet"
   type        = list(string)
-  default     = ["10.0.3.0/24"]
+  default     = ["10.1.3.0/24"]
 }
 
 variable "bastion_subnet_prefixes" {
   description = "Address prefixes for the Azure Bastion subnet; Azure requires the subnet to be named AzureBastionSubnet and be at least /26"
   type        = list(string)
-  default     = ["10.0.4.0/26"]
+  default     = ["10.1.4.0/26"]
 }
 
 variable "tags" {
