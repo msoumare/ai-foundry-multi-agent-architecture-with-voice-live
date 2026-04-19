@@ -20,6 +20,11 @@ module "vnet" {
   workload            = var.workload
   env                 = var.environment
   region              = var.location
+  address_space                    = var.address_space
+  aks_subnet_prefixes              = var.aks_subnet_prefixes
+  private_endpoints_subnet_prefixes = var.private_endpoints_subnet_prefixes
+  devops_subnet_prefixes           = var.devops_subnet_prefixes
+  bastion_subnet_prefixes          = var.bastion_subnet_prefixes
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

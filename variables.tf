@@ -70,6 +70,31 @@ variable "tags" {
   default     = {}
 }
 
+variable "address_space" {
+  description = "Address space for the virtual network"
+  type        = list(string)
+}
+
+variable "aks_subnet_prefixes" {
+  description = "Address prefixes for the AKS subnet"
+  type        = list(string)
+}
+
+variable "private_endpoints_subnet_prefixes" {
+  description = "Address prefixes for the private endpoints subnet"
+  type        = list(string)
+}
+
+variable "devops_subnet_prefixes" {
+  description = "Address prefixes for the devops subnet"
+  type        = list(string)
+}
+
+variable "bastion_subnet_prefixes" {
+  description = "Address prefixes for the Azure Bastion subnet; Azure requires the subnet to be named AzureBastionSubnet and be at least /26"
+  type        = list(string)
+}
+
 variable "aks_system_node_vm_size" {
   description = "VM size for AKS system node pool"
   type        = string

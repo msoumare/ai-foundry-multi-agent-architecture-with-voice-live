@@ -1,7 +1,6 @@
 #!/bin/bash
 # Install build tools required by Azure DevOps pipeline jobs.
-# Agent lifecycle (install, register, deregister) is managed by the Azure DevOps
-# native VMSS pool integration -- no agent registration is done here.
+# Agent lifecycle (install, register, deregister) is managed by the Azure DevOps native VMSS pool integration -- no agent registration is done here.
 set -e
 export DEBIAN_FRONTEND=noninteractive
 

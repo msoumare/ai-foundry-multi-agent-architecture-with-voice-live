@@ -16,6 +16,62 @@ This project is designed to be published as a free, public reference implementat
 - Use private networking, managed identities, and policy-first Azure architecture
 - Reuse infrastructure modules across environments
 
+## Prerequisites
+
+Before running any pipeline, create a federated service connection (OIDC/workload identity federation) from Azure DevOps or GitHub to Azure.
+
+### 1. Create a Federated Service Connection
+
+- Azure DevOps: create an Azure Resource Manager service connection using Workload Identity Federation.
+- GitHub Actions: create a federated credential on the app registration/service principal and use `azure/login` with OIDC.
+- Ensure the service principal used by the service connection is the one executing Terraform.
+
+### 2. Required RBAC Permissions
+
+Assign these permissions to the deployment service principal.
+
+- Terraform state access:
+  - `Storage Blob Data Contributor` on the Terraform state storage account (or state container scope).
+- Role assignment operations:
+  - `User Access Administrator` at least on the workload resource group where Terraform creates role assignments.
+
+Recommended minimum additional access for provisioning resources:
+- `Contributor` on the Terraform state resource group and workload resource group.
+
+Notes:
+- `User Access Administrator` is required because this stack creates RBAC role assignments (`Microsoft.Authorization/roleAssignments/write`).
+- If permissions were recently granted, refresh credentials (new pipeline run or fresh login) to avoid stale token 403 errors.
+
+## First Run Order (Important)
+
+For a brand-new environment, run pipelines in this order:
+
+1. Run the Init pipeline first to create Terraform state resources.
+   - Use `pipelines/1-init.yml` or the `TFStateInit` stage in `pipelines/0-unified.yml`.
+2. Grant the initial service connection the required permissions:
+   - `Storage Blob Data Contributor` on the state storage account.
+   - `User Access Administrator` on the workload resource group.
+3. Create and validate the Azure DevOps private VMSS agent pool.
+  - The Core stage requires a private agent pool backed by the DevOps VMSS.
+  - If you run `pipelines/0-unified.yml` with Core enabled before this pool exists, the run fails with a "no private agent" error.
+4. Re-run with the unified pipeline (`pipelines/0-unified.yml`) or continue stage-by-stage.
+
+Important:
+- Do not run the Core pipeline/stage until the private VMSS agent pool is online and has at least one available agent.
+
+If step 2 is skipped, Terraform plan/apply may fail with 403 errors while creating role assignments.
+
+## Destroy Pipeline
+
+Use `pipelines/5-destroy.yml` to tear down all Terraform-managed resources for a selected environment.
+
+- Default behavior: destroys workload infrastructure but keeps the Terraform state backend.
+- Optional parameter: `destroy_tfstate`.
+
+Warning:
+- Setting `destroy_tfstate=true` also removes the remote Terraform state backend (state resource group/storage account).
+- After backend removal, future Terraform runs require re-initializing backend resources (run Init pipeline again).
+
 ## Repository Structure
 
 - Root Terraform stack:

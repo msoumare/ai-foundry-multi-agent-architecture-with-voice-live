@@ -5,3 +5,9 @@ location                = "northeurope"
 resource_group_workload = "rg-agenthubspoke-prd-ne"
 log_analytics_workspace = "log-agenthubspoke-prd-ne"
 subscription_id         = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
+
+address_space                    = ["10.1.0.0/16"]
+aks_subnet_prefixes              = ["10.1.1.0/24"]
+private_endpoints_subnet_prefixes = ["10.1.2.0/24"]
+devops_subnet_prefixes           = ["10.1.3.0/24"]
+bastion_subnet_prefixes          = ["10.1.4.0/26"]
