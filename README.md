@@ -85,7 +85,6 @@ If step 2 is skipped, Terraform plan/apply may fail with 403 errors while creati
 Network pipeline conditional behavior:
 - In `pipelines/0-unified.yml` and `pipelines/2-network.yml`, the network plan conditionally includes `module.p2s_vpn[0]` only when `enable_p2s_vpn = true` in the selected environment tfvars file.
 - If `enable_p2s_vpn = false`, the P2S module is intentionally skipped during network plan/apply.
-- In `pipelines/0-unified.yml` and `pipelines/2-network.yml`, a post-apply Azure CLI step automatically sets VPN Gateway P2S DNS servers from `dns_resolver_inbound_ip` in the selected tfvars when `enable_p2s_vpn = true`.
 
 ## Destroy Pipeline
 
@@ -111,22 +110,32 @@ Use Point-to-Site VPN to connect your local machine to the private Azure VNet fo
     - `dns_resolver_inbound_ip = "10.1.6.4"`
     - `p2s_vpn_client_address_space = ["172.16.20.0/24"]`
 2. Apply Terraform for that environment.
-3. After network apply finishes, re-download the VPN profile (DNS settings are applied post-deploy):
-   - Azure Portal → Virtual Network Gateway → **Settings** → **Point-to-site configuration** → **Download VPN client**.
-4. Install/open Azure VPN Client on your local machine.
-5. Import the downloaded profile and connect using your Entra ID account.
+3. After network apply finishes:
+   - Re-download the VPN profile: Azure Portal → Virtual Network Gateway → **Point-to-site configuration** → **Download VPN client**.
+   - Import the profile into Azure VPN Client on your local machine.
+4. Connect to the VPN using your Entra ID account.
+5. **Configure DNS on your client machine** (critical step):
+   - On **Windows**: Run the provided PowerShell script after connecting:
+     ```powershell
+     # Run from the scripts directory
+     .\set-p2s-dns.ps1 -DnsIp "10.1.6.4" -ConnectionName "agenthubspoke-prd"
+     ```
+   - The script will:
+     - Identify your VPN network adapter
+     - Set the DNS server to the Azure DNS Private Resolver inbound endpoint (e.g., `10.1.6.4`)
+     - Test DNS resolution to a known private endpoint FQDN
+   - On **macOS/Linux**: Use `networksetup` or `resolvectl` to set DNS for the VPN interface to `10.1.6.4`.
 6. Validate private endpoint connectivity from your local machine.
 
 Quick validation commands (Windows/macOS/Linux shell):
-- `nslookup <keyvault-name>.vault.azure.net`
-- `nslookup <search-name>.search.windows.net`
-- `nslookup <acr-name>.azurecr.io`
+- `nslookup akv-agenthubspoke-prd-ne.vault.azure.net` (or your Key Vault FQDN)
+- `nslookup search-agenthubspoke-prd-ne.search.windows.net` (or your AI Search FQDN)
+- `nslookup acragenthubspokeprdne.azurecr.io` (or your ACR FQDN)
 
-Expected DNS behavior when connected:
-- Private endpoint FQDNs resolve to private IPs from your VNet address space.
+Expected DNS behavior when connected with correct DNS configuration:
+- Private endpoint FQDNs resolve to private IPs from your VNet address space (10.x.x.x).
 - Traffic to private services stays on the VPN/private network path.
-- If DNS still resolves to public IPs, the VPN profile/DNS path is not being used yet.
-- `nslookup` should not show your home router as DNS server while testing private endpoint resolution.
+- If DNS resolves to public IPs, re-run the DNS configuration script and verify the correct DNS IP is set.
 - Private DNS zone links in this deployment are VNet-scoped, so resolution works only while connected to the VPN.
 
 ## Repository Structure
@@ -150,9 +159,11 @@ Expected DNS behavior when connected:
   - `modules/cosmosdb`: conversation/state persistence
   - `modules/redis`: low-latency cache/session support
   - `modules/devops_identity`, `modules/devops`: CI/CD build agents (optional path)
+- Scripts:
+  - `scripts/set-p2s-dns.ps1`: PowerShell script to configure DNS for P2S VPN clients on Windows
 - Pipelines:
   - `pipelines/0-unified.yml` (staged Terraform plan/apply orchestration)
-  - `pipelines/2-network.yml` (network apply + post-apply VPN Gateway DNS configuration from `dns_resolver_inbound_ip` when P2S is enabled)
+  - `pipelines/2-network.yml` (network apply only)
   - `pipelines/3-devops.yml` (hosted agent stage for DevOps infra only; does not write Key Vault secrets when vault is private-only)
   - `pipelines/4-core.yml` (private VMSS agent pool stage; performs Key Vault secret writes for private-only vaults)
 
