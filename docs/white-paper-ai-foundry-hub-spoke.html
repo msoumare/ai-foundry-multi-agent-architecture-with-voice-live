@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI Foundry Hub and Spoke Design Pattern for Multi-Agent Systems</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --secondary-color: #106ebe;
+            --tertiary-color: #1e90ff;
+            --text-color: #333;
+            --bg-color: #ffffff;
+            --border-color: #ddd;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            h1, h2 {
+                page-break-after: avoid;
+            }
+            p {
+                page-break-inside: avoid;
+            }
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin: 40px 0 20px 0;
+            font-size: 2.5em;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            color: var(--secondary-color);
+            margin: 35px 0 15px 0;
+            font-size: 1.8em;
+            border-left: 4px solid var(--secondary-color);
+            padding-left: 15px;
+        }
+        
+        h3 {
+            color: var(--tertiary-color);
+            margin: 25px 0 12px 0;
+            font-size: 1.3em;
+        }
+        
+        p {
+            margin: 15px 0;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-size: 0.95em;
+            color: #c7254e;
+        }
+        
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid var(--primary-color);
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #333;
+        }
+        
+        .mermaid-placeholder {
+            background-color: #f9f9f9;
+            border: 2px dashed var(--primary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .mermaid-placeholder pre {
+            background-color: white;
+            border-left: none;
+            padding: 10px;
+            margin: 10px 0 0 0;
+            overflow-x: auto;
+        }
+        
+        strong {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        em {
+            font-style: italic;
+            color: #555;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        blockquote {
+            border-left: 4px solid var(--primary-color);
+            margin-left: 0;
+            padding-left: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .footer ul {
+            margin: 10px 0 0 20px;
+            list-style-type: none;
+        }
+        
+        .footer li {
+            margin: 5px 0;
+        }
+        
+        .print-instruction {
+            background-color: #e7f3ff;
+            border: 1px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            color: #004085;
+        }
+        
+        .print-instruction strong {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="print-instruction">
+            <strong>📄 Printing Instructions:</strong> Use your browser's Print function (Ctrl+P or Cmd+P) and select 
+            "Save as PDF" to create a PDF version. Set margins to 0.5" and select "Background graphics" for best results.
+        </div>
+        
+        <p><h1>White Paper Draft</h1></p><p><h2>AI Foundry Hub and Spoke Design Pattern for Multi-Agent Systems</h2></p><p>Version: 0.1 (Draft)
+Date: 2026-04-18</p><p><h2>Abstract</h2></p><p>Enterprise multi-agent systems often fail when orchestration logic, domain logic, and infrastructure concerns are tightly coupled. This white paper presents an Azure AI Foundry hub-and-spoke design pattern where a Hub service (FastAPI) receives user requests, delegates intent classification and routing to a Router Agent in AI Foundry, and then dispatches to domain-specific spoke agents for final response generation.</p><p>The pattern enables separation of concerns, secure-by-default networking, identity-first access, and repeatable infrastructure as code for production readiness.</p><p><h2>Problem Statement</h2></p><p>Modern AI applications require multiple specialized agents (retrieval, operations, code, policy, analytics). A single monolithic agent tends to degrade in:
+<ul><li>Explainability of decisions</li>
+<li>Operational reliability under mixed workloads</li>
+<li>Governance and access control per domain</li>
+<li>Team autonomy and release velocity</li></ul></p><p>A hub-and-spoke pattern addresses this by centralizing ingress and routing while decentralizing domain execution.</p><p><h2>Design Goals</h2></p><p><ul><li>Clear control plane and data plane boundaries</li>
+<li>Deterministic routing with auditable agent decisions</li>
+<li>Least-privilege access for each runtime component</li>
+<li>Private network posture for platform services</li>
+<li>Scalable spoke execution and independent lifecycle</li>
+<li>Observable end-to-end request traces</li></ul></p><p><h2>Reference Architecture</h2></p><p><h3>Logical View</h3></p><p><pre><code>flowchart TB
+    C[Client] --> H[Hub Service FastAPI on AKS]
+    H --> RA[Router Agent AI Foundry Project]
+  RA -->|routing envelope: sub_agent_name, query, context| H
+  H -->|dispatch| SA1[Spoke Agent A]
+  H -->|dispatch| SA2[Spoke Agent B]
+  H -->|dispatch| SA3[Spoke Agent C]</p><p>    SA1 --> DS1[Azure AI Search]
+    SA2 --> DS2[Cosmos DB]
+    SA3 --> DS3[External APIs]</p><p>  SA1 -->|final answer| H
+  SA2 -->|final answer| H
+  SA3 -->|final answer| H</p><p>    H --> Cache[Redis]
+    H --> State[Cosmos DB]
+    H --> Obs[Application Insights]
+    H --> C
+</code></pre></p><p><h3>Infrastructure Mapping (This Repository)</h3></p><p><ul><li>Hub runtime:</li></ul>
+  - AKS module for private cluster hosting (<code>modules/aks</code>)
+<ul><li>Router Agent platform:</li></ul>
+  - AI Foundry Hub and Project (<code>modules/ai_foundry</code>)
+<ul><li>Shared data and tools:</li></ul>
+  - AI Search (<code>modules/ai_search</code>)
+  - Cosmos DB (<code>modules/cosmosdb</code>)
+  - Redis (<code>modules/redis</code>)
+<ul><li>Security and access:</li></ul>
+  - Platform identity for Foundry (<code>modules/identity</code>)
+  - Workload identity for AKS (<code>modules/aks_identity</code>)
+  - Key Vault (<code>modules/keyvault</code>)
+<ul><li>Network isolation:</li></ul>
+  - VNet, private endpoints, private DNS (<code>modules/vnet</code>)
+<ul><li>Operations:</li></ul>
+  - Monitoring with Log Analytics and App Insights (<code>modules/monitoring</code>)</p><p><h2>Request Lifecycle</h2></p><p><li>Client sends request to Hub <code>/chat</code> endpoint.</li>
+<li>Hub validates input, user context, and policy headers.</li>
+<li>Hub calls Router Agent with normalized task payload.</li>
+<li>Router returns a routing envelope, for example:</li>
+  - <code>sub_agent_name</code>
+  - <code>query</code>
+  - <code>context</code>
+   - <code>confidence</code>
+  - <code>fallback_agent</code>
+   - <code>safety_flags</code>
+  - <code>trace_id</code>
+<li>Hub enforces policy checks against returned route.</li>
+<li>Hub invokes the selected spoke agent.</li>
+<li>Spoke fetches data and tools as required.</li>
+<li>Spoke returns final answer to Hub.</li>
+<li>Hub post-processes (redaction, schema normalization, citations).</li>
+<li>Hub returns response to client and writes telemetry.</li></p><p><h2>Recommended Architecture Practices</h2></p><p><h3>1. Use a Strong Route Contract</h3></p><p>Do not use free-text routing decisions from the Router Agent. Use a typed JSON envelope and validate it in the Hub before dispatch.</p><p>Suggested route envelope:</p><p><pre><code>{
+  "sub_agent_name": "retrieval_spoke",
+  "query": "summarized or rewritten task for the selected spoke",
+  "context": {
+    "user_intent": "knowledge_lookup",
+    "conversation_id": "abc-123",
+    "constraints": ["cite_sources"]
+  },
+  "confidence": 0.92,
+  "fallback_agent": "generalist_spoke",
+  "safety_flags": ["none"],
+  "trace_id": "trace-xyz"
+}
+</code></pre></p><p><h3>2. Apply Confidence-Based Routing</h3></p><p><ul><li>High confidence: route directly to <code>sub_agent_name</code>.</li>
+<li>Medium confidence: route with additional Hub validation rules.</li>
+<li>Low confidence: use <code>fallback_agent</code> or return a clarification prompt.</li></ul></p><p><h3>3. Keep the Hub as the Policy Enforcement Point</h3></p><p>The Hub should always enforce governance before and after spoke execution:
+<ul><li>authentication and authorization</li>
+<li>rate limiting and abuse controls</li>
+<li>prompt-injection and safety checks</li>
+<li>output schema validation and optional redaction</li></ul></p><p><h3>4. Build Observability at Route and Spoke Levels</h3></p><p>Track route quality and runtime health separately:
+<ul><li>router latency and confidence distribution</li>
+<li>spoke latency and error rate by agent</li>
+<li>fallback frequency</li>
+<li>user feedback and quality score by spoke</li>
+<li>end-to-end request trace correlation with <code>trace_id</code></li></ul></p><p><h3>5. Design for Safe Failure</h3></p><p><ul><li>enforce timeout budgets per hop (Hub -> Router -> Spoke)</li>
+<li>add retries with backoff for transient failures</li>
+<li>use circuit breakers per spoke dependency</li>
+<li>return deterministic fallback responses</li></ul></p><p><h3>6. Version and Evaluate Continuously</h3></p><p><ul><li>version router prompts and spoke prompts independently</li>
+<li>maintain route-accuracy datasets from real traffic traces</li>
+<li>run regression evaluation before promoting new router or spoke versions</li>
+<li>gate releases on quality and safety thresholds</li></ul></p><p><h3>7. Clarify Responsibility Boundaries</h3></p><p><ul><li>Router Agent returns routing metadata only (<code>sub_agent_name</code>, <code>query</code>, <code>context</code>, confidence).</li>
+<li>Spoke Agent returns the final domain response.</li>
+<li>Hub owns orchestration, policy, and response normalization.</li></ul></p><p><h2>Router Contract Design</h2></p><p>A strongly typed routing contract reduces ambiguity and runtime failures.</p><p>Example response schema:</p><p><pre><code>{
+  "sub_agent_name": "retrieval_spoke",
+  "query": "summarized or rewritten task for the selected spoke",
+  "context": {
+    "user_intent": "knowledge_lookup",
+    "conversation_id": "abc-123",
+    "constraints": ["cite_sources"]
+  },
+  "confidence": 0.92,
+  "fallback_agent": "generalist_spoke",
+  "safety_flags": ["none"],
+  "trace_id": "trace-xyz"
+}
+</code></pre></p><p><h2>Hub API Contract (FastAPI)</h2></p><p>Suggested minimal interfaces:
+<ul><li><code>POST /chat</code>: end-user request entry point</li>
+<li><code>POST /route</code>: internal endpoint for route simulation/testing</li>
+<li><code>GET /healthz</code>: liveness probe</li>
+<li><code>GET /readyz</code>: readiness probe</li>
+<li><code>GET /metrics</code>: Prometheus/OpenTelemetry export</li></ul></p><p>Minimal pseudo-code:</p><p><pre><code>@app.post("/chat")
+async def chat(request: ChatRequest):
+    route = await router_agent.route(request)
+    enforce_policy(route, request)
+  spoke = spoke_registry.resolve(route.sub_agent_name)
+    result = await spoke.handle(request, route)
+    return normalize_response(result)
+</code></pre></p><p><h2>Security Model</h2></p><p><h3>Identity</h3></p><p><ul><li>Use user-assigned managed identity for AI Foundry platform operations.</li>
+<li>Use separate user-assigned managed identity for AKS workloads.</li>
+<li>Assign only required roles:</li></ul>
+  - Key Vault Secrets User
+  - AcrPull
+  - Search Index Data Contributor
+  - Cosmos DB SQL Data Contributor</p><p><h3>Network</h3></p><p><ul><li>Use private endpoints for AI Services, Storage, Key Vault, Cosmos DB, Redis, ACR, and Search.</li>
+<li>Use private DNS zones linked to workload VNet.</li>
+<li>Keep AKS private and avoid public control plane exposure.</li></ul></p><p><h3>Secrets and Configuration</h3></p><p><ul><li>Keep keys and connection metadata in Key Vault.</li>
+<li>Prefer managed identity over static secrets.</li>
+<li>Rotate and audit all credentials that cannot be eliminated.</li></ul></p><p><h2>Reliability and Scalability</h2></p><p><ul><li>Scale hub and spokes independently.</li>
+<li>Add timeout budgets and retry policy per spoke.</li>
+<li>Use circuit breakers for unstable downstream dependencies.</li>
+<li>Define deterministic fallback routing when router confidence is low.</li>
+<li>Cache repeated retrieval workloads with Redis.</li></ul></p><p><h2>Observability and Evaluation</h2></p><p>Capture at least these telemetry dimensions:
+<ul><li>Route decision latency</li>
+<li>Spoke execution latency</li>
+<li>Router confidence distribution</li>
+<li>Route mismatch rate (offline adjudication)</li>
+<li>User feedback score by agent</li>
+<li>Safety intervention counts</li></ul></p><p>Evaluation recommendations:
+<ul><li>Build route-accuracy datasets from real traces.</li>
+<li>Run periodic regression tests when prompts or models change.</li>
+<li>Track quality by route, not only aggregate chatbot metrics.</li></ul></p><p><h2>Governance and Operating Model</h2></p><p><ul><li>Platform team owns hub framework, router policy, and infra baseline.</li>
+<li>Domain teams own spoke prompts, tools, and domain evaluation sets.</li>
+<li>Release spoke agents independently with contract tests.</li>
+<li>Version routing policy separately from spoke behavior.</li></ul></p><p><h2>Common Anti-Patterns</h2></p><p><ul><li>Treating router output as untrusted free text instead of typed JSON.</li>
+<li>Sharing one identity across hub, router, and all spokes.</li>
+<li>Running without route-level observability.</li>
+<li>Hard-coding route rules in multiple services.</li>
+<li>No fallback route for uncertain intent.</li></ul></p><p><h2>Implementation Roadmap</h2></p><p><li>Phase 1: Core platform</li>
+   - Deploy Terraform modules and validate private networking.
+<li>Phase 2: Hub and router integration</li>
+   - Implement FastAPI Hub and route contract.
+<li>Phase 3: Initial spokes</li>
+   - Add retrieval spoke and operations spoke.
+<li>Phase 4: Evaluation</li>
+   - Build route and answer quality benchmark datasets.
+<li>Phase 5: Production hardening</li>
+   - SLOs, autoscaling, canary rollout, and incident playbooks.</p><p><h2>Conclusion</h2></p><p>The AI Foundry hub-and-spoke pattern provides a practical architecture for scaling multi-agent systems safely. By separating ingress, routing, and domain execution, organizations can improve governance, reliability, and team velocity without sacrificing model agility.</p><p><h2>Appendix A: Suggested Figures for Publication</h2></p><p><ul><li>Figure 1: Logical architecture (Hub, Router, Spokes)</li>
+<li>Figure 2: Sequence diagram of request lifecycle</li>
+<li>Figure 3: Identity and RBAC boundary diagram</li>
+<li>Figure 4: Private endpoint and DNS topology</li>
+<li>Figure 5: Evaluation loop (trace -> dataset -> benchmark -> prompt update)</li></ul></p><p><h2>Appendix B: Suggested Audience</h2></p><p><ul><li>Enterprise architects</li>
+<li>Platform engineers</li>
+<li>AI engineering leads</li>
+<li>Security and governance stakeholders</li></ul>
+</p>
+        
+        <div class="footer">
+            <p><strong>Document Information:</strong></p>
+            <ul>
+                <li><strong>Title:</strong> AI Foundry Hub and Spoke Design Pattern for Multi-Agent Systems</li>
+                <li><strong>Version:</strong> 0.1 (Draft)</li>
+                <li><strong>Generated:</strong> April 18, 2026</li>
+                <li><strong>Repository:</strong> <code>ai-agent-hub-spoke/infrastructure</code></li>
+                <li><strong>License:</strong> MIT (coming in public release)</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

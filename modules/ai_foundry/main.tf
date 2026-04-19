@@ -85,6 +85,11 @@ resource "azapi_resource" "ai_services_connection" {
   name      = "ai-services-connection"
   parent_id = azapi_resource.hub.id
 
+  timeouts {
+    create = "30m"
+    delete = "30m"  # Add this
+  }
+  
   body = {
     properties = {
       category      = "AIServices"
