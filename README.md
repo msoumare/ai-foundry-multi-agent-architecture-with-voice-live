@@ -59,6 +59,11 @@ For a brand-new environment, run pipelines in this order:
 Important:
 - Do not run the Core pipeline/stage until the private VMSS agent pool is online and has at least one available agent.
 
+Private-only sequencing note:
+- When Key Vault public network access is disabled, Microsoft-hosted agents cannot read/write secrets in that vault.
+- In this repository, create/update Key Vault secrets only from the Core stage/pipeline that runs on the private VMSS agent pool.
+- Keep DevOps stage focused on provisioning Key Vault, identities, and VMSS infrastructure; perform secret writes after the private pool is available.
+
 Recommended first-run sequence:
 1. Run `pipelines/0-unified.yml` with `Deploy Core = false`.
 2. Complete DevOps stage and create/link the VMSS private agent pool in Azure DevOps.
@@ -71,9 +76,9 @@ You can also run each pipeline separately in sequence. This is often easier for 
 
 1. Run `pipelines/1-init.yml`.
 2. Run `pipelines/2-network.yml`.
-3. Run `pipelines/3-devops.yml`.
+3. Run `pipelines/3-devops.yml` (hosted agent; provisions DevOps infra only, no Key Vault secret writes for private-only vaults).
 4. Create/link the Azure DevOps private VMSS agent pool and verify at least one agent is online.
-5. Run `pipelines/4-core.yml`.
+5. Run `pipelines/4-core.yml` (private VMSS agent pool; performs Key Vault secret writes for private-only vaults).
 
 If step 2 is skipped, Terraform plan/apply may fail with 403 errors while creating role assignments.
 
@@ -137,6 +142,8 @@ Expected DNS behavior when connected:
   - `modules/devops_identity`, `modules/devops`: CI/CD build agents (optional path)
 - Pipelines:
   - `pipelines/0-unified.yml` (staged Terraform plan/apply orchestration)
+  - `pipelines/3-devops.yml` (hosted agent stage for DevOps infra only; does not write Key Vault secrets when vault is private-only)
+  - `pipelines/4-core.yml` (private VMSS agent pool stage; performs Key Vault secret writes for private-only vaults)
 
 ## Logical Request Flow
 
