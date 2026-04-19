@@ -14,17 +14,17 @@ resource "azurerm_resource_group" "main" {
 module "vnet" {
   source = "./modules/vnet"
 
-  name                = "vnet-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  workload            = var.workload
-  env                 = var.environment
-  region              = var.location
-  address_space                    = var.address_space
-  aks_subnet_prefixes              = var.aks_subnet_prefixes
+  name                              = "vnet-${var.workload}-${var.environment}-${var.region}"
+  location                          = var.location
+  resource_group_name               = azurerm_resource_group.main.name
+  workload                          = var.workload
+  env                               = var.environment
+  region                            = var.region
+  address_space                     = var.address_space
+  aks_subnet_prefixes               = var.aks_subnet_prefixes
   private_endpoints_subnet_prefixes = var.private_endpoints_subnet_prefixes
-  devops_subnet_prefixes           = var.devops_subnet_prefixes
-  bastion_subnet_prefixes          = var.bastion_subnet_prefixes
+  devops_subnet_prefixes            = var.devops_subnet_prefixes
+  bastion_subnet_prefixes           = var.bastion_subnet_prefixes
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

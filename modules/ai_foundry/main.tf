@@ -10,15 +10,15 @@ terraform {
 }
 
 resource "azurerm_storage_account" "ai" {
-  name                     = var.storage_account_name
-  location                 = var.location
-  resource_group_name      = var.resource_group_name
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  account_kind             = "StorageV2"
-  min_tls_version          = "TLS1_2"
+  name                      = var.storage_account_name
+  location                  = var.location
+  resource_group_name       = var.resource_group_name
+  account_tier              = "Standard"
+  account_replication_type  = "LRS"
+  account_kind              = "StorageV2"
+  min_tls_version           = "TLS1_2"
   shared_access_key_enabled = false
-  tags                     = var.tags
+  tags                      = var.tags
 }
 
 # Grant the user-assigned identity access to AI Foundry storage
@@ -62,10 +62,10 @@ resource "azapi_resource" "hub" {
   body = {
     kind = "Hub"
     properties = {
-      friendlyName        = var.hub_name
-      storageAccount      = azurerm_storage_account.ai.id
-      keyVault            = var.key_vault_id
-      applicationInsights = var.app_insights_id
+      friendlyName                = var.hub_name
+      storageAccount              = azurerm_storage_account.ai.id
+      keyVault                    = var.key_vault_id
+      applicationInsights         = var.app_insights_id
       primaryUserAssignedIdentity = var.user_assigned_identity_id
     }
     sku = {
@@ -87,7 +87,7 @@ resource "azapi_resource" "ai_services_connection" {
 
   timeouts {
     create = "30m"
-    delete = "60m"  # Add this
+    delete = "60m" # Add this
   }
 
   body = {

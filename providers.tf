@@ -28,7 +28,7 @@ provider "azurerm" {
     }
   }
   storage_use_azuread = true
-  subscription_id = var.subscription_id
+  subscription_id     = var.subscription_id
 }
 
 provider "azapi" {}
