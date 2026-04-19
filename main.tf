@@ -20,6 +20,7 @@ module "vnet" {
   workload                          = var.workload
   env                               = var.environment
   # Keep legacy naming suffix aligned with existing deployed resources to avoid forced subnet replacement.
+  # Remember to change the region to var.region for new deployments to other regions.
   region                            = var.location
   address_space                     = var.address_space
   aks_subnet_prefixes               = var.aks_subnet_prefixes
@@ -35,7 +36,7 @@ module "vnet" {
 
 # --- Point-to-Site VPN (Optional) ---
 module "p2s_vpn" {
-  count = var.enable_p2s_vpn ? 1 : 0
+  # count = var.enable_p2s_vpn ? 1 : 0
 
   source = "./modules/p2s_vpn"
 
