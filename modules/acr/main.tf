@@ -4,6 +4,7 @@ resource "azurerm_container_registry" "this" {
   resource_group_name = var.resource_group_name
   sku                 = "Premium"
   admin_enabled       = false
+  public_network_access_enabled = false
   tags                = var.tags
 }
 

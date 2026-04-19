@@ -100,7 +100,7 @@ Use Point-to-Site VPN to connect your local machine to the private Azure VNet fo
   - `enable_p2s_vpn = true`
   - Set `gateway_subnet_prefixes` and `p2s_vpn_client_address_space`.
 2. Apply Terraform for that environment.
-3. In Azure Portal, open the Virtual Network Gateway and download the VPN client profile.
+3. In Azure Portal, open the Virtual Network Gateway → **Settings** → **Point-to-site configuration** → click **Download VPN client**.
 4. Install/open Azure VPN Client on your local machine.
 5. Import the downloaded profile and connect using your Entra ID account.
 6. Validate private endpoint connectivity from your local machine.

@@ -18,6 +18,7 @@ resource "azurerm_storage_account" "ai" {
   account_kind              = "StorageV2"
   min_tls_version           = "TLS1_2"
   shared_access_key_enabled = false
+  public_network_access_enabled = false
   tags                      = var.tags
 }
 
@@ -44,6 +45,7 @@ resource "azurerm_cognitive_account" "ai_services" {
   kind                  = "AIServices"
   sku_name              = "S0"
   custom_subdomain_name = var.ai_services_name
+  public_network_access_enabled = false
   tags                  = var.tags
 }
 

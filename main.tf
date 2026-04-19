@@ -100,6 +100,8 @@ module "keyvault" {
   name                = substr("akv-${var.workload}-${var.environment}-${var.region}", 0, 24)
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  keyvault_dns_zone_id       = module.vnet.keyvault_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

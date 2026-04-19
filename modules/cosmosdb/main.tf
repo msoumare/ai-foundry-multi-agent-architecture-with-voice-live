@@ -4,6 +4,7 @@ resource "azurerm_cosmosdb_account" "this" {
   resource_group_name = var.resource_group_name
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
+  public_network_access_enabled = false
   tags                = var.tags
 
   consistency_policy {
