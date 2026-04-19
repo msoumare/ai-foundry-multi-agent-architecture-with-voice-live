@@ -117,22 +117,22 @@ module "devops_identity" {
 }
 
 # --- DevOps VMSS (Build Agent) ---
-# module "devops" {
-#   source = "./modules/devops"
+module "devops" {
+  source = "./modules/devops"
 
-#   name                = "vmss-devops-${var.workload}-${var.environment}-${var.region}"
-#   location            = var.location
-#   resource_group_name = azurerm_resource_group.main.name
-#   subnet_id           = module.vnet.devops_subnet_id
-#   admin_username      = "build_agent_user"
-#   ssh_public_key      = tls_private_key.devops.public_key_openssh
-#   identity_ids        = [module.devops_identity.id]
-#   tags = merge(var.tags, {
-#     environment = var.environment
-#     workload    = var.workload
-#     managed-by  = "terraform"
-#   })
-# }
+  name                = "vmss-devops-${var.workload}-${var.environment}-${var.region}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  subnet_id           = module.vnet.devops_subnet_id
+  admin_username      = "build_agent_user"
+  ssh_public_key      = tls_private_key.devops.public_key_openssh
+  identity_ids        = [module.devops_identity.id]
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
 
 # --- Monitoring ---
 module "monitoring" {
