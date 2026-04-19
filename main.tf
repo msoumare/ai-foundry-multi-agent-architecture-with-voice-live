@@ -47,6 +47,8 @@ module "p2s_vpn" {
   resource_group_name          = azurerm_resource_group.main.name
   virtual_network_name         = module.vnet.name
   gateway_subnet_prefixes      = var.gateway_subnet_prefixes
+  dns_resolver_inbound_subnet_prefixes = var.dns_resolver_inbound_subnet_prefixes
+  dns_resolver_inbound_ip      = var.dns_resolver_inbound_ip
   p2s_vpn_client_address_space = var.p2s_vpn_client_address_space
   tags = merge(var.tags, {
     environment = var.environment

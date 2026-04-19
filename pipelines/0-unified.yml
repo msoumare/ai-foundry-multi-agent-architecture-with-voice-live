@@ -230,6 +230,38 @@ stages:
                 echo "### APPLY Network Infrastructure (includes NAT Gateway for DevOps egress) ###"
                 terraform apply -input=false tfplan-network
 
+          - task: AzureCLI@2
+            displayName: "Configure P2S DNS Server (Post-Apply)"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                set -e
+                TFVARS_FILE="./environments/${{ parameters.env }}.tfvars"
+
+                if ! grep -E '^enable_p2s_vpn\s*=\s*true' "$TFVARS_FILE" >/dev/null; then
+                  echo "P2S VPN disabled in tfvars; skipping VPN DNS configuration."
+                  exit 0
+                fi
+
+                DNS_IP=$(grep -E '^dns_resolver_inbound_ip\s*=' "$TFVARS_FILE" | awk -F= '{print $2}' | tr -d ' "')
+                if [[ -z "$DNS_IP" ]]; then
+                  echo "dns_resolver_inbound_ip is missing in $TFVARS_FILE"
+                  exit 1
+                fi
+
+                GATEWAY_NAME="vpngw-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
+                echo "Configuring VPN gateway '$GATEWAY_NAME' to use P2S DNS server $DNS_IP"
+
+                az network vnet-gateway update \
+                  --resource-group "$(resource_group_workload)" \
+                  --name "$GATEWAY_NAME" \
+                  --set "vpnClientConfiguration.vpnClientDnsServers=[\"${DNS_IP}\"]"
+
+                echo "P2S DNS server configuration completed."
+
 ########################################
 # STAGE 3 - PLAN DEVOPS
 ########################################

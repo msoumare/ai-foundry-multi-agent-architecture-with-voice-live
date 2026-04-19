@@ -128,3 +128,13 @@ output "p2s_vpn_gateway_public_ip" {
   description = "Point-to-Site VPN gateway public IP address"
   value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_public_ip : null
 }
+
+output "p2s_dns_resolver_id" {
+  description = "Azure DNS Private Resolver resource ID for P2S DNS"
+  value       = var.enable_p2s_vpn ? module.p2s_vpn[0].dns_resolver_id : null
+}
+
+output "p2s_dns_resolver_inbound_ip" {
+  description = "DNS Private Resolver inbound endpoint private IP used by P2S clients"
+  value       = var.enable_p2s_vpn ? module.p2s_vpn[0].dns_resolver_inbound_ip : null
+}
