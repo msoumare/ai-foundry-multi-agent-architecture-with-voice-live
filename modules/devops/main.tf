@@ -7,6 +7,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "devops" {
   resource_group_name = var.resource_group_name
   sku                 = var.vm_size
   instances           = var.instance_count
+  single_placement_group = false
   admin_username      = var.admin_username
   # Manual upgrade mode is required for Azure DevOps VMSS pool integration.
   upgrade_mode        = "Manual"
