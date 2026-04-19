@@ -338,124 +338,124 @@ stages:
                 echo "### APPLY DevOps Infrastructure (NAT gateway now available) ###"
                 terraform apply -input=false tfplan-devops
 
-# ########################################
-# # STAGE 5 - PLAN CORE
-# ########################################
-# - stage: PlanCore
-#   displayName: "Terraform Plan - Core Infrastructure"
-#   dependsOn: ApplyDevOps
-#   condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
-#   jobs:
-#   - job: TerraformPlan
-#     displayName: "Plan Core (ACR, Cosmos, Redis, AI Services)"
-#     pool:
-#       name: $(agent_pool_name)
-#     steps:
-#     - checkout: self
+########################################
+# STAGE 5 - PLAN CORE
+########################################
+- stage: PlanCore
+  displayName: "Terraform Plan - Core Infrastructure"
+  dependsOn: ApplyDevOps
+  condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
+  jobs:
+  - job: TerraformPlan
+    displayName: "Plan Core (ACR, Cosmos, Redis, AI Services)"
+    pool:
+      name: $(agent_pool_name)
+    steps:
+    - checkout: self
 
-#     - task: TerraformInstaller@1
-#       displayName: "Install Terraform"
-#       inputs:
-#         terraformVersion: $(terraform_version)
+    - task: TerraformInstaller@1
+      displayName: "Install Terraform"
+      inputs:
+        terraformVersion: $(terraform_version)
 
-#     - task: AzureCLI@2
-#       displayName: "Terraform Init (Core)"
-#       inputs:
-#         azureSubscription: $(service_connection_name)
-#         scriptType: bash
-#         scriptLocation: inlineScript
-#         workingDirectory: "$(terraform_working_directory)"
-#         inlineScript: |
-#           echo "### Terraform INIT (Core Plan) ###"
-#           rm -rf .terraform
-#           terraform init \
-#             -backend-config="resource_group_name=$(resource_group_tfstate)" \
-#             -backend-config="storage_account_name=$(storage_account_tfstate)" \
-#             -backend-config="container_name=$(container_tfstate)" \
-#             -backend-config="key=$(key_tfstate)" \
-#             -backend-config="use_azuread_auth=true"
+    - task: AzureCLI@2
+      displayName: "Terraform Init (Core)"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### Terraform INIT (Core Plan) ###"
+          rm -rf .terraform
+          terraform init \
+            -backend-config="resource_group_name=$(resource_group_tfstate)" \
+            -backend-config="storage_account_name=$(storage_account_tfstate)" \
+            -backend-config="container_name=$(container_tfstate)" \
+            -backend-config="key=$(key_tfstate)" \
+            -backend-config="use_azuread_auth=true"
 
-#     - task: AzureCLI@2
-#       displayName: "Terraform Plan - Core"
-#       inputs:
-#         azureSubscription: $(service_connection_name)
-#         scriptType: bash
-#         scriptLocation: inlineScript
-#         workingDirectory: "$(terraform_working_directory)"
-#         inlineScript: |
-#           echo "### TERRAFORM PLAN - Core Infrastructure ###"
-#           terraform plan \
-#             -target=module.monitoring \
-#             -target=module.acr \
-#             -target=module.cosmosdb \
-#             -target=module.redis \
-#             -target=module.ai_foundry \
-#             -target=module.ai_search \
-#             -target=module.identity \
-#             -target=module.aks \
-#             -target=azurerm_role_assignment.aks_acr_pull \
-#             -var-file="./environments/${{ parameters.env }}.tfvars" \
-#             -out=tfplan-core 
+    - task: AzureCLI@2
+      displayName: "Terraform Plan - Core"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          echo "### TERRAFORM PLAN - Core Infrastructure ###"
+          terraform plan \
+            -target=module.monitoring \
+            -target=module.acr \
+            -target=module.cosmosdb \
+            -target=module.redis \
+            -target=module.ai_foundry \
+            -target=module.ai_search \
+            -target=module.identity \
+            -target=module.aks \
+            -target=azurerm_role_assignment.aks_acr_pull \
+            -var-file="./environments/${{ parameters.env }}.tfvars" \
+            -out=tfplan-core 
 
-#     - task: PublishPipelineArtifact@1
-#       displayName: "Publish Core plan"
-#       inputs:
-#         artifactName: "tfplan-core"
-#         targetPath: "$(terraform_working_directory)/tfplan-core"
+    - task: PublishPipelineArtifact@1
+      displayName: "Publish Core plan"
+      inputs:
+        artifactName: "tfplan-core"
+        targetPath: "$(terraform_working_directory)/tfplan-core"
 
-# ########################################
-# # STAGE 6 - APPLY CORE
-# ########################################
-# - stage: ApplyCore
-#   displayName: "Terraform Apply - Core Infrastructure"
-#   dependsOn: PlanCore
-#   condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
-#   jobs:
-#   - deployment: TerraformApply
-#     displayName: "Apply Core Infrastructure"
-#     pool:
-#       name: $(agent_pool_name)
-#     environment: "Infra-${{ parameters.env }}-Core"
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - checkout: self
+########################################
+# STAGE 6 - APPLY CORE
+########################################
+- stage: ApplyCore
+  displayName: "Terraform Apply - Core Infrastructure"
+  dependsOn: PlanCore
+  condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
+  jobs:
+  - deployment: TerraformApply
+    displayName: "Apply Core Infrastructure"
+    pool:
+      name: $(agent_pool_name)
+    environment: "Infra-${{ parameters.env }}-Core"
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
 
-#           - task: TerraformInstaller@1
-#             displayName: "Install Terraform"
-#             inputs:
-#               terraformVersion: $(terraform_version)
+          - task: TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: $(terraform_version)
 
-#           - task: DownloadPipelineArtifact@2
-#             inputs:
-#               artifactName: "tfplan-core"
-#               downloadPath: "$(terraform_working_directory)"
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifactName: "tfplan-core"
+              downloadPath: "$(terraform_working_directory)"
 
-#           - task: AzureCLI@2
-#             displayName: "Terraform Init (Core Apply)"
-#             inputs:
-#               azureSubscription: $(service_connection_name)
-#               scriptType: bash
-#               scriptLocation: inlineScript
-#               workingDirectory: "$(terraform_working_directory)"
-#               inlineScript: |
-#                 echo "### Terraform INIT (Core Apply) ###"
-#                 rm -rf .terraform
-#                 terraform init \
-#                   -backend-config="resource_group_name=$(resource_group_tfstate)" \
-#                   -backend-config="storage_account_name=$(storage_account_tfstate)" \
-#                   -backend-config="container_name=$(container_tfstate)" \
-#                   -backend-config="key=$(key_tfstate)" \
-#                   -backend-config="use_azuread_auth=true"
+          - task: AzureCLI@2
+            displayName: "Terraform Init (Core Apply)"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### Terraform INIT (Core Apply) ###"
+                rm -rf .terraform
+                terraform init \
+                  -backend-config="resource_group_name=$(resource_group_tfstate)" \
+                  -backend-config="storage_account_name=$(storage_account_tfstate)" \
+                  -backend-config="container_name=$(container_tfstate)" \
+                  -backend-config="key=$(key_tfstate)" \
+                  -backend-config="use_azuread_auth=true"
 
-#           - task: AzureCLI@2
-#             displayName: "Terraform Apply - Core"
-#             inputs:
-#               azureSubscription: $(service_connection_name)
-#               scriptType: bash
-#               scriptLocation: inlineScript
-#               workingDirectory: "$(terraform_working_directory)"
-#               inlineScript: |
-#                 echo "### APPLY Core Infrastructure ###"
-#                 terraform apply -input=false tfplan-core
+          - task: AzureCLI@2
+            displayName: "Terraform Apply - Core"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                echo "### APPLY Core Infrastructure ###"
+                terraform apply -input=false tfplan-core
