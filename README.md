@@ -103,29 +103,16 @@ Use Point-to-Site VPN to connect your local machine to the private Azure VNet fo
 
 1. Enable P2S in your environment tfvars:
   - `enable_p2s_vpn = true`
-  - Set `gateway_subnet_prefixes`, `dns_resolver_inbound_subnet_prefixes`, `dns_resolver_inbound_ip`, and `p2s_vpn_client_address_space`.
+  - Set `gateway_subnet_prefixes` and `p2s_vpn_client_address_space`.
   - Example (`prd`):
     - `gateway_subnet_prefixes = ["10.1.5.0/27"]`
-    - `dns_resolver_inbound_subnet_prefixes = ["10.1.6.0/28"]`
-    - `dns_resolver_inbound_ip = "10.1.6.4"`
     - `p2s_vpn_client_address_space = ["172.16.20.0/24"]`
 2. Apply Terraform for that environment.
 3. After network apply finishes:
    - Re-download the VPN profile: Azure Portal → Virtual Network Gateway → **Point-to-site configuration** → **Download VPN client**.
    - Import the profile into Azure VPN Client on your local machine.
 4. Connect to the VPN using your Entra ID account.
-5. **Configure DNS on your client machine** (critical step):
-   - On **Windows**: Run the provided PowerShell script after connecting:
-     ```powershell
-     # Run from the scripts directory
-     .\set-p2s-dns.ps1 -DnsIp "10.1.6.4" -ConnectionName "agenthubspoke-prd"
-     ```
-   - The script will:
-     - Identify your VPN network adapter
-     - Set the DNS server to the Azure DNS Private Resolver inbound endpoint (e.g., `10.1.6.4`)
-     - Test DNS resolution to a known private endpoint FQDN
-   - On **macOS/Linux**: Use `networksetup` or `resolvectl` to set DNS for the VPN interface to `10.1.6.4`.
-6. Validate private endpoint connectivity from your local machine.
+5. Validate private endpoint connectivity from your local machine.
 
 Quick validation commands (Windows/macOS/Linux shell):
 - `nslookup akv-agenthubspoke-prd-ne.vault.azure.net` (or your Key Vault FQDN)
@@ -135,7 +122,6 @@ Quick validation commands (Windows/macOS/Linux shell):
 Expected DNS behavior when connected with correct DNS configuration:
 - Private endpoint FQDNs resolve to private IPs from your VNet address space (10.x.x.x).
 - Traffic to private services stays on the VPN/private network path.
-- If DNS resolves to public IPs, re-run the DNS configuration script and verify the correct DNS IP is set.
 - Private DNS zone links in this deployment are VNet-scoped, so resolution works only while connected to the VPN.
 
 ## Repository Structure
@@ -147,7 +133,7 @@ Expected DNS behavior when connected with correct DNS configuration:
   - `environments/prd.tfvars`
 - Modules:
   - `modules/vnet`: network segmentation, private DNS, NAT, bastion subnet
-  - `modules/p2s_vpn`: P2S VPN gateway + Azure DNS Private Resolver inbound endpoint for VPN client DNS
+  - `modules/p2s_vpn`: P2S VPN gateway for local secure connectivity
   - `modules/keyvault`: secrets store for platform and workloads
   - `modules/monitoring`: Log Analytics + Application Insights
   - `modules/acr`: private Azure Container Registry
@@ -159,8 +145,6 @@ Expected DNS behavior when connected with correct DNS configuration:
   - `modules/cosmosdb`: conversation/state persistence
   - `modules/redis`: low-latency cache/session support
   - `modules/devops_identity`, `modules/devops`: CI/CD build agents (optional path)
-- Scripts:
-  - `scripts/set-p2s-dns.ps1`: PowerShell script to configure DNS for P2S VPN clients on Windows
 - Pipelines:
   - `pipelines/0-unified.yml` (staged Terraform plan/apply orchestration)
   - `pipelines/2-network.yml` (network apply only)

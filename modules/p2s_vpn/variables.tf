@@ -33,16 +33,6 @@ variable "gateway_subnet_prefixes" {
   type        = list(string)
 }
 
-variable "dns_resolver_inbound_subnet_prefixes" {
-  description = "Address prefixes for the DNS Private Resolver inbound endpoint subnet"
-  type        = list(string)
-}
-
-variable "dns_resolver_inbound_ip" {
-  description = "Static private IP for the DNS Private Resolver inbound endpoint"
-  type        = string
-}
-
 variable "p2s_vpn_client_address_space" {
   description = "Client address pool for Point-to-Site VPN clients"
   type        = list(string)
