@@ -16,9 +16,10 @@ resource "azurerm_public_ip" "vpn_gateway" {
   zones               = ["2", "3", "1"]
   tags                = var.tags
 
-  # Keep existing gateway IP attached and avoid force-replacement when Azure reports zone metadata differently.
+  # This IP is attached to the VPN gateway and should never be replaced by incidental drift.
+  # Ignoring all changes avoids destructive replacement attempts that fail while attached.
   lifecycle {
-    ignore_changes = [zones]
+    ignore_changes = all
   }
 }
 
