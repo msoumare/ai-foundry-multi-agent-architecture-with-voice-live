@@ -13,8 +13,13 @@ resource "azurerm_public_ip" "vpn_gateway" {
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = ["2", "3", "1"]
   tags                = var.tags
+
+  # Keep existing gateway IP attached and avoid force-replacement when Azure reports zone metadata differently.
+  lifecycle {
+    ignore_changes = [zones]
+  }
 }
 
 resource "azurerm_virtual_network_gateway" "p2s" {
