@@ -38,6 +38,12 @@ variable "p2s_vpn_client_address_space" {
   type        = list(string)
 }
 
+variable "p2s_dns_servers" {
+  description = "Optional DNS servers to push to P2S VPN clients"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

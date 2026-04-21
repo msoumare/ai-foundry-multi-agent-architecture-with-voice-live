@@ -13,7 +13,7 @@ resource "azurerm_public_ip" "vpn_gateway" {
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["2", "3", "1"]
+  zones               = ["1", "2", "3"]
   tags                = var.tags
 
   # This IP is attached to the VPN gateway and should never be replaced by incidental drift.

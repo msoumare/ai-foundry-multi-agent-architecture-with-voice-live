@@ -53,6 +53,18 @@ variable "bastion_subnet_prefixes" {
   type        = list(string)
 }
 
+variable "enable_private_dns_resolver" {
+  description = "Enable Azure Private DNS Resolver resources"
+  type        = bool
+  default     = false
+}
+
+variable "dns_resolver_subnet_prefixes" {
+  description = "Address prefixes for the Private DNS Resolver inbound endpoint subnet (minimum /28)"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

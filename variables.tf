@@ -107,6 +107,18 @@ variable "gateway_subnet_prefixes" {
   default     = []
 }
 
+variable "enable_private_dns_resolver" {
+  description = "Enable Azure Private DNS Resolver with an inbound endpoint"
+  type        = bool
+  default     = true
+}
+
+variable "dns_resolver_subnet_prefixes" {
+  description = "Address prefixes for the Private DNS Resolver inbound endpoint subnet (minimum /28)"
+  type        = list(string)
+  default     = []
+}
+
 variable "p2s_vpn_client_address_space" {
   description = "Client address pool for Point-to-Site VPN clients"
   type        = list(string)

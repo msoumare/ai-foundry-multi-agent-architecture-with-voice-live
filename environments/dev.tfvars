@@ -14,4 +14,5 @@ bastion_subnet_prefixes           = ["10.0.4.0/26"]
 
 enable_p2s_vpn               = true
 gateway_subnet_prefixes      = ["10.0.5.0/27"]
+dns_resolver_subnet_prefixes = ["10.0.6.0/28"]
 p2s_vpn_client_address_space = ["172.16.10.0/24"]

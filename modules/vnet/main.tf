@@ -34,6 +34,39 @@ resource "azurerm_subnet" "bastion" {
   address_prefixes     = var.bastion_subnet_prefixes
 }
 
+resource "azurerm_subnet" "dns_resolver_inbound" {
+  count = var.enable_private_dns_resolver ? 1 : 0
+
+  name                 = "snet-dnsr-in-${var.workload}-${var.env}-${var.region}"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.workload.name
+  address_prefixes     = var.dns_resolver_subnet_prefixes
+}
+
+resource "azurerm_private_dns_resolver" "workload" {
+  count = var.enable_private_dns_resolver ? 1 : 0
+
+  name                = "dnsr-${var.workload}-${var.env}-${var.region}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  virtual_network_id  = azurerm_virtual_network.workload.id
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_resolver_inbound_endpoint" "workload" {
+  count = var.enable_private_dns_resolver ? 1 : 0
+
+  name                    = "dnsr-in-${var.workload}-${var.env}-${var.region}"
+  location                = var.location
+  private_dns_resolver_id = azurerm_private_dns_resolver.workload[0].id
+  tags                    = var.tags
+
+  ip_configurations {
+    private_ip_allocation_method = "Dynamic"
+    subnet_id                    = azurerm_subnet.dns_resolver_inbound[0].id
+  }
+}
+
 # Private DNS Zones
 resource "azurerm_private_dns_zone" "keyvault" {
   name                = "privatelink.vaultcore.azure.net"

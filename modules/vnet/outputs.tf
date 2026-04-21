@@ -77,3 +77,13 @@ output "nat_gateway_public_ip" {
   description = "NAT Gateway public IP address"
   value       = azurerm_public_ip.nat_gateway.ip_address
 }
+
+output "private_dns_resolver_id" {
+  description = "Private DNS Resolver resource ID"
+  value       = var.enable_private_dns_resolver ? azurerm_private_dns_resolver.workload[0].id : null
+}
+
+output "private_dns_resolver_inbound_ip" {
+  description = "Private DNS Resolver inbound endpoint IP address"
+  value       = var.enable_private_dns_resolver ? azurerm_private_dns_resolver_inbound_endpoint.workload[0].ip_configurations[0].private_ip_address : null
+}
