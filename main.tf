@@ -27,7 +27,6 @@ module "vnet" {
   private_endpoints_subnet_prefixes = var.private_endpoints_subnet_prefixes
   devops_subnet_prefixes            = var.devops_subnet_prefixes
   bastion_subnet_prefixes           = var.bastion_subnet_prefixes
-  enable_private_dns_resolver       = var.enable_private_dns_resolver && length(var.dns_resolver_subnet_prefixes) > 0
   dns_resolver_subnet_prefixes      = var.dns_resolver_subnet_prefixes
   tags = merge(var.tags, {
     environment = var.environment
@@ -50,7 +49,7 @@ module "p2s_vpn" {
   virtual_network_name         = module.vnet.name
   gateway_subnet_prefixes      = var.gateway_subnet_prefixes
   p2s_vpn_client_address_space = var.p2s_vpn_client_address_space
-  p2s_dns_servers              = (var.enable_private_dns_resolver && length(var.dns_resolver_subnet_prefixes) > 0) ? [module.vnet.private_dns_resolver_inbound_ip] : []
+  p2s_dns_servers              = [module.vnet.private_dns_resolver_inbound_ip]
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

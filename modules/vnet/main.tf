@@ -35,8 +35,6 @@ resource "azurerm_subnet" "bastion" {
 }
 
 resource "azurerm_subnet" "dns_resolver_inbound" {
-  count = var.enable_private_dns_resolver ? 1 : 0
-
   name                 = "snet-dnsr-in-${var.workload}-${var.env}-${var.region}"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.workload.name
@@ -55,8 +53,6 @@ resource "azurerm_subnet" "dns_resolver_inbound" {
 }
 
 resource "azurerm_private_dns_resolver" "workload" {
-  count = var.enable_private_dns_resolver ? 1 : 0
-
   name                = "dnsr-${var.workload}-${var.env}-${var.region}"
   location            = var.location
   resource_group_name = var.resource_group_name
@@ -65,16 +61,14 @@ resource "azurerm_private_dns_resolver" "workload" {
 }
 
 resource "azurerm_private_dns_resolver_inbound_endpoint" "workload" {
-  count = var.enable_private_dns_resolver ? 1 : 0
-
   name                    = "dnsr-in-${var.workload}-${var.env}-${var.region}"
   location                = var.location
-  private_dns_resolver_id = azurerm_private_dns_resolver.workload[0].id
+  private_dns_resolver_id = azurerm_private_dns_resolver.workload.id
   tags                    = var.tags
 
   ip_configurations {
     private_ip_allocation_method = "Dynamic"
-    subnet_id                    = azurerm_subnet.dns_resolver_inbound[0].id
+    subnet_id                    = azurerm_subnet.dns_resolver_inbound.id
   }
 }
 

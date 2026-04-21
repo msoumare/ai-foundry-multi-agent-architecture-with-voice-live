@@ -80,10 +80,10 @@ output "nat_gateway_public_ip" {
 
 output "private_dns_resolver_id" {
   description = "Private DNS Resolver resource ID"
-  value       = var.enable_private_dns_resolver ? azurerm_private_dns_resolver.workload[0].id : null
+  value       = azurerm_private_dns_resolver.workload.id
 }
 
 output "private_dns_resolver_inbound_ip" {
   description = "Private DNS Resolver inbound endpoint IP address"
-  value       = var.enable_private_dns_resolver ? azurerm_private_dns_resolver_inbound_endpoint.workload[0].ip_configurations[0].private_ip_address : null
+  value       = azurerm_private_dns_resolver_inbound_endpoint.workload.ip_configurations[0].private_ip_address
 }
