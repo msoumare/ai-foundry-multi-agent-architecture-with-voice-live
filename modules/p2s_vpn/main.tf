@@ -1,10 +1,5 @@
 data "azurerm_client_config" "current" {}
 
-data "azurerm_virtual_network" "target" {
-  name                = var.virtual_network_name
-  resource_group_name = var.resource_group_name
-}
-
 resource "azurerm_subnet" "gateway" {
   name                 = "GatewaySubnet"
   resource_group_name  = var.resource_group_name

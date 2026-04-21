@@ -104,24 +104,21 @@ Use Point-to-Site VPN to connect your local machine to the private Azure VNet fo
 1. Enable P2S in your environment tfvars:
   - `enable_p2s_vpn = true`
   - Set `gateway_subnet_prefixes` and `p2s_vpn_client_address_space`.
-  - Example (`prd`):
-    - `gateway_subnet_prefixes = ["10.1.5.0/27"]`
-    - `p2s_vpn_client_address_space = ["172.16.20.0/24"]`
 2. Apply Terraform for that environment.
-3. After network apply finishes:
-   - Re-download the VPN profile: Azure Portal → Virtual Network Gateway → **Point-to-site configuration** → **Download VPN client**.
-   - Import the profile into Azure VPN Client on your local machine.
-4. Connect to the VPN using your Entra ID account.
-5. Validate private endpoint connectivity from your local machine.
+3. In Azure Portal, open the Virtual Network Gateway → **Settings** → **Point-to-site configuration** → click **Download VPN client**.
+4. Install/open Azure VPN Client on your local machine.
+5. Import the downloaded profile and connect using your Entra ID account.
+6. Validate private endpoint connectivity from your local machine.
 
 Quick validation commands (Windows/macOS/Linux shell):
-- `nslookup akv-agenthubspoke-prd-ne.vault.azure.net` (or your Key Vault FQDN)
-- `nslookup search-agenthubspoke-prd-ne.search.windows.net` (or your AI Search FQDN)
-- `nslookup acragenthubspokeprdne.azurecr.io` (or your ACR FQDN)
+- `nslookup <keyvault-name>.vault.azure.net`
+- `nslookup <search-name>.search.windows.net`
+- `nslookup <acr-name>.azurecr.io`
 
-Expected DNS behavior when connected with correct DNS configuration:
-- Private endpoint FQDNs resolve to private IPs from your VNet address space (10.x.x.x).
+Expected DNS behavior when connected:
+- Private endpoint FQDNs resolve to private IPs from your VNet address space.
 - Traffic to private services stays on the VPN/private network path.
+- If DNS still resolves to public IPs, the VPN profile/DNS path is not being used yet.
 - Private DNS zone links in this deployment are VNet-scoped, so resolution works only while connected to the VPN.
 
 ## Repository Structure
@@ -130,10 +127,8 @@ Expected DNS behavior when connected with correct DNS configuration:
   - `main.tf`, `variables.tf`, `outputs.tf`, `providers.tf`, `backend.tf`
 - Environment values:
   - `environments/dev.tfvars`
-  - `environments/prd.tfvars`
 - Modules:
   - `modules/vnet`: network segmentation, private DNS, NAT, bastion subnet
-  - `modules/p2s_vpn`: P2S VPN gateway for local secure connectivity
   - `modules/keyvault`: secrets store for platform and workloads
   - `modules/monitoring`: Log Analytics + Application Insights
   - `modules/acr`: private Azure Container Registry
@@ -147,7 +142,6 @@ Expected DNS behavior when connected with correct DNS configuration:
   - `modules/devops_identity`, `modules/devops`: CI/CD build agents (optional path)
 - Pipelines:
   - `pipelines/0-unified.yml` (staged Terraform plan/apply orchestration)
-  - `pipelines/2-network.yml` (network apply only)
   - `pipelines/3-devops.yml` (hosted agent stage for DevOps infra only; does not write Key Vault secrets when vault is private-only)
   - `pipelines/4-core.yml` (private VMSS agent pool stage; performs Key Vault secret writes for private-only vaults)
 
