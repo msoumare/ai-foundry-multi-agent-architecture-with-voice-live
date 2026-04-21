@@ -41,6 +41,17 @@ resource "azurerm_subnet" "dns_resolver_inbound" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.workload.name
   address_prefixes     = var.dns_resolver_subnet_prefixes
+
+  delegation {
+    name = "dnsResolverDelegation"
+
+    service_delegation {
+      name = "Microsoft.Network/dnsResolvers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
 }
 
 resource "azurerm_private_dns_resolver" "workload" {
