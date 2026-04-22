@@ -145,6 +145,27 @@ Expected DNS behavior when connected:
   - `pipelines/3-devops.yml` (hosted agent stage for DevOps infra only; does not write Key Vault secrets when vault is private-only)
   - `pipelines/4-core.yml` (private VMSS agent pool stage; performs Key Vault secret writes for private-only vaults)
 
+## Why Public IPs Exist In This Private Architecture
+
+This stack is private for workload and data planes, but it still uses a few controlled edge/control-plane public IPs by design.
+
+Public IP resources and purpose:
+- `pip-bastion-agenthubspoke-<env>-<region>`: Azure Bastion entry point. This exposes Bastion only, not VM public IPs.
+- `pip-nat-agenthubspoke-<env>-<region>`: NAT Gateway egress identity for outbound traffic from private subnets. This is outbound-only.
+- `pip-vpngw-agenthubspoke-<env>-<region>`: P2S VPN gateway entry point so approved users/devices can connect from local machines.
+
+Security posture:
+- This does not expose private endpoints or workload services directly to the internet.
+- Private services (Key Vault, Storage, Cosmos DB, AI Search, ACR, AI Services private endpoints) remain reachable through private networking and private DNS.
+- Public IPs are limited to controlled ingress/egress functions required for operations and developer access.
+
+Hardening recommendations:
+- Enforce Entra ID + MFA + Conditional Access for VPN access.
+- Apply least-privilege RBAC for Bastion and VPN operations.
+- Use NSG/UDR/Firewall policy to restrict outbound destinations and deny unnecessary egress.
+- Enable diagnostics and alerting for Bastion, VPN Gateway, and NAT flow/connection patterns.
+- Periodically review whether Bastion/VPN are still required or can be replaced with stricter private connectivity patterns.
+
 ## Logical Request Flow
 
 ```mermaid
