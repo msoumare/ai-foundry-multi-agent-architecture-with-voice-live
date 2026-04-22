@@ -28,8 +28,23 @@ variable "cosmos_db_account_id" {
   type        = string
 }
 
+variable "redis_id" {
+  description = "Redis Cache resource ID for Entra access policy assignment"
+  type        = string
+}
+
 variable "ai_search_id" {
   description = "Azure AI Search service resource ID"
+  type        = string
+}
+
+variable "ai_services_id" {
+  description = "Primary Azure AI Services resource ID for OpenAI role assignment"
+  type        = string
+}
+
+variable "ai_realtime_id" {
+  description = "Secondary Azure AI Services resource ID for OpenAI role assignment"
   type        = string
 }
 

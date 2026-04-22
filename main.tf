@@ -324,7 +324,10 @@ module "aks_identity" {
   key_vault_id         = module.keyvault.id
   acr_id               = module.acr.id
   cosmos_db_account_id = module.cosmosdb.id
+  redis_id             = module.redis.id
   ai_search_id         = module.ai_search.id
+  ai_services_id       = module.ai_foundry.ai_services_id
+  ai_realtime_id       = module.ai_realtime.ai_realtime_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

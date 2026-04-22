@@ -3,6 +3,7 @@ resource "azurerm_search_service" "this" {
   location            = var.location
   resource_group_name = var.resource_group_name
   sku                 = var.sku
+  local_authentication_enabled = false
   public_network_access_enabled = false
   tags                = var.tags
 }

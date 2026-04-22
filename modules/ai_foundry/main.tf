@@ -33,7 +33,7 @@ resource "azurerm_role_assignment" "uai_storage_access" {
 # Grant the user-assigned identity access to AI Services
 resource "azurerm_role_assignment" "uai_cognitive_services_user" {
   scope                = azurerm_cognitive_account.ai_services.id
-  role_definition_name = "Cognitive Services User"
+  role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = var.user_assigned_identity_principal_id
   principal_type       = "ServicePrincipal"
 }
@@ -42,7 +42,7 @@ resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user" {
   count = var.enable_secondary_ai_services_connection ? 1 : 0
 
   scope                = var.secondary_ai_services_resource_id
-  role_definition_name = "Cognitive Services User"
+  role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = var.user_assigned_identity_principal_id
   principal_type       = "ServicePrincipal"
 }
@@ -54,6 +54,7 @@ resource "azurerm_cognitive_account" "ai_services" {
   kind                  = "AIServices"
   sku_name              = "S0"
   custom_subdomain_name = var.ai_services_name
+  local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
 }

@@ -32,10 +32,43 @@ resource "azurerm_cosmosdb_sql_role_assignment" "data_contributor" {
   scope               = var.cosmos_db_account_id
 }
 
-# Azure AI Search — for AKS workloads to access search
+# Azure AI Search management plane — needed to create and manage indexes without API keys
+resource "azurerm_role_assignment" "ai_search_service_contributor" {
+  scope                = var.ai_search_id
+  role_definition_name = "Search Service Contributor"
+  principal_id         = azurerm_user_assigned_identity.this.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Azure AI Search data plane — for AKS workloads to access indexed content
 resource "azurerm_role_assignment" "ai_search_contributor" {
   scope                = var.ai_search_id
   role_definition_name = "Search Index Data Contributor"
   principal_id         = azurerm_user_assigned_identity.this.principal_id
   principal_type       = "ServicePrincipal"
+}
+
+# Azure OpenAI inference on the primary Foundry-linked AI Services account
+resource "azurerm_role_assignment" "ai_services_openai_user" {
+  scope                = var.ai_services_id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = azurerm_user_assigned_identity.this.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Azure OpenAI inference on the Sweden Central real-time AI Services account
+resource "azurerm_role_assignment" "ai_realtime_openai_user" {
+  scope                = var.ai_realtime_id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = azurerm_user_assigned_identity.this.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Azure Cache for Redis data access using Entra tokens instead of access keys
+resource "azurerm_redis_cache_access_policy_assignment" "redis_data_contributor" {
+  name               = "${var.name}-data-contributor"
+  redis_cache_id     = var.redis_id
+  access_policy_name = "Data Contributor"
+  object_id          = azurerm_user_assigned_identity.this.principal_id
+  object_id_alias    = var.name
 }

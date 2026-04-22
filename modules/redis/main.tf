@@ -5,11 +5,14 @@ resource "azurerm_redis_cache" "this" {
   capacity                      = var.capacity
   family                        = var.family
   sku_name                      = var.sku_name
+  access_keys_authentication_enabled = false
   minimum_tls_version           = "1.2"
   public_network_access_enabled = false
   tags                          = var.tags
 
-  redis_configuration {}
+  redis_configuration {
+    active_directory_authentication_enabled = true
+  }
 }
 
 resource "azurerm_private_endpoint" "this" {

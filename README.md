@@ -121,6 +121,125 @@ Expected DNS behavior when connected:
 - If DNS still resolves to public IPs, the VPN profile/DNS path is not being used yet.
 - Private DNS zone links in this deployment are VNet-scoped, so resolution works only while connected to the VPN.
 
+### Local Developer RBAC Commands
+
+Use the following Azure CLI commands to grant your local Entra user the same service access patterns needed for local testing over VPN with `az login` and `DefaultAzureCredential`.
+
+These commands assume:
+- Subscription: `3c9d7b7f-4666-43a3-a852-062c5b18c783`
+- Resource group: `rg-agenthubspoke-prd-ne`
+- Local user object ID: `8694e7a2-c772-40a4-8f70-9d3cca3285d5`
+
+```bash
+# Common variables
+SUB="3c9d7b7f-4666-43a3-a852-062c5b18c783"
+RG="rg-agenthubspoke-prd-ne"
+OID="8694e7a2-c772-40a4-8f70-9d3cca3285d5"
+
+KV="akv-agenthubspoke-prd-ne"
+AI_PRIMARY="ai-agenthubspoke-prd-ne"
+AI_RT="ai-rt-agenthubspoke-prd"
+COSMOS="cosmos-agenthubspoke-prd-ne"
+SEARCH="search-agenthubspoke-prd-ne"
+REDIS="redis-agenthubspoke-prd-ne"
+STORAGE="stagenthubspokeprdne"
+
+az account set --subscription "$SUB"
+
+# Key Vault secrets read access for local testing
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Key Vault Secrets User" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.KeyVault/vaults/$KV" \
+  --subscription "$SUB"
+
+# Primary Azure AI Services / Azure OpenAI inference access
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Cognitive Services OpenAI User" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.CognitiveServices/accounts/$AI_PRIMARY" \
+  --subscription "$SUB"
+
+# Sweden Central AI Services account that hosts cross-region model deployments
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Cognitive Services OpenAI User" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.CognitiveServices/accounts/$AI_RT" \
+  --subscription "$SUB"
+
+# Azure AI Search management-plane access for indexes, datasources, and indexers
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Search Service Contributor" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.Search/searchServices/$SEARCH" \
+  --subscription "$SUB"
+
+# Azure AI Search data-plane access for document read/write and queries
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Search Index Data Contributor" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.Search/searchServices/$SEARCH" \
+  --subscription "$SUB"
+
+# Cosmos DB SQL API data-plane access
+az cosmosdb sql role assignment create \
+  --resource-group "$RG" \
+  --account-name "$COSMOS" \
+  --principal-id "$OID" \
+  --role-definition-id "00000000-0000-0000-0000-000000000002" \
+  --scope "/"
+
+# Redis data access using Microsoft Entra authentication
+az redis access-policy-assignment create \
+  --resource-group "$RG" \
+  --name "$REDIS" \
+  --object-id "$OID" \
+  --object-id-alias "local-dev-user" \
+  --access-policy-name "Data Contributor" \
+  --policy-assignment-name "local-dev-user-data-contributor"
+
+# Optional: Blob access if local tooling reads/writes Foundry storage directly
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$STORAGE" \
+  --subscription "$SUB"
+
+# Optional: Foundry portal access for hub/project experiences
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Azure AI User" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.MachineLearningServices/workspaces/af-hub-agenthubspoke-prd-ne" \
+  --subscription "$SUB"
+
+az role assignment create \
+  --assignee-object-id "$OID" \
+  --role "Azure AI User" \
+  --scope "/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.MachineLearningServices/workspaces/af-proj-agenthubspoke-prd-ne" \
+  --subscription "$SUB"
+```
+
+Verification commands:
+
+```bash
+az role assignment list --assignee "$OID" --all --subscription "$SUB" --query "[].{role:roleDefinitionName,scope:scope}" -o table
+
+az cosmosdb sql role assignment list \
+  --resource-group "$RG" \
+  --account-name "$COSMOS" \
+  -o table
+
+az redis access-policy-assignment list \
+  --resource-group "$RG" \
+  --name "$REDIS" \
+  -o table
+```
+
+Notes:
+- You need `User Access Administrator`, `Owner`, or equivalent `Microsoft.Authorization/roleAssignments/write` permission to run the role assignment commands.
+- These commands grant local developer access for testing. They do not replace the workload identities used by AKS or Foundry.
+- RBAC is necessary but not sufficient for this private setup; your local machine must also be connected over the P2S VPN and using the private DNS path.
+
 ## Repository Structure
 
 - Root Terraform stack:
