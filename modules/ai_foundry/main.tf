@@ -47,6 +47,22 @@ resource "azurerm_role_assignment" "uai_cognitive_services_user_general" {
   principal_type       = "ServicePrincipal"
 }
 
+# Grant the user-assigned identity admin access to the linked Key Vault
+resource "azurerm_role_assignment" "uai_key_vault_admin" {
+  scope                = var.key_vault_id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Grant the user-assigned identity access to linked Application Insights
+resource "azurerm_role_assignment" "uai_monitoring_contributor" {
+  scope                = var.app_insights_id
+  role_definition_name = "Monitoring Contributor"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
 resource "azurerm_cognitive_account" "ai_services" {
   name                  = var.ai_services_name
   location              = var.location
@@ -121,7 +137,9 @@ resource "azapi_resource" "hub" {
   depends_on = [
     azurerm_role_assignment.uai_storage_access,
     azurerm_role_assignment.uai_cognitive_services_user,
-    azurerm_role_assignment.uai_cognitive_services_user_general
+    azurerm_role_assignment.uai_cognitive_services_user_general,
+    azurerm_role_assignment.uai_key_vault_admin,
+    azurerm_role_assignment.uai_monitoring_contributor
   ]
 }
 
