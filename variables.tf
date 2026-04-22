@@ -113,12 +113,6 @@ variable "dns_resolver_subnet_prefixes" {
   default     = []
 }
 
-variable "enable_secondary_ai_services_connection" {
-  description = "Create a secondary AI Services connection from the Foundry hub/project to another regional AI Services account when required models are unavailable in the primary region"
-  type        = bool
-  default     = true
-}
-
 variable "p2s_vpn_client_address_space" {
   description = "Client address pool for Point-to-Site VPN clients"
   type        = list(string)

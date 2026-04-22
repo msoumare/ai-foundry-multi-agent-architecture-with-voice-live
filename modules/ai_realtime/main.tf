@@ -11,7 +11,7 @@ terraform {
 # from end-user clients and cannot be routed over the private VNet.
 resource "azurerm_cognitive_account" "ai_realtime" {
   name                          = var.ai_services_name
-  location                      = "swedencentral"
+  location                      = var.location
   resource_group_name           = var.resource_group_name
   kind                          = "AIServices"
   sku_name                      = "S0"
@@ -37,34 +37,4 @@ resource "azurerm_cognitive_deployment" "gpt4o_realtime" {
   }
 }
 
-resource "azurerm_cognitive_deployment" "gpt4o" {
-  name                 = "gpt-4o"
-  cognitive_account_id = azurerm_cognitive_account.ai_realtime.id
 
-  model {
-    format  = "OpenAI"
-    name    = "gpt-4o"
-    version = "2024-11-20"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = 1
-  }
-}
-
-resource "azurerm_cognitive_deployment" "gpt41mini" {
-  name                 = "gpt-4.1-mini"
-  cognitive_account_id = azurerm_cognitive_account.ai_realtime.id
-
-  model {
-    format  = "OpenAI"
-    name    = "gpt-4.1-mini"
-    version = "2025-04-14"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = 1
-  }
-}

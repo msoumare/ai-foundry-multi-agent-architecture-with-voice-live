@@ -1,5 +1,10 @@
 variable "ai_services_name" {
-  description = "AI Services account name for real-time voice (Sweden Central)"
+  description = "AI Services account name for real-time voice"
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region"
   type        = string
 }
 

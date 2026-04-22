@@ -253,12 +253,6 @@ module "ai_foundry" {
   storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
   user_assigned_identity_id           = module.identity.id
   user_assigned_identity_principal_id = module.identity.principal_id
-  # Enable this secondary connection only when a required model/SKU is not available in
-  # the primary Foundry region. For single-region deployments, set
-  # enable_secondary_ai_services_connection = false and the extra connection is omitted.
-  enable_secondary_ai_services_connection = var.enable_secondary_ai_services_connection
-  secondary_ai_services_resource_id    = var.enable_secondary_ai_services_connection ? module.ai_realtime.ai_realtime_id : null
-  secondary_ai_services_endpoint       = var.enable_secondary_ai_services_connection ? module.ai_realtime.ai_realtime_endpoint : null
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -273,6 +267,7 @@ module "ai_realtime" {
   source = "./modules/ai_realtime"
 
   ai_services_name    = "ai-rt-${var.workload}-${var.environment}"
+  location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
     environment = var.environment

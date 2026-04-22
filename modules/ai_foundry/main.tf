@@ -47,24 +47,6 @@ resource "azurerm_role_assignment" "uai_cognitive_services_user_general" {
   principal_type       = "ServicePrincipal"
 }
 
-resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user" {
-  count = var.enable_secondary_ai_services_connection ? 1 : 0
-
-  scope                = var.secondary_ai_services_resource_id
-  role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = var.user_assigned_identity_principal_id
-  principal_type       = "ServicePrincipal"
-}
-
-resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user_general" {
-  count = var.enable_secondary_ai_services_connection ? 1 : 0
-
-  scope                = var.secondary_ai_services_resource_id
-  role_definition_name = "Cognitive Services User"
-  principal_id         = var.user_assigned_identity_principal_id
-  principal_type       = "ServicePrincipal"
-}
-
 resource "azurerm_cognitive_account" "ai_services" {
   name                  = var.ai_services_name
   location              = var.location
@@ -75,6 +57,38 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
+}
+
+resource "azurerm_cognitive_deployment" "gpt4o" {
+  name                 = "gpt-4o"
+  cognitive_account_id = azurerm_cognitive_account.ai_services.id
+
+  model {
+    format  = "OpenAI"
+    name    = "gpt-4o"
+    version = "2024-11-20"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
+  }
+}
+
+resource "azurerm_cognitive_deployment" "gpt41mini" {
+  name                 = "gpt-4.1-mini"
+  cognitive_account_id = azurerm_cognitive_account.ai_services.id
+
+  model {
+    format  = "OpenAI"
+    name    = "gpt-4.1-mini"
+    version = "2025-04-14"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
+  }
 }
 
 resource "azapi_resource" "hub" {
@@ -133,48 +147,6 @@ resource "azapi_resource" "ai_services_connection" {
       }
     }
   }
-}
-
-# Optional secondary AI Services connection.
-#
-# Keep this enabled when the Foundry hub/project is deployed in a region where the
-# required model SKU is unavailable, but a second Azure AI Services account in another
-# region hosts the needed model deployments.
-#
-# Disable this connection for simpler single-region deployments where the primary
-# regional AI Services account already hosts all required models. In that case, set:
-#   secondary_ai_services_resource_id = null
-#   secondary_ai_services_endpoint    = null
-resource "azapi_resource" "secondary_ai_services_connection" {
-  count = var.enable_secondary_ai_services_connection ? 1 : 0
-
-  type      = "Microsoft.MachineLearningServices/workspaces/connections@2024-10-01"
-  name      = "ai-services-secondary-connection"
-  parent_id = azapi_resource.hub.id
-
-  timeouts {
-    create = "30m"
-    delete = "60m"
-  }
-
-  body = {
-    properties = {
-      category      = "AIServices"
-      target        = var.secondary_ai_services_endpoint
-      authType      = "AAD"
-      isSharedToAll = true
-      metadata = {
-        ApiType    = "Azure"
-        ResourceId = var.secondary_ai_services_resource_id
-      }
-    }
-  }
-
-  depends_on = [
-    azapi_resource.hub,
-    azurerm_role_assignment.uai_secondary_cognitive_services_user,
-    azurerm_role_assignment.uai_secondary_cognitive_services_user_general,
-  ]
 }
 
 resource "azapi_resource" "project" {

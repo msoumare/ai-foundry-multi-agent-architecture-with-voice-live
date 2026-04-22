@@ -68,21 +68,3 @@ variable "user_assigned_identity_principal_id" {
   description = "Principal ID of the platform user-assigned managed identity (for role assignments)"
   type        = string
 }
-
-variable "enable_secondary_ai_services_connection" {
-  description = "Enable creation of the secondary AI Services role assignment and Foundry connection"
-  type        = bool
-  default     = false
-}
-
-variable "secondary_ai_services_resource_id" {
-  description = "Optional resource ID of a secondary Azure AI Services account used when required model SKUs are unavailable in the primary region"
-  type        = string
-  default     = null
-}
-
-variable "secondary_ai_services_endpoint" {
-  description = "Optional endpoint of a secondary Azure AI Services account used by the Foundry hub/project as an additional model connection"
-  type        = string
-  default     = null
-}
