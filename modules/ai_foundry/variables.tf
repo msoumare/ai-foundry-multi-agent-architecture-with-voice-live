@@ -59,6 +59,11 @@ variable "storage_dns_zone_id" {
   type        = string
 }
 
+variable "hub_dns_zone_id" {
+  description = "Private DNS zone ID for ML workspaces (privatelink.api.azureml.ms)"
+  type        = string
+}
+
 variable "user_assigned_identity_id" {
   description = "Resource ID of the platform user-assigned managed identity (AI Foundry hub/project)"
   type        = string

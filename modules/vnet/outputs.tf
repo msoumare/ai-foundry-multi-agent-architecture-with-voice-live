@@ -68,6 +68,16 @@ output "log_analytics_dns_zone_id" {
   value       = azurerm_private_dns_zone.log_analytics.id
 }
 
+output "ml_workspace_dns_zone_id" {
+  description = "ML workspace private DNS zone ID (privatelink.api.azureml.ms)"
+  value       = azurerm_private_dns_zone.ml_workspace.id
+}
+
+output "ml_notebooks_dns_zone_id" {
+  description = "ML notebooks private DNS zone ID (privatelink.notebooks.azure.net)"
+  value       = azurerm_private_dns_zone.ml_notebooks.id
+}
+
 output "nat_gateway_id" {
   description = "NAT Gateway resource ID"
   value       = azurerm_nat_gateway.devops.id

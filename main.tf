@@ -251,6 +251,7 @@ module "ai_foundry" {
   private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
   ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
   storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
+  hub_dns_zone_id                     = module.vnet.ml_workspace_dns_zone_id
   user_assigned_identity_id           = module.identity.id
   user_assigned_identity_principal_id = module.identity.principal_id
   tags = merge(var.tags, {

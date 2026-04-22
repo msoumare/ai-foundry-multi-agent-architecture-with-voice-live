@@ -260,4 +260,27 @@ resource "azurerm_private_endpoint" "storage_blob" {
   tags = var.tags
 }
 
+resource "azurerm_private_endpoint" "hub" {
+  name                = "pe-af-${var.hub_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "hub-connection"
+    private_connection_resource_id = azapi_resource.hub.id
+    subresource_names              = ["amlworkspace"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-af-${var.hub_name}"
+    private_dns_zone_ids = [var.hub_dns_zone_id]
+  }
+
+  tags = var.tags
+
+  depends_on = [azapi_resource.hub]
+}
+
 data "azurerm_client_config" "current" {}
