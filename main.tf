@@ -266,7 +266,7 @@ module "ai_foundry" {
 module "ai_realtime" {
   source = "./modules/ai_realtime"
 
-  ai_services_name    = "ai-rt-${var.workload}-${var.environment}"
+  ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   tags = merge(var.tags, {
