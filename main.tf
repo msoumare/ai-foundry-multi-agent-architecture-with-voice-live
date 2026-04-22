@@ -263,18 +263,18 @@ module "ai_foundry" {
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
-module "ai_realtime" {
-  source = "./modules/ai_realtime"
+# module "ai_realtime" {
+#   source = "./modules/ai_realtime"
 
-  ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
+#   ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
+#   location            = var.location
+#   resource_group_name = azurerm_resource_group.main.name
+#   tags = merge(var.tags, {
+#     environment = var.environment
+#     workload    = var.workload
+#     managed-by  = "terraform"
+#   })
+# }
 
 # --- Azure AI Search ---
 module "ai_search" {
