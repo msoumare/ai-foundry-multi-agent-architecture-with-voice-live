@@ -38,11 +38,29 @@ resource "azurerm_role_assignment" "uai_cognitive_services_user" {
   principal_type       = "ServicePrincipal"
 }
 
+# Keep the generic Cognitive Services role for Foundry platform compatibility
+# on hub/project connection and service metadata operations.
+resource "azurerm_role_assignment" "uai_cognitive_services_user_general" {
+  scope                = azurerm_cognitive_account.ai_services.id
+  role_definition_name = "Cognitive Services User"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
 resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user" {
   count = var.enable_secondary_ai_services_connection ? 1 : 0
 
   scope                = var.secondary_ai_services_resource_id
   role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user_general" {
+  count = var.enable_secondary_ai_services_connection ? 1 : 0
+
+  scope                = var.secondary_ai_services_resource_id
+  role_definition_name = "Cognitive Services User"
   principal_id         = var.user_assigned_identity_principal_id
   principal_type       = "ServicePrincipal"
 }
@@ -88,7 +106,8 @@ resource "azapi_resource" "hub" {
 
   depends_on = [
     azurerm_role_assignment.uai_storage_access,
-    azurerm_role_assignment.uai_cognitive_services_user
+    azurerm_role_assignment.uai_cognitive_services_user,
+    azurerm_role_assignment.uai_cognitive_services_user_general
   ]
 }
 
@@ -154,6 +173,7 @@ resource "azapi_resource" "secondary_ai_services_connection" {
   depends_on = [
     azapi_resource.hub,
     azurerm_role_assignment.uai_secondary_cognitive_services_user,
+    azurerm_role_assignment.uai_secondary_cognitive_services_user_general,
   ]
 }
 

@@ -1,9 +1,9 @@
 environment             = "prd"
 workload                = "agenthubspoke"
-region                  = "ne"
-location                = "northeurope"
-resource_group_workload = "rg-agenthubspoke-prd-ne"
-log_analytics_workspace = "log-agenthubspoke-prd-ne"
+region                  = "sdc"
+location                = "swedencentral"
+resource_group_workload = "rg-agenthubspoke-prd-sdc"
+log_analytics_workspace = "log-agenthubspoke-prd-sdc"
 subscription_id         = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
 
 address_space                     = ["10.1.0.0/16"]

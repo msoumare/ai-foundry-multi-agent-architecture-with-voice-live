@@ -25,7 +25,8 @@ parameters:
   values:
   - ne
   - eus
-
+  - sdc
+  
 variables:
 - group: ${{ parameters.workload }}.infra
 
