@@ -39,7 +39,7 @@ resource "azurerm_role_assignment" "uai_cognitive_services_user" {
 }
 
 resource "azurerm_role_assignment" "uai_secondary_cognitive_services_user" {
-  count = var.secondary_ai_services_resource_id != null ? 1 : 0
+  count = var.enable_secondary_ai_services_connection ? 1 : 0
 
   scope                = var.secondary_ai_services_resource_id
   role_definition_name = "Cognitive Services User"
@@ -126,7 +126,7 @@ resource "azapi_resource" "ai_services_connection" {
 #   secondary_ai_services_resource_id = null
 #   secondary_ai_services_endpoint    = null
 resource "azapi_resource" "secondary_ai_services_connection" {
-  count = var.secondary_ai_services_resource_id != null && var.secondary_ai_services_endpoint != null ? 1 : 0
+  count = var.enable_secondary_ai_services_connection ? 1 : 0
 
   type      = "Microsoft.MachineLearningServices/workspaces/connections@2024-10-01"
   name      = "ai-services-secondary-connection"

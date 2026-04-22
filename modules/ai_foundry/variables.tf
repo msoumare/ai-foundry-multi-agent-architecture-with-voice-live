@@ -69,6 +69,12 @@ variable "user_assigned_identity_principal_id" {
   type        = string
 }
 
+variable "enable_secondary_ai_services_connection" {
+  description = "Enable creation of the secondary AI Services role assignment and Foundry connection"
+  type        = bool
+  default     = false
+}
+
 variable "secondary_ai_services_resource_id" {
   description = "Optional resource ID of a secondary Azure AI Services account used when required model SKUs are unavailable in the primary region"
   type        = string

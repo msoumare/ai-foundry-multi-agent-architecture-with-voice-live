@@ -256,6 +256,7 @@ module "ai_foundry" {
   # Enable this secondary connection only when a required model/SKU is not available in
   # the primary Foundry region. For single-region deployments, set
   # enable_secondary_ai_services_connection = false and the extra connection is omitted.
+  enable_secondary_ai_services_connection = var.enable_secondary_ai_services_connection
   secondary_ai_services_resource_id    = var.enable_secondary_ai_services_connection ? module.ai_realtime.ai_realtime_id : null
   secondary_ai_services_endpoint       = var.enable_secondary_ai_services_connection ? module.ai_realtime.ai_realtime_endpoint : null
   tags = merge(var.tags, {
