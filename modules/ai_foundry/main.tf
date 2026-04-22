@@ -63,6 +63,22 @@ resource "azurerm_role_assignment" "uai_monitoring_contributor" {
   principal_type       = "ServicePrincipal"
 }
 
+# Required by AI Hub diagnostics on linked resources
+resource "azurerm_role_assignment" "uai_key_vault_ai_admin" {
+  scope                = var.key_vault_id
+  role_definition_name = "Azure AI Administrator"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Required by AI Hub diagnostics on linked resources
+resource "azurerm_role_assignment" "uai_app_insights_ai_admin" {
+  scope                = var.app_insights_id
+  role_definition_name = "Azure AI Administrator"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
 resource "azurerm_cognitive_account" "ai_services" {
   name                  = var.ai_services_name
   location              = var.location
@@ -139,7 +155,9 @@ resource "azapi_resource" "hub" {
     azurerm_role_assignment.uai_cognitive_services_user,
     azurerm_role_assignment.uai_cognitive_services_user_general,
     azurerm_role_assignment.uai_key_vault_admin,
-    azurerm_role_assignment.uai_monitoring_contributor
+    azurerm_role_assignment.uai_monitoring_contributor,
+    azurerm_role_assignment.uai_key_vault_ai_admin,
+    azurerm_role_assignment.uai_app_insights_ai_admin
   ]
 }
 
