@@ -46,6 +46,7 @@ variable "ai_services_id" {
 variable "ai_realtime_id" {
   description = "Secondary Azure AI Services resource ID for OpenAI role assignment"
   type        = string
+  default     = null
 }
 
 variable "tags" {

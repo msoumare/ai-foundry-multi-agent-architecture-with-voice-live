@@ -234,9 +234,15 @@ resource "azurerm_private_endpoint" "ai_services" {
   tags = var.tags
 
   # Wait for the Cognitive Services account to reach a terminal provisioning
-  # state before attempting the private endpoint. Without this, Terraform may
-  # race ahead while the account is still in "Accepted" state (400 Bad Request).
-  depends_on = [azurerm_cognitive_account.ai_services]
+  # state and complete its downstream dependency path before attempting the
+  # private endpoint. This reduces Accepted-state race conditions.
+  depends_on = [
+    azurerm_cognitive_account.ai_services,
+    azurerm_cognitive_deployment.gpt4o,
+    azurerm_cognitive_deployment.gpt41mini,
+    azapi_resource.ai_services_connection,
+    azapi_resource.project,
+  ]
 }
 
 resource "azurerm_private_endpoint" "storage_blob" {

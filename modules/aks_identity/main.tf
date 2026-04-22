@@ -58,6 +58,7 @@ resource "azurerm_role_assignment" "ai_services_openai_user" {
 
 # Azure OpenAI inference on the Sweden Central real-time AI Services account
 resource "azurerm_role_assignment" "ai_realtime_openai_user" {
+  count                = var.ai_realtime_id != null ? 1 : 0
   scope                = var.ai_realtime_id
   role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = azurerm_user_assigned_identity.this.principal_id
