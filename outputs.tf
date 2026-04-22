@@ -129,8 +129,8 @@ output "p2s_vpn_gateway_public_ip" {
   value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_public_ip : null
 }
 
-output "ai_realtime_endpoint" {
-  description = "AI Services endpoint for Voice Live API (gpt-4o-realtime-preview, Sweden Central)"
-  value       = module.ai_realtime.ai_realtime_endpoint
-}
+# output "ai_realtime_endpoint" {
+#   description = "AI Services endpoint for Voice Live API (gpt-4o-realtime-preview, Sweden Central)"
+#   value       = module.ai_realtime.ai_realtime_endpoint
+# }
 
