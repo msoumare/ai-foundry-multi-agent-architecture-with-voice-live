@@ -43,10 +43,10 @@ variable "ai_services_id" {
   type        = string
 }
 
-# variable "ai_realtime_id" {
-#   description = "Secondary Azure AI Services resource ID for OpenAI role assignment"
-#   type        = string
-# }
+variable "ai_realtime_id" {
+  description = "Secondary Azure AI Services resource ID for OpenAI role assignment"
+  type        = string
+}
 
 variable "tags" {
   description = "Resource tags"
