@@ -48,18 +48,17 @@ resource "azurerm_role_assignment" "ai_search_contributor" {
   principal_type       = "ServicePrincipal"
 }
 
-# Azure OpenAI inference on the primary Foundry-linked AI Services account
-resource "azurerm_role_assignment" "ai_services_openai_user" {
-  scope                = var.ai_services_id
+# Azure OpenAI inference on the Foundry-linked AI Services account for model deployments
+resource "azurerm_role_assignment" "foundry_openai_user" {
+  scope                = var.foundry_ai_services_id
   role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = azurerm_user_assigned_identity.this.principal_id
   principal_type       = "ServicePrincipal"
 }
 
-# Azure OpenAI inference on the Sweden Central real-time AI Services account
-resource "azurerm_role_assignment" "ai_realtime_openai_user" {
-  count                = var.ai_realtime_id != null ? 1 : 0
-  scope                = var.ai_realtime_id
+# Azure OpenAI inference on the Realtime AI Services account for audio/WebRTC endpoints
+resource "azurerm_role_assignment" "realtime_openai_user" {
+  scope                = var.realtime_ai_services_id
   role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = azurerm_user_assigned_identity.this.principal_id
   principal_type       = "ServicePrincipal"

@@ -314,16 +314,16 @@ module "identity" {
 module "aks_identity" {
   source = "./modules/aks_identity"
 
-  name                 = "id-aks-${var.workload}-${var.environment}-${var.region}"
-  location             = var.location
-  resource_group_name  = azurerm_resource_group.main.name
-  key_vault_id         = module.keyvault.id
-  acr_id               = module.acr.id
-  cosmos_db_account_id = module.cosmosdb.id
-  redis_id             = module.redis.id
-  ai_search_id         = module.ai_search.id
-  ai_services_id       = module.ai_foundry.ai_services_id
-  ai_realtime_id       = module.ai_realtime.ai_realtime_id
+  name                      = "id-aks-${var.workload}-${var.environment}-${var.region}"
+  location                  = var.location
+  resource_group_name       = azurerm_resource_group.main.name
+  key_vault_id              = module.keyvault.id
+  acr_id                    = module.acr.id
+  cosmos_db_account_id      = module.cosmosdb.id
+  redis_id                  = module.redis.id
+  ai_search_id              = module.ai_search.id
+  foundry_ai_services_id    = module.ai_foundry.ai_services_id
+  realtime_ai_services_id   = module.ai_realtime.ai_realtime_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

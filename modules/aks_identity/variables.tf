@@ -38,15 +38,14 @@ variable "ai_search_id" {
   type        = string
 }
 
-variable "ai_services_id" {
-  description = "Primary Azure AI Services resource ID for OpenAI role assignment"
+variable "foundry_ai_services_id" {
+  description = "Foundry-linked Azure AI Services resource ID for OpenAI role assignment"
   type        = string
 }
 
-variable "ai_realtime_id" {
-  description = "Secondary Azure AI Services resource ID for OpenAI role assignment"
+variable "realtime_ai_services_id" {
+  description = "Azure AI Realtime Services resource ID for OpenAI role assignment"
   type        = string
-  default     = null
 }
 
 variable "tags" {
