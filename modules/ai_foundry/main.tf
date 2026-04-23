@@ -89,6 +89,12 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
+
+  # Protect from accidental replacement/deletion caused by targeted applies
+  # or transient drift in dependent resources.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o" {
