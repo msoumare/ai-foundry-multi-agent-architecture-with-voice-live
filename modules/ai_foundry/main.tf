@@ -185,6 +185,37 @@ resource "azapi_resource" "ai_services_connection" {
   }
 }
 
+# Some Foundry workspace flows look up this legacy/default connection name
+# in the project workspace context.
+resource "azapi_resource" "ai_services_connection_project_alias" {
+  type      = "Microsoft.MachineLearningServices/workspaces/connections@2024-10-01"
+  name      = "ai-services-connection_aoai"
+  parent_id = azapi_resource.project.id
+
+  timeouts {
+    create = "30m"
+    delete = "60m"
+  }
+
+  body = {
+    properties = {
+      category      = "AIServices"
+      target        = azurerm_cognitive_account.ai_services.endpoint
+      authType      = "AAD"
+      isSharedToAll = true
+      metadata = {
+        ApiType    = "Azure"
+        ResourceId = azurerm_cognitive_account.ai_services.id
+      }
+    }
+  }
+
+  depends_on = [
+    azapi_resource.project,
+    azapi_resource.ai_services_connection,
+  ]
+}
+
 resource "azapi_resource" "project" {
   type      = "Microsoft.MachineLearningServices/workspaces@2024-10-01"
   name      = var.project_name
@@ -262,6 +293,7 @@ resource "azurerm_private_endpoint" "ai_services" {
     azurerm_cognitive_deployment.gpt4o,
     azurerm_cognitive_deployment.gpt41mini,
     azapi_resource.ai_services_connection,
+    azapi_resource.ai_services_connection_project_alias,
     azapi_resource.project,
   ]
 }
