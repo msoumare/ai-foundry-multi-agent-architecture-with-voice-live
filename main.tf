@@ -293,6 +293,22 @@ module "ai_foundry" {
   })
 }
 
+# --- Foundry Project (new model: Cognitive Services projects) ---
+module "ai_foundry_project" {
+  source = "./modules/ai_foundry_project"
+
+  name                   = "proj-${var.workload}-${var.environment}-${var.region}"
+  display_name           = "proj-${var.workload}-${var.environment}-${var.region}"
+  description            = "Foundry project for ${var.workload} ${var.environment} ${var.region}"
+  location               = var.location
+  ai_services_account_id = module.ai_foundry.ai_services_id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
 module "ai_realtime" {
   source = "./modules/ai_realtime"
