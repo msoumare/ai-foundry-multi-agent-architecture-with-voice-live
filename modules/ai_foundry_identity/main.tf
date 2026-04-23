@@ -29,6 +29,14 @@ resource "azurerm_role_assignment" "ai_search_contributor" {
   principal_type       = "ServicePrincipal"
 }
 
+# Azure AI Search management plane — for index/resource management workflows
+resource "azurerm_role_assignment" "ai_search_service_contributor" {
+  scope                = var.ai_search_id
+  role_definition_name = "Search Service Contributor"
+  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
 # Cosmos DB Built-in Data Contributor — for agents to access conversation history and state
 resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_data_contributor" {
   resource_group_name = var.resource_group_name

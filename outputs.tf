@@ -98,12 +98,6 @@ output "devops_ssh_private_key_secret_name" {
   value       = azurerm_key_vault_secret.devops_ssh_private_key.name
 }
 
-output "app_insights_connection_string" {
-  description = "Application Insights connection string"
-  value       = module.monitoring.app_insights_connection_string
-  sensitive   = true
-}
-
 output "ai_foundry_identity_client_id" {
   description = "Client ID of the Foundry User Assigned Identity"
   value       = module.ai_foundry_identity.client_id

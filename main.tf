@@ -244,7 +244,7 @@ module "ai_foundry_identity" {
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
-  storage_account_id  = module.monitoring.storage_account_id
+  storage_account_id  = module.storage.id
   ai_search_id        = module.ai_search.id
   cosmos_db_account_id = module.cosmosdb.id
   app_insights_id     = module.monitoring.app_insights_id
@@ -258,11 +258,28 @@ module "ai_foundry_identity" {
   depends_on = [module.ai_foundry]
 }
 
+# --- AI Foundry Storage ---
+module "storage" {
+  source = "./modules/storage"
+
+  name                       = lower(substr("st${var.workload}${var.environment}${var.region}", 0, 24))
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  storage_dns_zone_id        = module.vnet.storage_dns_zone_id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
 # --- AI Foundry (AI Services) ---
 module "ai_foundry" {
   source = "./modules/ai_foundry"
 
   ai_services_name           = "ai-${var.workload}-${var.environment}-${var.region}"
+  storage_account_id         = module.storage.id
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id

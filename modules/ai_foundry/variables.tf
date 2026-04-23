@@ -3,6 +3,11 @@ variable "ai_services_name" {
   type        = string
 }
 
+variable "storage_account_id" {
+  description = "Storage account resource ID for Foundry artifacts and datasets"
+  type        = string
+}
+
 variable "location" {
   description = "Azure region"
   type        = string
