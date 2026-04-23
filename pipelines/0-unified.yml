@@ -397,6 +397,7 @@ stages:
             -target=module.cosmosdb \
             -target=module.redis \
             -target=module.ai_foundry \
+            -target=module.ai_realtime \
             -target=module.ai_search \
             -target=module.identity \
             -target=module.aks \
