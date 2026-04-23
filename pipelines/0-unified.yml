@@ -396,10 +396,11 @@ stages:
             -target=module.acr \
             -target=module.cosmosdb \
             -target=module.redis \
+            -target=module.storage \
             -target=module.ai_foundry \
             -target=module.ai_realtime \
             -target=module.ai_search \
-            -target=module.identity \
+            -target=module.ai_foundry_identity \
             -target=module.aks \
             -target=azurerm_role_assignment.aks_acr_pull \
             -target=azurerm_key_vault_secret.devops_ssh_private_key \
