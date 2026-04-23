@@ -64,6 +64,11 @@ variable "hub_dns_zone_id" {
   type        = string
 }
 
+variable "hub_notebooks_dns_zone_id" {
+  description = "Private DNS zone ID for ML notebooks (privatelink.notebooks.azure.net)"
+  type        = string
+}
+
 variable "user_assigned_identity_id" {
   description = "Resource ID of the platform user-assigned managed identity (AI Foundry hub/project)"
   type        = string

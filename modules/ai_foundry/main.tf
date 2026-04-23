@@ -281,7 +281,10 @@ resource "azurerm_private_endpoint" "hub" {
 
   private_dns_zone_group {
     name                 = "dns-af-${var.hub_name}"
-    private_dns_zone_ids = [var.hub_dns_zone_id]
+    private_dns_zone_ids = [
+      var.hub_dns_zone_id,
+      var.hub_notebooks_dns_zone_id,
+    ]
   }
 
   tags = var.tags
