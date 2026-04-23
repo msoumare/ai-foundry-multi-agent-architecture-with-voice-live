@@ -213,6 +213,27 @@ resource "azapi_resource" "project" {
   depends_on = [azapi_resource.hub]
 }
 
+# Foundry service-to-service calls use the workspace identity against ARM.
+# Grant least-privilege read access on hub/project so listing online endpoints
+# does not fail with 403 when the workspace runs with only UAI.
+resource "azurerm_role_assignment" "uai_hub_reader" {
+  scope                = azapi_resource.hub.id
+  role_definition_name = "Reader"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+
+  depends_on = [azapi_resource.hub]
+}
+
+resource "azurerm_role_assignment" "uai_project_reader" {
+  scope                = azapi_resource.project.id
+  role_definition_name = "Reader"
+  principal_id         = var.user_assigned_identity_principal_id
+  principal_type       = "ServicePrincipal"
+
+  depends_on = [azapi_resource.project]
+}
+
 resource "azurerm_private_endpoint" "ai_services" {
   name                = "pe-ai-${var.ai_services_name}"
   location            = var.location
