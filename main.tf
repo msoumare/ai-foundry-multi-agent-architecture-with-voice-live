@@ -1,27 +1,5 @@
 data "azurerm_client_config" "current" {}
 
-# Import blocks for manually-created DNS resources (safe to remove after first successful apply)
-import {
-  to = module.vnet.azurerm_private_dns_zone.ai_openai
-  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com"
-}
-
-import {
-  to = module.vnet.azurerm_private_dns_zone.ai_services_ai
-  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.services.ai.azure.com"
-}
-
-import {
-  to = module.vnet.azurerm_private_dns_zone_virtual_network_link.ai_openai
-  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com/virtualNetworkLinks/link-openai-agenthubspoke-dev-swedencentral"
-}
-
-import {
-  to = module.vnet.azurerm_private_dns_zone_virtual_network_link.ai_services_ai
-  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.services.ai.azure.com/virtualNetworkLinks/link-servicesai-agenthubspoke-dev-swedencentral"
-}
-
-
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.workload}-${var.environment}-${var.region}"
   location = var.location
@@ -258,34 +236,22 @@ module "redis" {
   })
 }
 
-# --- AI Foundry (AI Services + Hub + Project + Storage) ---
+# --- AI Foundry (AI Services) ---
 module "ai_foundry" {
   source = "./modules/ai_foundry"
 
-  hub_name                            = "af-hub-${var.workload}-${var.environment}-${var.region}"
-  project_name                        = "af-proj-${var.workload}-${var.environment}-${var.region}"
-  ai_services_name                    = "ai-${var.workload}-${var.environment}-${var.region}"
-  storage_account_name                = substr(replace("st${var.workload}${var.environment}${var.region}", "-", ""), 0, 24)
-  location                            = var.location
-  resource_group_name                 = azurerm_resource_group.main.name
-  key_vault_id                        = module.keyvault.id
-  app_insights_id                     = module.monitoring.app_insights_id
-  private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
-  ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
-  ai_openai_dns_zone_id               = module.vnet.ai_openai_dns_zone_id
-  ai_services_ai_dns_zone_id          = module.vnet.ai_services_ai_dns_zone_id
-  storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
-  hub_dns_zone_id                     = module.vnet.ml_workspace_dns_zone_id
-  hub_notebooks_dns_zone_id           = module.vnet.ml_notebooks_dns_zone_id
-  user_assigned_identity_id           = module.identity.id
-  user_assigned_identity_principal_id = module.identity.principal_id
+  ai_services_name           = "ai-${var.workload}-${var.environment}-${var.region}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
+  ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
+  ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
+  ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
     managed-by  = "terraform"
   })
-
-  depends_on = [module.identity]
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
@@ -310,24 +276,8 @@ module "ai_search" {
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
   sku                        = "basic"
-  ai_foundry_hub_id          = module.ai_foundry.hub_id
   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
   search_dns_zone_id         = module.vnet.search_dns_zone_id
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-# --- Platform Identity (AI Foundry Hub/Project) ---
-module "identity" {
-  source = "./modules/identity"
-
-  name                = "id-foundry-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  key_vault_id        = module.keyvault.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

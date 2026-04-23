@@ -204,33 +204,6 @@ resource "azurerm_private_dns_zone_virtual_network_link" "log_analytics" {
   virtual_network_id    = azurerm_virtual_network.workload.id
 }
 
-# Azure ML / AI Foundry Hub workspace
-resource "azurerm_private_dns_zone" "ml_workspace" {
-  name                = "privatelink.api.azureml.ms"
-  resource_group_name = var.resource_group_name
-  tags                = var.tags
-}
-
-resource "azurerm_private_dns_zone" "ml_notebooks" {
-  name                = "privatelink.notebooks.azure.net"
-  resource_group_name = var.resource_group_name
-  tags                = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "ml_workspace" {
-  name                  = "link-aml-${var.workload}-${var.env}-${var.region}"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.ml_workspace.name
-  virtual_network_id    = azurerm_virtual_network.workload.id
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "ml_notebooks" {
-  name                  = "link-nb-${var.workload}-${var.env}-${var.region}"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.ml_notebooks.name
-  virtual_network_id    = azurerm_virtual_network.workload.id
-}
-
 # NAT Gateway for DevOps subnet egress
 resource "azurerm_public_ip" "nat_gateway" {
   name                = "pip-nat-${var.workload}-${var.env}-${var.region}"

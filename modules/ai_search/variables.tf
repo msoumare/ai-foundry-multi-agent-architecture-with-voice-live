@@ -19,11 +19,6 @@ variable "sku" {
   default     = "basic"
 }
 
-variable "ai_foundry_hub_id" {
-  description = "AI Foundry Hub resource ID for private link"
-  type        = string
-}
-
 variable "tags" {
   description = "Resource tags"
   type        = map(string)
