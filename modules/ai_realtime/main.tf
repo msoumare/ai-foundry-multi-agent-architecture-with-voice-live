@@ -22,13 +22,13 @@ resource "azurerm_cognitive_account" "ai_realtime" {
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o_realtime" {
-  name                 = "gpt-4o-realtime-preview"
+  name                 = "gpt-4o-realtime"
   cognitive_account_id = azurerm_cognitive_account.ai_realtime.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-4o-realtime-preview"
-    version = "2024-12-17"
+    name    = "gpt-4o-realtime"
+    version = "2025-08-28"
   }
 
   sku {
