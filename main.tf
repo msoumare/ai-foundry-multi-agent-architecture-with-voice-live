@@ -1,5 +1,27 @@
 data "azurerm_client_config" "current" {}
 
+# Import blocks for manually-created DNS resources (safe to remove after first successful apply)
+import {
+  to = module.vnet.azurerm_private_dns_zone.ai_openai
+  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com"
+}
+
+import {
+  to = module.vnet.azurerm_private_dns_zone.ai_services_ai
+  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.services.ai.azure.com"
+}
+
+import {
+  to = module.vnet.azurerm_private_dns_zone_virtual_network_link.ai_openai
+  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com/virtualNetworkLinks/link-openai-agenthubspoke-dev-swedencentral"
+}
+
+import {
+  to = module.vnet.azurerm_private_dns_zone_virtual_network_link.ai_services_ai
+  id = "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-sdc/providers/Microsoft.Network/privateDnsZones/privatelink.services.ai.azure.com/virtualNetworkLinks/link-servicesai-agenthubspoke-dev-swedencentral"
+}
+
+
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.workload}-${var.environment}-${var.region}"
   location = var.location
