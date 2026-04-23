@@ -121,7 +121,6 @@ stages:
             -target=module.redis \
             -target=module.storage \
             -target=module.ai_foundry \
-            -target=module.ai_foundry_project \
             -target=module.ai_realtime \
             -target=module.ai_search \
             -target=module.ai_foundry_identity \

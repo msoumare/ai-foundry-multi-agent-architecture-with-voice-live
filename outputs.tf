@@ -103,16 +103,6 @@ output "ai_foundry_identity_client_id" {
   value       = module.ai_foundry_identity.client_id
 }
 
-output "ai_foundry_project_name" {
-  description = "Foundry project name (new model)"
-  value       = module.ai_foundry_project.name
-}
-
-output "ai_foundry_project_id" {
-  description = "Foundry project resource ID (new model)"
-  value       = module.ai_foundry_project.id
-}
-
 output "p2s_vpn_gateway_id" {
   description = "Point-to-Site VPN gateway resource ID"
   value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_id : null
