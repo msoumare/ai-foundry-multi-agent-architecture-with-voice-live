@@ -3,6 +3,9 @@ terraform {
     azurerm = {
       source = "hashicorp/azurerm"
     }
+    azapi = {
+      source = "azure/azapi"
+    }
   }
 }
 
@@ -16,6 +19,19 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
+}
+
+resource "azapi_update_resource" "ai_services_project_management" {
+  type        = "Microsoft.CognitiveServices/accounts@2024-10-01"
+  resource_id = azurerm_cognitive_account.ai_services.id
+
+  body = {
+    properties = {
+      allowProjectManagement = true
+    }
+  }
+
+  depends_on = [azurerm_cognitive_account.ai_services]
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o" {

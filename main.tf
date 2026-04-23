@@ -307,6 +307,8 @@ module "ai_foundry_project" {
     workload    = var.workload
     managed-by  = "terraform"
   })
+
+  depends_on = [module.ai_foundry]
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
