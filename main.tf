@@ -269,7 +269,6 @@ module "ai_foundry" {
   ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
   ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
   ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
-  user_assigned_identity_id  = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -284,7 +283,6 @@ module "ai_realtime" {
   ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
-  user_assigned_identity_id = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

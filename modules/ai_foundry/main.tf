@@ -16,11 +16,6 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [var.user_assigned_identity_id]
-  }
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o" {

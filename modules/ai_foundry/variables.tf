@@ -39,9 +39,4 @@ variable "ai_services_ai_dns_zone_id" {
   type        = string
 }
 
-variable "user_assigned_identity_id" {
-  description = "User Assigned Identity resource ID for Foundry agents"
-  type        = string
-}
-
 
