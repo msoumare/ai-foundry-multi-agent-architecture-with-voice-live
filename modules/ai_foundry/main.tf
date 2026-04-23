@@ -280,7 +280,11 @@ resource "azurerm_private_endpoint" "ai_services" {
 
   private_dns_zone_group {
     name                 = "dns-ai-${var.ai_services_name}"
-    private_dns_zone_ids = [var.ai_services_dns_zone_id]
+    private_dns_zone_ids = [
+      var.ai_services_dns_zone_id,
+      var.ai_openai_dns_zone_id,
+      var.ai_services_ai_dns_zone_id,
+    ]
   }
 
   tags = var.tags

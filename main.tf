@@ -250,6 +250,8 @@ module "ai_foundry" {
   app_insights_id                     = module.monitoring.app_insights_id
   private_endpoint_subnet_id          = module.vnet.private_endpoints_subnet_id
   ai_services_dns_zone_id             = module.vnet.ai_services_dns_zone_id
+  ai_openai_dns_zone_id               = module.vnet.ai_openai_dns_zone_id
+  ai_services_ai_dns_zone_id          = module.vnet.ai_services_ai_dns_zone_id
   storage_dns_zone_id                 = module.vnet.storage_dns_zone_id
   hub_dns_zone_id                     = module.vnet.ml_workspace_dns_zone_id
   hub_notebooks_dns_zone_id           = module.vnet.ml_notebooks_dns_zone_id

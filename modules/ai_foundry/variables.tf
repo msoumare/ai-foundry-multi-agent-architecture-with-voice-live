@@ -54,6 +54,16 @@ variable "ai_services_dns_zone_id" {
   type        = string
 }
 
+variable "ai_openai_dns_zone_id" {
+  description = "Private DNS zone ID for OpenAI (privatelink.openai.azure.com)"
+  type        = string
+}
+
+variable "ai_services_ai_dns_zone_id" {
+  description = "Private DNS zone ID for Services AI (privatelink.services.ai.azure.com)"
+  type        = string
+}
+
 variable "storage_dns_zone_id" {
   description = "Private DNS zone ID for Storage Blob (privatelink.blob.core.windows.net)"
   type        = string

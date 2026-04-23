@@ -115,6 +115,18 @@ resource "azurerm_private_dns_zone" "ai_services" {
   tags                = var.tags
 }
 
+resource "azurerm_private_dns_zone" "ai_openai" {
+  name                = "privatelink.openai.azure.com"
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_zone" "ai_services_ai" {
+  name                = "privatelink.services.ai.azure.com"
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
 resource "azurerm_private_dns_zone" "log_analytics" {
   name                = "privatelink.oms.opinsights.azure.com"
   resource_group_name = var.resource_group_name
@@ -168,6 +180,20 @@ resource "azurerm_private_dns_zone_virtual_network_link" "ai_services" {
   name                  = "link-ais-${var.workload}-${var.env}-${var.region}"
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.ai_services.name
+  virtual_network_id    = azurerm_virtual_network.workload.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "ai_openai" {
+  name                  = "link-openai-${var.workload}-${var.env}-${var.region}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.ai_openai.name
+  virtual_network_id    = azurerm_virtual_network.workload.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "ai_services_ai" {
+  name                  = "link-servicesai-${var.workload}-${var.env}-${var.region}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.ai_services_ai.name
   virtual_network_id    = azurerm_virtual_network.workload.id
 }
 

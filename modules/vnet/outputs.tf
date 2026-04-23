@@ -63,6 +63,16 @@ output "ai_services_dns_zone_id" {
   value       = azurerm_private_dns_zone.ai_services.id
 }
 
+output "ai_openai_dns_zone_id" {
+  description = "OpenAI private DNS zone ID"
+  value       = azurerm_private_dns_zone.ai_openai.id
+}
+
+output "ai_services_ai_dns_zone_id" {
+  description = "Services AI private DNS zone ID"
+  value       = azurerm_private_dns_zone.ai_services_ai.id
+}
+
 output "log_analytics_dns_zone_id" {
   description = "Log Analytics private DNS zone ID"
   value       = azurerm_private_dns_zone.log_analytics.id
