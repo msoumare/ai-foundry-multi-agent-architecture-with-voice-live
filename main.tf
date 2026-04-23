@@ -236,19 +236,26 @@ module "redis" {
   })
 }
 
-# --- Platform Identity (AI Foundry) ---
-module "identity" {
-  source = "./modules/identity"
+# --- Foundry Identity (AI Foundry agents) ---
+module "ai_foundry_identity" {
+  source = "./modules/ai_foundry_identity"
 
   name                = "id-foundry-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
+  storage_account_id  = module.monitoring.storage_account_id
+  ai_search_id        = module.ai_search.id
+  cosmos_db_account_id = module.cosmosdb.id
+  app_insights_id     = module.monitoring.app_insights_id
+  ai_services_id      = module.ai_foundry.ai_services_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
     managed-by  = "terraform"
   })
+
+  depends_on = [module.ai_foundry]
 }
 
 # --- AI Foundry (AI Services) ---
@@ -262,7 +269,7 @@ module "ai_foundry" {
   ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
   ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
   ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
-  user_assigned_identity_id  = module.identity.id
+  user_assigned_identity_id  = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -277,7 +284,7 @@ module "ai_realtime" {
   ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
-  user_assigned_identity_id = module.identity.id
+  user_assigned_identity_id = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

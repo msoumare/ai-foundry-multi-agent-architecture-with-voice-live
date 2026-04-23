@@ -104,9 +104,9 @@ output "app_insights_connection_string" {
   sensitive   = true
 }
 
-output "foundry_identity_client_id" {
+output "ai_foundry_identity_client_id" {
   description = "Client ID of the Foundry User Assigned Identity"
-  value       = module.identity.client_id
+  value       = module.ai_foundry_identity.client_id
 }
 
 output "p2s_vpn_gateway_id" {
