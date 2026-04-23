@@ -6,7 +6,7 @@ terraform {
   }
 }
 
-# AI Services account in Sweden Central for the Voice Live API (gpt-4o-realtime-preview).
+# AI Services account in Sweden Central for the Voice Live API (gpt-realtime).
 # Public network access is enabled because real-time audio (WebRTC) connections originate
 # from end-user clients and cannot be routed over the private VNet.
 resource "azurerm_cognitive_account" "ai_realtime" {
@@ -22,13 +22,13 @@ resource "azurerm_cognitive_account" "ai_realtime" {
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o_realtime" {
-  name                 = "gpt-4o-realtime-preview"
+  name                 = "gpt-realtime"
   cognitive_account_id = azurerm_cognitive_account.ai_realtime.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-4o-realtime-preview"
-    version = "2025-06-03"
+    name    = "gpt-realtime"
+    version = "2025-08-28"
   }
 
   sku {
