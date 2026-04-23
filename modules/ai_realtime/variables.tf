@@ -18,3 +18,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "user_assigned_identity_id" {
+  description = "User Assigned Identity resource ID for Foundry agents"
+  type        = string
+}

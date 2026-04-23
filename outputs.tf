@@ -104,18 +104,8 @@ output "app_insights_connection_string" {
   sensitive   = true
 }
 
-output "ai_foundry_hub_name" {
-  description = "AI Foundry Hub name"
-  value       = module.ai_foundry.hub_name
-}
-
-output "ai_foundry_project_name" {
-  description = "AI Foundry Project name"
-  value       = module.ai_foundry.project_name
-}
-
-output "managed_identity_client_id" {
-  description = "Client ID of the User Assigned Managed Identity"
+output "foundry_identity_client_id" {
+  description = "Client ID of the Foundry User Assigned Identity"
   value       = module.identity.client_id
 }
 
