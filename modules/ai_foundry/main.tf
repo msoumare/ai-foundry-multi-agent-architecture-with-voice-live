@@ -16,6 +16,12 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled    = false
   public_network_access_enabled = false
   tags                  = var.tags
+
+  lifecycle {
+    # Temporary guard: keep the existing account in place while projects under the account
+    # are not managed by Terraform.
+    ignore_changes = all
+  }
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o" {
