@@ -21,7 +21,7 @@ resource "azurerm_cognitive_account" "ai_realtime" {
   tags                          = var.tags
 
   lifecycle {
-    prevent_destroy = var.prevent_ai_services_destroy
+    prevent_destroy = true
   }
 }
 

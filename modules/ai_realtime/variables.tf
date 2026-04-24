@@ -3,12 +3,6 @@ variable "ai_services_name" {
   type        = string
 }
 
-variable "prevent_ai_services_destroy" {
-  description = "Prevent accidental destroy/replace of the real-time AI Services account"
-  type        = bool
-  default     = true
-}
-
 variable "location" {
   description = "Azure region"
   type        = string
