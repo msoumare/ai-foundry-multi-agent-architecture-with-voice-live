@@ -3,6 +3,12 @@ variable "ai_services_name" {
   type        = string
 }
 
+variable "prevent_ai_services_destroy" {
+  description = "Prevent accidental destroy/replace of the AI Services account"
+  type        = bool
+  default     = true
+}
+
 variable "storage_account_id" {
   description = "Storage account resource ID for Foundry artifacts and datasets"
   type        = string

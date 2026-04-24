@@ -19,6 +19,10 @@ resource "azurerm_cognitive_account" "ai_realtime" {
   local_auth_enabled            = false
   public_network_access_enabled = true
   tags                          = var.tags
+
+  lifecycle {
+    prevent_destroy = var.prevent_ai_services_destroy
+  }
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o_realtime" {
