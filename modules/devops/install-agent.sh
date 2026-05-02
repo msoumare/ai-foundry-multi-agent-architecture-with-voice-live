@@ -44,14 +44,7 @@ echo "[$(date)] Helm installed: $(helm version --short)"
 # Install kubelogin (quick - ~10s)
 echo "[$(date)] Installing kubelogin..."
 curl --connect-timeout 30 --max-time 300 -LO "https://github.com/Azure/kubelogin/releases/download/v0.0.25/kubelogin-linux-amd64.zip"
-if command -v unzip >/dev/null 2>&1; then
-	unzip -q -j "kubelogin-linux-amd64.zip" -d /usr/local/bin
-else
-	echo "[$(date)] unzip not found, falling back to bsdtar..."
-	bsdtar -xvf "kubelogin-linux-amd64.zip" -C /tmp >/dev/null
-	install -o root -g root -m 0755 /tmp/bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
-	rm -rf /tmp/bin
-fi
+unzip -q -j "kubelogin-linux-amd64.zip" -d /usr/local/bin
 rm -f kubelogin-linux-amd64.zip
 echo "[$(date)] kubelogin installed: $(kubelogin --version)"
 

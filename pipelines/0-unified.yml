@@ -360,23 +360,6 @@ stages:
     steps:
     - checkout: self
 
-    - bash: |
-        set -e
-        if command -v unzip >/dev/null 2>&1; then
-          echo "unzip already available: $(command -v unzip)"
-          exit 0
-        fi
-
-        echo "Installing unzip for TerraformInstaller..."
-        if command -v sudo >/dev/null 2>&1; then
-          sudo apt-get update -y
-          sudo apt-get install -y unzip
-        else
-          apt-get update -y
-          apt-get install -y unzip
-        fi
-      displayName: "Ensure unzip is installed"
-
     - task: TerraformInstaller@1
       displayName: "Install Terraform"
       inputs:
@@ -448,23 +431,6 @@ stages:
         deploy:
           steps:
           - checkout: self
-
-          - bash: |
-              set -e
-              if command -v unzip >/dev/null 2>&1; then
-                echo "unzip already available: $(command -v unzip)"
-                exit 0
-              fi
-
-              echo "Installing unzip for TerraformInstaller..."
-              if command -v sudo >/dev/null 2>&1; then
-                sudo apt-get update -y
-                sudo apt-get install -y unzip
-              else
-                apt-get update -y
-                apt-get install -y unzip
-              fi
-            displayName: "Ensure unzip is installed"
 
           - task: TerraformInstaller@1
             displayName: "Install Terraform"
