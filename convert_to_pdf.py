@@ -16,8 +16,8 @@ def convert_markdown_to_pdf():
     """Convert white paper markdown to PDF"""
     from pathlib import Path
     script_dir = Path(__file__).parent
-    md_file = script_dir / "docs" / "white-paper-ai-foundry-hub-spoke.md"
-    pdf_file = script_dir / "docs" / "white-paper-ai-foundry-hub-spoke.pdf"
+    md_file = script_dir / "docs" / "white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.md"
+    pdf_file = script_dir / "docs" / "white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.pdf"
     
     if not md_file.exists():
         print(f"Error: Markdown file not found at {md_file}")

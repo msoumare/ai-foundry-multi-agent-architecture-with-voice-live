@@ -5,6 +5,7 @@ resource "azurerm_user_assigned_identity" "foundry" {
   tags                = var.tags
 }
 
+
 # Key Vault Secrets User — for Foundry agents to access secrets and API keys
 resource "azurerm_role_assignment" "kv_secrets_user" {
   scope                = var.key_vault_id
@@ -18,6 +19,14 @@ resource "azurerm_role_assignment" "storage_blob_data_contributor" {
   scope                = var.storage_account_id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# ACR repository pull access for hosted agent images
+resource "azurerm_role_assignment" "acr_repository_reader" {
+  scope                = var.acr_id
+  role_definition_name = "Container Registry Repository Reader"
+  principal_id         = var.foundry_project_principal_id
   principal_type       = "ServicePrincipal"
 }
 

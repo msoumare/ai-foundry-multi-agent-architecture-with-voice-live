@@ -23,6 +23,17 @@ variable "storage_account_id" {
   type        = string
 }
 
+variable "acr_id" {
+  description = "Container Registry resource ID for hosted agent image pulls"
+  type        = string
+}
+
+variable "foundry_project_principal_id" {
+  description = "Object ID of the Foundry project managed identity (used for hosted agent ACR pulls)"
+  type        = string
+  default     = ""
+}
+
 variable "ai_search_id" {
   description = "Azure AI Search service resource ID"
   type        = string

@@ -66,8 +66,8 @@ def markdown_to_html(md_content):
 def convert_to_html():
     """Convert white paper markdown to HTML"""
     script_dir = Path(__file__).parent
-    md_file = script_dir / "docs" / "white-paper-ai-foundry-hub-spoke.md"
-    html_file = script_dir / "docs" / "white-paper-ai-foundry-hub-spoke.html"
+    md_file = script_dir / "docs" / "white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.md"
+    html_file = script_dir / "docs" / "white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.html"
     
     if not md_file.exists():
         print(f"Error: Markdown file not found at {md_file}")
@@ -88,7 +88,7 @@ def convert_to_html():
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AI Foundry Hub and Spoke Design Pattern for Multi-Agent Systems</title>
+    <title>AI Foundry Multi-Agent Systems: Hub API with Agent Framework & Spokes with Agent Service</title>
     <style>
         :root {{
             --primary-color: #0078d4;
@@ -307,7 +307,7 @@ def convert_to_html():
         <div class="footer">
             <p><strong>Document Information:</strong></p>
             <ul>
-                <li><strong>Title:</strong> AI Foundry Hub and Spoke Design Pattern for Multi-Agent Systems</li>
+                <li><strong>Title:</strong> AI Foundry Multi-Agent Systems: Hub API with Agent Framework & Spokes with Agent Service</li>
                 <li><strong>Version:</strong> 0.1 (Draft)</li>
                 <li><strong>Generated:</strong> April 18, 2026</li>
                 <li><strong>Repository:</strong> <code>ai-agent-hub-spoke/infrastructure</code></li>
@@ -329,7 +329,7 @@ def convert_to_html():
     print(f"3. Select 'Save as PDF'")
     print(f"4. Set margins to 0.5 inches")
     print(f"5. Enable 'Background graphics'")
-    print(f"6. Save as 'white-paper-ai-foundry-hub-spoke.pdf'")
+    print(f"6. Save as 'white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.pdf'")
     
     return True
 

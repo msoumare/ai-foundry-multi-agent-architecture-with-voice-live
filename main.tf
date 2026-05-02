@@ -245,6 +245,8 @@ module "ai_foundry_identity" {
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
   storage_account_id  = module.storage.id
+  acr_id              = module.acr.id
+  foundry_project_principal_id = var.foundry_project_principal_id
   ai_search_id        = module.ai_search.id
   cosmos_db_account_id = module.cosmosdb.id
   app_insights_id     = module.monitoring.app_insights_id

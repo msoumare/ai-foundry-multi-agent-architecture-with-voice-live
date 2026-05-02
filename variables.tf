@@ -3,6 +3,12 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "foundry_project_principal_id" {
+  description = "Object ID of the Foundry project managed identity used for hosted agent image pulls"
+  type        = string
+  default     = ""
+}
+
 variable "region" {
   description = "Short region code (ne, eus)"
   type        = string

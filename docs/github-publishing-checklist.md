@@ -26,7 +26,7 @@ Use this checklist before making the repository public.
   - quick start
   - security model
 - Include this white paper draft:
-  - `docs/white-paper-ai-foundry-hub-spoke.md`
+  - `docs/white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-spokes-with-agent-service.md`
 - Add diagrams (PNG/SVG) in a future `docs/diagrams/` folder for publishing platforms that do not render Mermaid.
 
 ## 4. Security Guardrails

@@ -1,6 +1,6 @@
-# AI Foundry Hub-and-Spoke Multi-Agent Infrastructure
+# AI Foundry Multi-Agent Systems: Hub API with Agent Framework & Domain Agents with Agent Service Infrastructure
 
-This repository provisions a secure Azure foundation for a hub-and-spoke multi-agent system using Terraform.
+This repository provisions a secure Azure foundation for a Hub API with Agent Framework & Domain Agents with Agent Service multi-agent system using Terraform.
 
 The core idea is:
 - The Hub exposes a FastAPI endpoint.
@@ -252,13 +252,15 @@ Notes:
   - `modules/monitoring`: Log Analytics + Application Insights
   - `modules/acr`: private Azure Container Registry
   - `modules/ai_foundry`: AI Foundry Hub/Project + AI Services + storage
-  - `modules/ai_search`: Azure AI Search for retrieval-enabled spokes
-  - `modules/identity`: platform identity for Foundry hub/project
-  - `modules/aks_identity`: workload identity for AKS spokes
-  - `modules/aks`: private AKS cluster for hub and spoke services
+  - `modules/ai_realtime`: optional Azure AI Realtime resource for low-latency speech and streaming scenarios
+  - `modules/ai_search`: Azure AI Search for retrieval-enabled Domain Agents
+  - `modules/ai_foundry_identity`: platform identity for Foundry hub/project
+  - `modules/aks_identity`: workload identity for AKS Domain Agents
+  - `modules/devops_identity`: identity used by private CI/CD agent infrastructure
+  - `modules/aks`: private AKS cluster for Hub API with Agent Framework & Domain Agents with Agent Service workloads
   - `modules/cosmosdb`: conversation/state persistence
   - `modules/redis`: low-latency cache/session support
-  - `modules/devops_identity`, `modules/devops`: CI/CD build agents (optional path)
+  - `modules/devops`: CI/CD build agents (optional path)
 - Pipelines:
   - `pipelines/0-unified.yml` (staged Terraform plan/apply orchestration)
   - `pipelines/3-devops.yml` (hosted agent stage for DevOps infra only; does not write Key Vault secrets when vault is private-only)
@@ -378,15 +380,16 @@ Track route quality and runtime health separately:
   - Explicit role assignments for Key Vault, ACR, AI Search, and Cosmos DB
 - AI platform:
   - AI Foundry Hub and Project resources (via `azapi`)
+  - Optional Azure AI Realtime resource for realtime interaction workloads
   - AI Services connection bound into Foundry workspace
 - Runtime and data services:
-  - AKS for hosting hub and spoke services
+  - AKS for hosting Hub API with Agent Framework & Domain Agents with Agent Service workloads
   - Cosmos DB + Redis + AI Search for state, caching, and retrieval
 
 ## White Paper
 
 A full white paper draft is included at:
-- `docs/white-paper-ai-foundry-hub-spoke.md`
+- `docs/white-paper-ai-foundry-multi-agent-systems-hub-api-with-agent-framework-and-Domain Agents-with-agent-service.md`
 
 A publishing checklist is included at:
 - `docs/github-publishing-checklist.md`

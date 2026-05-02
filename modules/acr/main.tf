@@ -4,7 +4,8 @@ resource "azurerm_container_registry" "this" {
   resource_group_name = var.resource_group_name
   sku                 = "Premium"
   admin_enabled       = false
-  public_network_access_enabled = false
+  # Hosted agents require the ACR public endpoint to remain reachable for image pulls.
+  public_network_access_enabled = true
   tags                = var.tags
 }
 
