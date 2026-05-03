@@ -79,6 +79,31 @@ stages:
           steps:
           - checkout: self
 
+          - bash: |
+              set -e
+              required_tools=(az unzip terraform kubectl helm kubelogin curl jq wget gpg lsb_release)
+              missing_tools=()
+
+              for tool in "${required_tools[@]}"; do
+                if ! command -v "$tool" >/dev/null 2>&1; then
+                  missing_tools+=("$tool")
+                fi
+              done
+
+              if [[ ${#missing_tools[@]} -eq 0 ]]; then
+                echo "All required tools already exist. Skipping bootstrap."
+                exit 0
+              fi
+
+              echo "Missing tools: ${missing_tools[*]}"
+              echo "Running agent tooling bootstrap..."
+              if command -v sudo >/dev/null 2>&1; then
+                sudo bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
+              else
+                bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
+              fi
+            displayName: "Run agent bootstrap script"
+
           - task: TerraformInstaller@1
             displayName: "Install Terraform"
             inputs:
