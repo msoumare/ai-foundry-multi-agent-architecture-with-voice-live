@@ -55,14 +55,6 @@ resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_data_contributor" {
   scope               = var.cosmos_db_account_id
 }
 
-# Monitoring Contributor — for Application Insights telemetry and tracing
-resource "azurerm_role_assignment" "monitoring_contributor" {
-  scope                = var.app_insights_id
-  role_definition_name = "Monitoring Contributor"
-  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
-  principal_type       = "ServicePrincipal"
-}
-
 # Cognitive Services User — general access to AI Services account
 resource "azurerm_role_assignment" "cognitive_services_user" {
   scope                = var.ai_services_id

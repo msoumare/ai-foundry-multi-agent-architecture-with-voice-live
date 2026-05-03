@@ -44,11 +44,6 @@ variable "cosmos_db_account_id" {
   type        = string
 }
 
-variable "app_insights_id" {
-  description = "Application Insights resource ID"
-  type        = string
-}
-
 variable "ai_services_id" {
   description = "AI Services (Foundry) resource ID"
   type        = string

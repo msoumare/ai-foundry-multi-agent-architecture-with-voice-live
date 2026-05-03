@@ -13,7 +13,7 @@ resource "azurerm_application_insights" "this" {
   resource_group_name = var.resource_group_name
   workspace_id        = azurerm_log_analytics_workspace.this.id
   application_type    = "web"
-  local_authentication_disabled = true
+  local_authentication_disabled = false
   tags                = var.tags
 }
 

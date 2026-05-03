@@ -249,7 +249,6 @@ module "ai_foundry_identity" {
   foundry_project_principal_id = var.foundry_project_principal_id
   ai_search_id        = module.ai_search.id
   cosmos_db_account_id = module.cosmosdb.id
-  app_insights_id     = module.monitoring.app_insights_id
   ai_services_id      = module.ai_foundry.ai_services_id
   tags = merge(var.tags, {
     environment = var.environment
