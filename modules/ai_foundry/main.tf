@@ -86,3 +86,17 @@ resource "azurerm_private_endpoint" "ai_services" {
     azurerm_cognitive_deployment.gpt41mini,
   ]
 }
+
+resource "azurerm_monitor_diagnostic_setting" "ai_services" {
+  name                       = "diag-${var.ai_services_name}"
+  target_resource_id         = azurerm_cognitive_account.ai_services.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}

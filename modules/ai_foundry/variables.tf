@@ -8,6 +8,11 @@ variable "storage_account_id" {
   type        = string
 }
 
+variable "log_analytics_workspace_id" {
+  description = "Log Analytics workspace resource ID used for AI Services diagnostics"
+  type        = string
+}
+
 variable "location" {
   description = "Azure region"
   type        = string

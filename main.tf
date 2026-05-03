@@ -282,6 +282,7 @@ module "ai_foundry" {
 
   ai_services_name           = "ai-${var.workload}-${var.environment}-${var.region}"
   storage_account_id         = module.storage.id
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
