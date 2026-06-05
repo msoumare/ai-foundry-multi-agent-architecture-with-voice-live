@@ -296,17 +296,41 @@ module "ai_foundry" {
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
-module "ai_realtime" {
-  source = "./modules/ai_realtime"
+module "ai_realtime_model_mode" {
+  source = "./modules/ai_realtime_model_mode"
 
-  ai_services_name    = "ai-rt-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
+  ai_services_name          = "ai-rt-${var.workload}-${var.environment}-${var.region}"
+  location                  = var.location
+  resource_group_name       = azurerm_resource_group.main.name
+  user_assigned_identity_id = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
     managed-by  = "terraform"
   })
+}
+
+module "ai_realtime_agent_mode" {
+  source = "./modules/ai_realtime_agent_mode"
+
+  ai_services_name          = substr("ai-rtag-${var.workload}-${var.environment}-${var.region}", 0, 64)
+  location                  = var.location
+  resource_group_name       = azurerm_resource_group.main.name
+  user_assigned_identity_id = module.ai_foundry_identity.id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
+# --- Voice Live Agent mode RBAC ---
+# Allows the Voice Live managed identity to invoke Foundry agents.
+resource "azurerm_role_assignment" "voice_live_foundry_user" {
+  scope                = module.ai_foundry.ai_services_id
+  role_definition_name = "Foundry User"
+  principal_id         = module.ai_foundry_identity.principal_id
+  principal_type       = "ServicePrincipal"
 }
 
 # --- Azure AI Search ---
@@ -339,7 +363,7 @@ module "aks_identity" {
   redis_id                  = module.redis.id
   ai_search_id              = module.ai_search.id
   foundry_ai_services_id    = module.ai_foundry.ai_services_id
-  realtime_ai_services_id   = module.ai_realtime.ai_realtime_id
+  realtime_ai_services_id   = module.ai_realtime_model_mode.ai_realtime_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

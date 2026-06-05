@@ -118,3 +118,13 @@ output "ai_realtime_endpoint" {
   value       = module.ai_realtime.ai_realtime_endpoint
 }
 
+output "ai_realtime_agent_mode_endpoint" {
+  description = "AI Services endpoint for Foundry-native Agent Mode Voice Live"
+  value       = module.ai_realtime_agent_mode.ai_realtime_agent_mode_endpoint
+}
+
+output "ai_realtime_agent_mode_id" {
+  description = "AI Services resource ID for Foundry-native Agent Mode Voice Live"
+  value       = module.ai_realtime_agent_mode.ai_realtime_agent_mode_id
+}
+
