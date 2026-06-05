@@ -115,7 +115,7 @@ output "p2s_vpn_gateway_public_ip" {
 
 output "ai_realtime_endpoint" {
   description = "AI Services endpoint for Voice Live API (gpt-realtime, Sweden Central)"
-  value       = module.ai_realtime.ai_realtime_endpoint
+  value       = module.ai_realtime_model_mode.ai_realtime_endpoint
 }
 
 output "ai_realtime_agent_mode_endpoint" {
