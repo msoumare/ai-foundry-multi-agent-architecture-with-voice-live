@@ -1,9 +1,9 @@
-output "ai_realtime_agent_mode_id" {
+output "ai_realtime_id" {
   description = "AI Services resource ID for Foundry-native Agent Mode Voice Live"
-  value       = azurerm_cognitive_account.ai_realtime_agent_mode.id
+  value       = azurerm_cognitive_account.ai_realtime.id
 }
 
-output "ai_realtime_agent_mode_endpoint" {
+output "ai_realtime_endpoint" {
   description = "AI Services endpoint for Foundry-native Agent Mode Voice Live"
-  value       = azurerm_cognitive_account.ai_realtime_agent_mode.endpoint
+  value       = azurerm_cognitive_account.ai_realtime.endpoint
 }

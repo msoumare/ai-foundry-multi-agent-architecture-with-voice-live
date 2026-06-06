@@ -113,18 +113,22 @@ output "p2s_vpn_gateway_public_ip" {
   value       = var.enable_p2s_vpn ? module.p2s_vpn[0].vpn_gateway_public_ip : null
 }
 
-output "ai_realtime_endpoint" {
+output "ai_realtime_model_mode_id" {
+  description = "AI Services resource ID for Voice Live API (gpt-realtime, Sweden Central)"
+  value       = module.ai_realtime_model_mode.ai_realtime_id
+}
+
+output "ai_realtime_model_mode_endpoint" {
   description = "AI Services endpoint for Voice Live API (gpt-realtime, Sweden Central)"
   value       = module.ai_realtime_model_mode.ai_realtime_endpoint
 }
 
-output "ai_realtime_agent_mode_endpoint" {
-  description = "AI Services endpoint for Foundry-native Agent Mode Voice Live"
-  value       = module.ai_realtime_agent_mode.ai_realtime_agent_mode_endpoint
-}
-
 output "ai_realtime_agent_mode_id" {
   description = "AI Services resource ID for Foundry-native Agent Mode Voice Live"
-  value       = module.ai_realtime_agent_mode.ai_realtime_agent_mode_id
+  value       = module.ai_realtime_agent_mode.ai_realtime_id
 }
 
+output "ai_realtime_agent_mode_endpoint" {
+  description = "AI Services endpoint for Foundry-native Agent Mode Voice Live"
+  value       = module.ai_realtime_agent_mode.ai_realtime_endpoint
+}
