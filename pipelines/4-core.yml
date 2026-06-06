@@ -146,7 +146,6 @@ stages:
             -target=module.redis \
             -target=module.storage \
             -target=module.ai_foundry \
-            -target=module.ai_realtime \
             -target=module.ai_realtime_agent_mode \
             -target=module.ai_realtime_model_mode \
             -target=module.ai_search \
