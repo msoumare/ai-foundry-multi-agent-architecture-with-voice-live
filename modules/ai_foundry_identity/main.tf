@@ -70,3 +70,11 @@ resource "azurerm_role_assignment" "cognitive_services_openai_user" {
   principal_id         = azurerm_user_assigned_identity.foundry.principal_id
   principal_type       = "ServicePrincipal"
 }
+
+# Foundry User — enables Voice Live agent mode identity to invoke Foundry agents
+resource "azurerm_role_assignment" "foundry_user" {
+  scope                = var.ai_services_id
+  role_definition_name = "Foundry User"
+  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}

@@ -324,15 +324,6 @@ module "ai_realtime_agent_mode" {
   })
 }
 
-# --- Voice Live Agent mode RBAC ---
-# Allows the Voice Live managed identity to invoke Foundry agents.
-resource "azurerm_role_assignment" "voice_live_foundry_user" {
-  scope                = module.ai_foundry.ai_services_id
-  role_definition_name = "Foundry User"
-  principal_id         = module.ai_foundry_identity.principal_id
-  principal_type       = "ServicePrincipal"
-}
-
 # --- Azure AI Search ---
 module "ai_search" {
   source = "./modules/ai_search"
