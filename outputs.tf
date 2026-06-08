@@ -132,3 +132,8 @@ output "ai_realtime_agent_mode_endpoint" {
   description = "AI Services endpoint for Foundry-native Agent Mode Voice Live"
   value       = module.ai_realtime_agent_mode.ai_realtime_endpoint
 }
+
+output "ai_realtime_agent_mode_ws_endpoint" {
+  description = "Voice Live websocket endpoint for Foundry-native Agent Mode"
+  value       = module.ai_realtime_agent_mode.ai_realtime_ws_endpoint
+}
