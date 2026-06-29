@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-component
+  labels:
+    app: voice-component
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: voice-component
+  template:
+    metadata:
+      labels:
+        app: voice-component
+    spec:
+      containers:
+        - name: component
+          image: <acr-name>.azurecr.io/voice-live-relay:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: FRONTEND_ORIGIN
+              value: "https://<frontend-host>"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-component
+spec:
+  selector:
+    app: voice-component
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
