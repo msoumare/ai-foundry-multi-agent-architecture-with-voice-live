@@ -6,9 +6,9 @@ parameters:
 - name: workload
   displayName: Workload
   type: string
-  default: agenthubspoke
+  default: vlapi
   values:
-  - agenthubspoke
+  - vlapi
 
 - name: env
   displayName: Environment
