@@ -23,10 +23,4 @@ resource "azurerm_cognitive_account" "ai_realtime" {
     type         = "UserAssigned"
     identity_ids = [var.user_assigned_identity_id]
   }
-
-  lifecycle {
-    # Temporary guard: keep the existing account in place while projects under the account
-    # are not managed by Terraform.
-    ignore_changes = all
-  }
 }

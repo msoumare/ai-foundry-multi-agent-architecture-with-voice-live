@@ -1,5 +1,15 @@
 data "azurerm_client_config" "current" {}
 
+locals {
+  # Keep zone-redundant public IP where supported, but omit zones in regions
+  # that do not support zonal Public IPs for this resource type.
+  zonal_public_ip_locations = [
+    "northeurope",
+    "eastus",
+    "swedencentral",
+  ]
+}
+
 resource "azurerm_subnet" "gateway" {
   name                 = "GatewaySubnet"
   resource_group_name  = var.resource_group_name
@@ -13,7 +23,7 @@ resource "azurerm_public_ip" "vpn_gateway" {
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", ""))) ? ["1", "2", "3"] : null
   tags                = var.tags
 
   # This IP is attached to the VPN gateway and should never be replaced by incidental drift.
