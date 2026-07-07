@@ -13,9 +13,9 @@ parameters:
 - name: workload
   displayName: Workload
   type: string
-  default: vlapi
+  default: agenthubspoke
   values:
-  - vlapi
+  - agenthubspoke
 
 - name: env
   displayName: Environment
@@ -33,8 +33,8 @@ parameters:
   - ne
   - eus
   - sdc
-  - ncus
-
+  - ncu
+  
 variables:
 - group: ${{ parameters.workload }}.infra
 

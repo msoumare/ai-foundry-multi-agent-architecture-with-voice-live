@@ -1,9 +1,9 @@
 environment                  = "dev"
-workload                     = "vlapi"
-region                       = "ncus"
+workload                     = "agenthubspoke"
+region                       = "ncu"
 location                     = "northcentralus"
-resource_group_workload      = "rg-vlapi-dev-ncus"
-log_analytics_workspace      = "log-vlapi-dev-ncus"
+resource_group_workload      = "rg-agenthubspoke-dev-ncu"
+log_analytics_workspace      = "log-agenthubspoke-dev-ncu"
 subscription_id              = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
 
 address_space                     = ["10.0.0.0/16"]

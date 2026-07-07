@@ -6,9 +6,9 @@ parameters:
 - name: workload
   displayName: Workload
   type: string
-  default: vlapi
+  default: agenthubspoke
   values:
-  - vlapi
+  - agenthubspoke
 
 - name: env
   displayName: Environment
@@ -26,7 +26,7 @@ parameters:
   - ne
   - eus
   - sdc
-  - ncus
+  - ncu
 
 - name: deploy_core
   displayName: Deploy Core (requires private pool ready)
