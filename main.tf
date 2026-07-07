@@ -14,11 +14,11 @@ resource "azurerm_resource_group" "main" {
 module "vnet" {
   source = "./modules/vnet"
 
-  name                              = "vnet-${var.workload}-${var.environment}-${var.region}"
-  location                          = var.location
-  resource_group_name               = azurerm_resource_group.main.name
-  workload                          = var.workload
-  env                               = var.environment
+  name                = "vnet-${var.workload}-${var.environment}-${var.region}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  workload            = var.workload
+  env                 = var.environment
   # Keep legacy naming suffix aligned with existing deployed resources to avoid forced subnet replacement.
   # Remember to change the region to var.region for new deployments to other regions.
   region                            = var.location
@@ -99,9 +99,9 @@ resource "azurerm_bastion_host" "main" {
 module "keyvault" {
   source = "./modules/keyvault"
 
-  name                = substr("akv-${var.workload}-${var.environment}-${var.region}", 0, 24)
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
+  name                       = substr("akv-${var.workload}-${var.environment}-${var.region}", 0, 24)
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
   keyvault_dns_zone_id       = module.vnet.keyvault_dns_zone_id
   tags = merge(var.tags, {
@@ -236,29 +236,6 @@ module "redis" {
   })
 }
 
-# --- Foundry Identity (AI Foundry agents) ---
-module "ai_foundry_identity" {
-  source = "./modules/ai_foundry_identity"
-
-  name                = "id-foundry-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  key_vault_id        = module.keyvault.id
-  storage_account_id  = module.storage.id
-  acr_id              = module.acr.id
-  foundry_project_principal_id = var.foundry_project_principal_id
-  ai_search_id        = module.ai_search.id
-  cosmos_db_account_id = module.cosmosdb.id
-  ai_services_id      = module.ai_foundry.ai_services_id
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-
-  depends_on = [module.ai_foundry]
-}
-
 # --- AI Foundry Storage ---
 module "storage" {
   source = "./modules/storage"
@@ -273,6 +250,29 @@ module "storage" {
     workload    = var.workload
     managed-by  = "terraform"
   })
+}
+
+# --- Foundry Identity (AI Foundry agents) ---
+module "ai_foundry_identity" {
+  source = "./modules/ai_foundry_identity"
+
+  name                         = "id-foundry-${var.workload}-${var.environment}-${var.region}"
+  location                     = var.location
+  resource_group_name          = azurerm_resource_group.main.name
+  key_vault_id                 = module.keyvault.id
+  storage_account_id           = module.storage.id
+  acr_id                       = module.acr.id
+  ai_search_id                 = module.ai_search.id
+  cosmos_db_account_id         = module.cosmosdb.id
+  ai_services_id               = module.ai_foundry.ai_services_id
+  ai_services_principal_id     = module.ai_foundry.ai_services_principal_id
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+
+  depends_on = [module.ai_foundry]
 }
 
 # --- AI Foundry (AI Services) ---
@@ -296,8 +296,8 @@ module "ai_foundry" {
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
-module "ai_realtime_model_mode" {
-  source = "./modules/ai_realtime_model_mode"
+module "ai_foundry_voiceliveapi_model_mode" {
+  source = "./modules/ai_foundry_voiceliveapi_model_mode"
 
   ai_services_name          = "ai-rt-${var.workload}-${var.environment}-${var.region}"
   location                  = var.location
@@ -310,8 +310,8 @@ module "ai_realtime_model_mode" {
   })
 }
 
-module "ai_realtime_agent_mode" {
-  source = "./modules/ai_realtime_agent_mode"
+module "ai_foundry_voiceliveapi_agent_mode" {
+  source = "./modules/ai_foundry_voiceliveapi_agent_mode"
 
   ai_services_name          = substr("ai-rtag-${var.workload}-${var.environment}-${var.region}", 0, 64)
   location                  = var.location
@@ -345,16 +345,16 @@ module "ai_search" {
 module "aks_identity" {
   source = "./modules/aks_identity"
 
-  name                      = "id-aks-${var.workload}-${var.environment}-${var.region}"
-  location                  = var.location
-  resource_group_name       = azurerm_resource_group.main.name
-  key_vault_id              = module.keyvault.id
-  acr_id                    = module.acr.id
-  cosmos_db_account_id      = module.cosmosdb.id
-  redis_id                  = module.redis.id
-  ai_search_id              = module.ai_search.id
-  foundry_ai_services_id    = module.ai_foundry.ai_services_id
-  realtime_ai_services_id   = module.ai_realtime_model_mode.ai_realtime_id
+  name                    = "id-aks-${var.workload}-${var.environment}-${var.region}"
+  location                = var.location
+  resource_group_name     = azurerm_resource_group.main.name
+  key_vault_id            = module.keyvault.id
+  acr_id                  = module.acr.id
+  cosmos_db_account_id    = module.cosmosdb.id
+  redis_id                = module.redis.id
+  ai_search_id            = module.ai_search.id
+  foundry_ai_services_id  = module.ai_foundry.ai_services_id
+  realtime_ai_services_id = module.ai_foundry_voiceliveapi_model_mode.ai_realtime_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

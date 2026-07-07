@@ -7,15 +7,18 @@ terraform {
 }
 
 resource "azurerm_cognitive_account" "ai_services" {
-  name                  = var.ai_services_name
-  location              = var.location
-  resource_group_name   = var.resource_group_name
-  kind                  = "AIServices"
-  sku_name              = "S0"
-  custom_subdomain_name = var.ai_services_name
-  local_auth_enabled    = false
+  name                          = var.ai_services_name
+  location                      = var.location
+  resource_group_name           = var.resource_group_name
+  kind                          = "AIServices"
+  sku_name                      = "S0"
+  custom_subdomain_name         = var.ai_services_name
+  local_auth_enabled            = false
   public_network_access_enabled = false
-  tags                  = var.tags
+  identity {
+    type = "SystemAssigned"
+  }
+  tags                          = var.tags
 
   lifecycle {
     # Temporary guard: keep the existing account in place while projects under the account
@@ -70,7 +73,7 @@ resource "azurerm_private_endpoint" "ai_services" {
   }
 
   private_dns_zone_group {
-    name                 = "dns-ai-${var.ai_services_name}"
+    name = "dns-ai-${var.ai_services_name}"
     private_dns_zone_ids = [
       var.ai_services_dns_zone_id,
       var.ai_openai_dns_zone_id,

@@ -113,6 +113,7 @@ stages:
           azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT "$(acr_login_server)"
           azd env set AGENTHUB_MODEL_DEPLOYMENT "$(AGENTHUB_MODEL_DEPLOYMENT)"
           azd env set DEFAULT_MODEL_DEPLOYMENT "$(AGENTHUB_MODEL_DEPLOYMENT)"
+          azd env set VOICE_LIVE_UAI_CLIENT_ID "$(VOICE_LIVE_UAI_CLIENT_ID)"
 
           azd deploy --no-prompt
 

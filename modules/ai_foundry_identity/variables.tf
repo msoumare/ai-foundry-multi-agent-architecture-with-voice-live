@@ -28,12 +28,6 @@ variable "acr_id" {
   type        = string
 }
 
-variable "foundry_project_principal_id" {
-  description = "Object ID of the Foundry project managed identity (used for hosted agent ACR pulls)"
-  type        = string
-  default     = ""
-}
-
 variable "ai_search_id" {
   description = "Azure AI Search service resource ID"
   type        = string
@@ -47,6 +41,17 @@ variable "cosmos_db_account_id" {
 variable "ai_services_id" {
   description = "AI Services (Foundry) resource ID"
   type        = string
+}
+
+variable "ai_services_principal_id" {
+  description = "Principal ID of AI Services managed identity for ACR pull role assignment"
+  type        = string
+}
+
+variable "foundry_project_id" {
+  description = "Optional Foundry project/workspace scope resource ID for Foundry User role assignment"
+  type        = string
+  default     = ""
 }
 
 variable "tags" {

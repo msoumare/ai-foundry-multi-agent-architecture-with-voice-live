@@ -1,0 +1,90 @@
+image: mcr.microsoft.com/azure-cli:2.64.0
+
+definitions:
+  steps:
+    - step: &deploy-hub-agent-azcli
+        name: Deploy hosted hub agent (Azure CLI)
+        script:
+          - set -euo pipefail
+          - export WORKLOAD="${WORKLOAD:-agenthubspoke}"
+          - export ENV_NAME="${ENV_NAME:-dev}"
+          - export REGION="${REGION:-ne}"
+          - export HUB_AGENT_PATH="${HUB_AGENT_PATH:-poc_voice_live_api_agent/hub_agent}"
+          - export AGENT_NAME="${AGENT_NAME:-hub-agent}"
+          - export RESOURCE_GROUP_WORKLOAD="${RESOURCE_GROUP_WORKLOAD:-${resource_group_workload:-}}"
+          - export AGENT_MANIFEST_PATH="${AGENT_MANIFEST_PATH:-${HUB_AGENT_PATH}/agent.yaml}"
+          - export AGENT_CONTEXT_PATH="${AGENT_CONTEXT_PATH:-${HUB_AGENT_PATH}}"
+          - |
+            required=(
+              AZURE_CLIENT_ID
+              AZURE_CLIENT_SECRET
+              AZURE_TENANT_ID
+              AZURE_SUBSCRIPTION_ID
+              RESOURCE_GROUP_WORKLOAD
+              FOUNDRY_PROJECT_ENDPOINT
+            )
+
+            for key in "${required[@]}"; do
+              val="${!key:-}"
+              if [ -z "$val" ]; then
+                echo "Missing required Bitbucket variable: $key"
+                exit 1
+              fi
+            done
+
+            if [ ! -f "$AGENT_MANIFEST_PATH" ]; then
+              echo "Agent manifest not found: $AGENT_MANIFEST_PATH"
+              exit 1
+            fi
+
+            if [ ! -d "$AGENT_CONTEXT_PATH" ]; then
+              echo "Agent context path not found: $AGENT_CONTEXT_PATH"
+              exit 1
+            fi
+          - az login 
+          - az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          - export FOUNDRY_ACCOUNT_NAME="${FOUNDRY_ACCOUNT_NAME:-$(echo "$FOUNDRY_PROJECT_ENDPOINT" | sed -E 's#https://([^.]+)\..*#\1#')}"
+          - export FOUNDRY_PROJECT_NAME="${FOUNDRY_PROJECT_NAME:-$(echo "$FOUNDRY_PROJECT_ENDPOINT" | sed -E 's#.*/api/projects/([^/?]+).*#\1#')}"
+          - |
+            if [ -z "$FOUNDRY_ACCOUNT_NAME" ] || [ -z "$FOUNDRY_PROJECT_NAME" ]; then
+              echo "Unable to derive FOUNDRY_ACCOUNT_NAME or FOUNDRY_PROJECT_NAME from FOUNDRY_PROJECT_ENDPOINT."
+              echo "Set FOUNDRY_ACCOUNT_NAME and FOUNDRY_PROJECT_NAME explicitly in Bitbucket variables."
+              exit 1
+            fi
+          - az cognitiveservices account project show --name "$FOUNDRY_ACCOUNT_NAME" --project-name "$FOUNDRY_PROJECT_NAME" --resource-group "$RESOURCE_GROUP_WORKLOAD"
+          - az cognitiveservices agent create --account-name "$FOUNDRY_ACCOUNT_NAME" --name "$AGENT_NAME" --project-name "$FOUNDRY_PROJECT_NAME" --source "$AGENT_MANIFEST_PATH" --context "$AGENT_CONTEXT_PATH"
+
+pipelines:
+  branches:
+    main:
+      - step:
+          <<: *deploy-hub-agent-azcli
+          name: Deploy hosted hub agent via Azure CLI (main)
+          condition:
+            changesets:
+              includePaths:
+                - "poc_voice_live_api_agent/hub_agent/**"
+                - "pipelines/6-hub-agent-foundry.yml"
+                - "bitbucket-azcli-pipeline,yml"
+
+  custom:
+    deploy-hub-agent-azcli:
+      - variables:
+          - name: WORKLOAD
+            default: agenthubspoke
+            allowed-values:
+              - agenthubspoke
+          - name: ENV_NAME
+            default: dev
+            allowed-values:
+              - dev
+              - prd
+          - name: REGION
+            default: ne
+            allowed-values:
+              - ne
+              - eus
+              - sdc
+      - step:
+          <<: *deploy-hub-agent-azcli
+          name: Deploy hosted hub agent via Azure CLI (manual)

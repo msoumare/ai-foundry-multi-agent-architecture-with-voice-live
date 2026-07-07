@@ -7,17 +7,17 @@ terraform {
 }
 
 resource "azurerm_storage_account" "this" {
-  name                          = var.name
-  location                      = var.location
-  resource_group_name           = var.resource_group_name
-  account_tier                  = "Standard"
-  account_replication_type      = "LRS"
-  account_kind                  = "StorageV2"
-  min_tls_version               = "TLS1_2"
+  name                            = var.name
+  location                        = var.location
+  resource_group_name             = var.resource_group_name
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
+  account_kind                    = "StorageV2"
+  min_tls_version                 = "TLS1_2"
   default_to_oauth_authentication = true
-  shared_access_key_enabled     = false
-  public_network_access_enabled = false
-  tags                          = var.tags
+  shared_access_key_enabled       = false
+  public_network_access_enabled   = false
+  tags                            = var.tags
 }
 
 resource "azurerm_private_endpoint" "blob" {

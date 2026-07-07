@@ -14,10 +14,10 @@ resource "azurerm_subnet" "workload_aks" {
 }
 
 resource "azurerm_subnet" "workload_private_endpoints" {
-  name                 = "snet-pe-${var.workload}-${var.env}-${var.region}"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.workload.name
-  address_prefixes     = var.private_endpoints_subnet_prefixes
+  name                            = "snet-pe-${var.workload}-${var.env}-${var.region}"
+  resource_group_name             = var.resource_group_name
+  virtual_network_name            = azurerm_virtual_network.workload.name
+  address_prefixes                = var.private_endpoints_subnet_prefixes
   default_outbound_access_enabled = false
 }
 

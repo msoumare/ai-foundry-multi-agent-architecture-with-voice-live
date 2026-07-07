@@ -6,7 +6,7 @@ resource "azurerm_container_registry" "this" {
   admin_enabled       = false
   # Hosted agents require the ACR public endpoint to remain reachable for image pulls.
   public_network_access_enabled = true
-  tags                = var.tags
+  tags                          = var.tags
 }
 
 resource "azurerm_private_endpoint" "this" {

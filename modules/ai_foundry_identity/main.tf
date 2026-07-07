@@ -5,7 +5,6 @@ resource "azurerm_user_assigned_identity" "foundry" {
   tags                = var.tags
 }
 
-
 # Key Vault Secrets User — for Foundry agents to access secrets and API keys
 resource "azurerm_role_assignment" "kv_secrets_user" {
   scope                = var.key_vault_id
@@ -26,7 +25,7 @@ resource "azurerm_role_assignment" "storage_blob_data_contributor" {
 resource "azurerm_role_assignment" "acr_repository_reader" {
   scope                = var.acr_id
   role_definition_name = "Container Registry Repository Reader"
-  principal_id         = var.foundry_project_principal_id
+  principal_id         = var.ai_services_principal_id
   principal_type       = "ServicePrincipal"
 }
 
@@ -74,6 +73,15 @@ resource "azurerm_role_assignment" "cognitive_services_openai_user" {
 # Foundry User — enables Voice Live agent mode identity to invoke Foundry agents
 resource "azurerm_role_assignment" "foundry_user" {
   scope                = var.ai_services_id
+  role_definition_name = "Foundry User"
+  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Foundry User on Foundry project/workspace scope (required for agents/action)
+resource "azurerm_role_assignment" "foundry_user_on_project" {
+  count                = var.foundry_project_id != "" ? 1 : 0
+  scope                = var.foundry_project_id
   role_definition_name = "Foundry User"
   principal_id         = azurerm_user_assigned_identity.foundry.principal_id
   principal_type       = "ServicePrincipal"

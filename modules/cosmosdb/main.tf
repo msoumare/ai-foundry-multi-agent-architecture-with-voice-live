@@ -1,12 +1,12 @@
 resource "azurerm_cosmosdb_account" "this" {
-  name                = var.name
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  offer_type          = "Standard"
-  kind                = "GlobalDocumentDB"
+  name                          = var.name
+  location                      = var.location
+  resource_group_name           = var.resource_group_name
+  offer_type                    = "Standard"
+  kind                          = "GlobalDocumentDB"
   local_authentication_disabled = true
   public_network_access_enabled = false
-  tags                = var.tags
+  tags                          = var.tags
 
   consistency_policy {
     consistency_level = "Session"

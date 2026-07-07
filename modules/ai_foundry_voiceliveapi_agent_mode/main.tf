@@ -7,7 +7,7 @@ terraform {
 }
 
 # Foundry-native Agent Mode account for Voice Live.
-# This account is dedicated to agent-mode integration (no explicit gpt-realtime model deployment).
+# This account is dedicated to agent-mode integration.
 resource "azurerm_cognitive_account" "ai_realtime" {
   name                          = var.ai_services_name
   location                      = var.location

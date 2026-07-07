@@ -1,11 +1,11 @@
 resource "azurerm_search_service" "this" {
-  name                = var.name
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  sku                 = var.sku
-  local_authentication_enabled = false
+  name                          = var.name
+  location                      = var.location
+  resource_group_name           = var.resource_group_name
+  sku                           = var.sku
+  local_authentication_enabled  = false
   public_network_access_enabled = false
-  tags                = var.tags
+  tags                          = var.tags
 }
 
 # Shared private link removed — Azure Search does not support 'searchService' subresource_name as outbound type

@@ -1,375 +1,290 @@
-# White Paper Draft
+# White Paper
 
-## AI Foundry Multi-Agent Systems: Hub API with Agent Framework & Spokes with Agent Service
+## AI Foundry Hub-and-Spoke Multi-Agent Architecture
 
-Version: 0.1 (Draft)
-Date: 2026-04-18
+### Comparative Review of Two Hub Implementations and Production Readiness Guidance
 
-## Abstract
+Version: 1.0  
+Date: 2026-07-02  
+Prepared from: DESIGN_REVIEW.md, infrastructure/README.md, infrastructure/README-hosted-hub-agent.md
 
-Enterprise multi-agent systems often fail when orchestration logic, domain logic, and infrastructure concerns are tightly coupled. This white paper presents an Azure AI Foundry design pattern for a Hub API with Agent Framework & Spokes with Agent Service, where a Hub service (FastAPI) receives user requests, delegates intent classification and routing to a Router Agent in AI Foundry, and then dispatches to domain-specific spoke agents for final response generation.
+## Executive Summary
 
-The pattern enables separation of concerns, secure-by-default networking, identity-first access, and repeatable infrastructure as code for production readiness.
+This paper consolidates three source documents into a single decision guide for implementing a Hub-and-Spoke multi-agent architecture on Azure AI Foundry.
+
+The repository presents two viable Hub implementation models:
+
+1. FastAPI Hub on AKS (code-owned orchestration and policy gate)
+2. Hosted Router Hub Agent in Foundry Agent Service (platform-managed orchestration)
+
+Both designs are architecturally strong and align with modern enterprise patterns. However, the design review identifies critical controls required before production use in regulated domains such as banking, especially around authentication, authorization, PII protection, immutable audit, routing guardrails, and encryption.
+
+Key conclusion:
+- Choose FastAPI Hub when deterministic governance and strict policy enforcement are top priorities.
+- Choose Hosted Hub Agent when minimizing operational footprint and accelerating delivery are top priorities.
+- For high-regulation workloads, implement a policy-grade ingress/gateway and the hardening controls in this paper regardless of Hub model.
+
+## Scope and Method
+
+This white paper synthesizes:
+- Architectural intent and infrastructure baseline from infrastructure/README.md.
+- Alternate hosted-hub pattern from infrastructure/README-hosted-hub-agent.md.
+- Security and compliance gap assessment from DESIGN_REVIEW.md.
+
+The output is a practical guide with:
+- Side-by-side architecture comparison.
+- Deployment and operating model guidance.
+- Risk and control mapping.
+- A phased hardening roadmap.
 
 ## Problem Statement
 
-Modern AI applications require multiple specialized agents (retrieval, operations, code, policy, analytics). A single monolithic agent tends to degrade in:
-- Explainability of decisions
-- Operational reliability under mixed workloads
-- Governance and access control per domain
-- Team autonomy and release velocity
+Single-agent systems often struggle to scale safely across multiple business domains. A Hub-and-Spoke pattern introduces specialization while preserving centralized governance:
+- Hub: orchestration, routing, policy, normalization.
+- Spokes: domain execution and domain tools.
 
-A Hub API with Agent Framework & Spokes with Agent Service pattern addresses this by centralizing ingress and routing while decentralizing domain execution.
+The challenge is deciding where the Hub should live:
+- As an application you own (FastAPI on AKS).
+- As a managed orchestrator (Foundry hosted agent).
 
-## Design Goals
+## Architecture Baseline from the Repository
 
-- Clear control plane and data plane boundaries
-- Deterministic routing with auditable agent decisions
-- Least-privilege access for each runtime component
-- Private network posture for platform services
-- Scalable spoke execution and independent lifecycle
-- Observable end-to-end request traces
+The shared platform baseline is Terraform-driven and private-first:
+- Private networking with VNet segmentation, private endpoints, and private DNS.
+- Identity separation with user-assigned managed identities for platform, workloads, and CI/CD.
+- Foundry Hub/Project, AI Services, optional Realtime, AI Search, Cosmos DB, Redis, Key Vault, ACR, and monitoring.
+- Pipeline staging for init, network, devops, core, and destroy, with private agent pool sequencing for private vault operations.
 
-## Deployment Components Table of Contents
+## The Two Hub Implementations
 
-This section mirrors the deployed platform building blocks documented in the README.
+### Implementation A: FastAPI Hub on AKS
 
-1. [Federated Service Connection](#federated-service-connection)
-2. [Required RBAC Permissions](#required-rbac-permissions)
-3. [Network and Private Connectivity](#network-and-private-connectivity)
-4. [Private Build Agent](#private-build-agent)
-5. [AKS Runtime Platform](#aks-runtime-platform)
-6. [AI Foundry Hub and Project](#ai-foundry-hub-and-project)
-7. [Azure AI Realtime (Optional)](#azure-ai-realtime-optional)
-8. [Azure AI Search](#azure-ai-search)
-9. [Cosmos DB](#cosmos-db)
-10. [Redis](#redis)
-11. [Key Vault](#key-vault)
-12. [Azure Container Registry (ACR)](#azure-container-registry-acr)
-13. [Monitoring and Observability](#monitoring-and-observability)
+The Hub runs as a service you control.
 
-## Deployment Components Overview
+Typical flow:
+1. Client calls Hub API.
+2. Hub normalizes request and enforces policy checks.
+3. Hub requests route intent from Router Agent.
+4. Hub validates routing envelope and dispatches to selected spoke.
+5. Hub post-processes and returns final response.
 
-### Federated Service Connection
+Strengths:
+- Deterministic, code-owned enforcement point.
+- Flexible custom controls before and after route/spoke execution.
+- Deep observability and explicit operational control.
 
-The CI/CD trust boundary uses OIDC-based workload identity federation from Azure DevOps or GitHub Actions into Microsoft Entra ID. This avoids long-lived client secrets in pipelines and provides short-lived tokens tied to explicit workload identities.
+Trade-offs:
+- Higher operational responsibility (runtime, scaling, deployment, patching).
+- More code to maintain.
+- Requires disciplined security hardening.
 
-### Required RBAC Permissions
+### Implementation B: Hosted Router Hub Agent in Foundry
 
-The deployment principal requires narrowly scoped permissions for Terraform state operations and role assignment creation. At minimum, include state storage data access and role-assignment capability at workload scope. Use least privilege and periodically review assignment scope drift.
+The Hub is a hosted agent in Agent Service.
 
-### Network and Private Connectivity
+Typical flow:
+1. Client request enters through thin ingress gateway.
+2. Hosted Hub Agent performs route selection and delegation via connected agents.
+3. Selected spoke executes and returns final response through the Hub Agent.
+4. Gateway returns validated response to client.
 
-The platform is built around private networking: VNet segmentation, private endpoints, and private DNS resolution for platform services. Point-to-Site VPN is used for controlled operator and developer access to private resources without exposing workload or data planes to the internet.
+Strengths:
+- Smaller control-plane surface.
+- Faster adoption of native Foundry orchestration patterns.
+- Built-in thread and tracing primitives.
 
-### Private Build Agent
+Trade-offs:
+- Model-driven routing requires stronger contract validation.
+- Governance cannot depend on prompt behavior alone.
+- Requires externalized policy gate for regulated workloads.
 
-A private VMSS-backed build agent pool executes core deployment stages that must reach private endpoints (for example, private Key Vault secret operations). This separates public hosted-agent stages from private network operations.
+## Side-by-Side Comparison
 
-### AKS Runtime Platform
+| Concern | FastAPI Hub on AKS | Hosted Router Hub Agent |
+| --- | --- | --- |
+| Hub runtime | App-managed service | Foundry Agent Service |
+| Routing implementation | Deterministic code + model input | Model-driven structured output |
+| Policy enforcement | In Hub code | In thin ingress/gateway |
+| Operational footprint | Higher | Lower |
+| Customization depth | Highest | High, with platform boundaries |
+| State ownership | App-owned (Cosmos/Redis) | Foundry threads plus optional data stores |
+| Compliance control posture | Strong when implemented correctly | Strong only with explicit gateway controls |
+| Time to initial delivery | Moderate | Fast |
+| Best fit | Regulated or high-control systems | Rapid scaling with managed orchestration |
 
-AKS hosts the Hub API with Agent Framework & Spokes with Agent Service workloads. The cluster is private, identity-enabled, and designed so hub orchestration and spoke execution can scale independently under shared governance controls.
+## Recommended Route Contract
 
-### AI Foundry Hub and Project
+Both implementations should enforce a typed route envelope.
 
-AI Foundry provides the Router Agent control-plane capabilities and project-level model/runtime integration. The Router returns structured routing metadata, while domain response generation remains the responsibility of spoke runtimes.
+```json
+{
+  "sub_agent_name": "retrieval_spoke",
+  "query": "rewritten task for selected spoke",
+  "context": {
+    "user_intent": "knowledge_lookup",
+    "conversation_id": "abc-123",
+    "constraints": ["cite_sources"]
+  },
+  "confidence": 0.92,
+  "fallback_agent": "generalist_spoke",
+  "safety_flags": ["none"],
+  "trace_id": "trace-xyz"
+}
+```
 
-### Azure AI Realtime (Optional)
+Routing policy guidance:
+- High confidence: direct route.
+- Medium confidence: route with extra policy checks.
+- Low confidence: fallback or clarification prompt.
 
-Azure AI Realtime can be added when the deployment needs low-latency audio or streaming interactions. Keep it optional so teams that only need text-first routing and response patterns can deploy a simpler footprint.
+## Security and Compliance Findings (from Design Review)
 
-### Azure AI Search
+The reviewed implementation quality is strong in architecture and observability, but not production-ready for banking without additional controls.
 
-Search supports retrieval-centric spokes with indexed enterprise knowledge. Data-plane and management-plane permissions should be separated so runtime access does not imply administrative configuration authority.
+Critical gaps identified:
+1. Authentication and authorization validation not enforced end-to-end.
+2. Input sanitization and sensitive-data detection insufficient.
+3. PII redaction/masking in telemetry not guaranteed.
+4. Immutable audit trail for sensitive operations missing.
+5. Rate limiting and anomaly/fraud signaling not fully implemented.
+6. Routing decision hardening against jailbreak/policy bypass required.
+7. Session data persistence/encryption strategy insufficient for regulated workloads.
+8. Prompt guardrails for high-risk operations not comprehensive.
 
-### Cosmos DB
+Implication:
+- Architecture is a solid foundation.
+- Production release in regulated contexts should be gated by security and compliance hardening.
 
-Cosmos DB persists conversation state, routing context, and workflow metadata where required. Use role-based data access and partitioning strategies that align to conversation and tenant boundaries.
+## Control Framework for Both Hub Models
 
-### Redis
+### Identity and Access
 
-Redis provides low-latency caching for repeated retrieval requests, session acceleration, and transient orchestration state. Cache invalidation and TTL policy should align with data governance and freshness requirements.
+- Validate user identity tokens at ingress and workload boundaries.
+- Enforce role and scope checks before route and tool execution.
+- Isolate identities across hub, spokes, and platform services.
 
-### Key Vault
+### Data Protection
 
-Key Vault stores secret material and configuration references that cannot be replaced by managed identity. Access should be identity-based and audited, with strict separation between deployment and runtime identities.
+- Detect and redact sensitive fields in input, logs, traces, and outputs.
+- Encrypt persisted conversational/session data with managed keys.
+- Minimize data retention and separate operational logs from audit logs.
 
-### Azure Container Registry (ACR)
+### Policy and Safety
 
-ACR stores trusted Hub API with Agent Framework & Spokes with Agent Service container images. Pull access should be granted to runtime identities only, and image provenance controls should be included in pipeline policy.
+- Validate route schema and whitelist allowed target agents.
+- Apply prompt-injection detection and output validation.
+- Require step-up confirmation for sensitive operations.
 
-### Monitoring and Observability
+### Audit and Monitoring
 
-Log Analytics and Application Insights provide route-level and spoke-level telemetry, including latency, reliability, fallback behavior, and trace correlation. These signals are required for enterprise SLO management and release governance.
+- Record immutable, tamper-evident audit events for sensitive actions.
+- Track per-hop latency, fallback rate, route confidence, and safety interventions.
+- Correlate telemetry and audit events with trace_id and user/session IDs.
 
-## Reference Architecture
+### Runtime Hardening
 
-### Logical View
+- Use non-root containers, health probes, and explicit resource policies.
+- Apply timeout budgets, retries with backoff, and circuit breakers.
+- Establish SLOs and alert thresholds by route and spoke.
+
+## Decision Framework
+
+Choose FastAPI Hub on AKS when:
+- You need deterministic policy enforcement in code.
+- You need custom governance logic at every hop.
+- You can support a larger operational footprint.
+
+Choose Hosted Router Hub Agent when:
+- You want faster delivery with managed orchestration.
+- You can place a robust gateway in front of Foundry.
+- Your team prefers reducing application runtime ownership.
+
+Choose hybrid governance when:
+- You want hosted orchestration with strict enterprise controls.
+- You place an API gateway/policy facade in front of the hosted hub.
+
+## Reference Flows
+
+### Flow A: FastAPI Hub
 
 ```mermaid
-flowchart TB
-    C[Client] --> H[Hub Service FastAPI on AKS]
-    H --> RA[Router Agent AI Foundry Project]
-  RA -->|routing envelope: sub_agent_name, query, context| H
-  H -->|dispatch| SA1[Spoke Agent A]
-  H -->|dispatch| SA2[Spoke Agent B]
-  H -->|dispatch| SA3[Spoke Agent C]
-
-    SA1 --> DS1[Azure AI Search]
-    SA2 --> DS2[Cosmos DB]
-    SA3 --> DS3[External APIs]
-
-  SA1 -->|final answer| H
-  SA2 -->|final answer| H
-  SA3 -->|final answer| H
-
-    H --> Cache[Redis]
-    H --> State[Cosmos DB]
-    H --> Obs[Application Insights]
-    H --> C
+flowchart LR
+    U[Client] --> H[FastAPI Hub on AKS]
+    H --> R[Router Agent in Foundry]
+    R -->|route envelope| H
+    H -->|dispatch| S1[Spoke Agent]
+    H -->|dispatch| S2[Spoke Agent]
+    S1 --> H
+    S2 --> H
+    H --> U
 ```
 
-### Infrastructure Mapping (This Repository)
+### Flow B: Hosted Hub Agent
 
-- Hub runtime:
-  - AKS module for private cluster hosting (`modules/aks`)
-- Router Agent platform:
-  - AI Foundry Hub and Project (`modules/ai_foundry`)
-- Shared data and tools:
-  - Optional Azure AI Realtime (`modules/ai_realtime`)
-  - AI Search (`modules/ai_search`)
-  - Cosmos DB (`modules/cosmosdb`)
-  - Redis (`modules/redis`)
-- Security and access:
-  - Platform identity for Foundry (`modules/ai_foundry_identity`)
-  - Workload identity for AKS (`modules/aks_identity`)
-  - DevOps identity for private CI/CD agents (`modules/devops_identity`)
-  - Key Vault (`modules/keyvault`)
-- Network isolation:
-  - VNet, private endpoints, private DNS (`modules/vnet`)
-- Operations:
-  - Monitoring with Log Analytics and App Insights (`modules/monitoring`)
-
-## Request Lifecycle
-
-1. Client sends request to Hub `/chat` endpoint.
-2. Hub validates input, user context, and policy headers.
-3. Hub calls Router Agent with normalized task payload.
-4. Router returns a routing envelope, for example:
-  - `sub_agent_name`
-  - `query`
-  - `context`
-   - `confidence`
-  - `fallback_agent`
-   - `safety_flags`
-  - `trace_id`
-5. Hub enforces policy checks against returned route.
-6. Hub invokes the selected spoke agent.
-7. Spoke fetches data and tools as required.
-8. Spoke returns final answer to Hub.
-9. Hub post-processes (redaction, schema normalization, citations).
-10. Hub returns response to client and writes telemetry.
-
-## Recommended Architecture Practices
-
-### 1. Use a Strong Route Contract
-
-Do not use free-text routing decisions from the Router Agent. Use a typed JSON envelope and validate it in the Hub before dispatch.
-
-Suggested route envelope:
-
-```json
-{
-  "sub_agent_name": "retrieval_spoke",
-  "query": "summarized or rewritten task for the selected spoke",
-  "context": {
-    "user_intent": "knowledge_lookup",
-    "conversation_id": "abc-123",
-    "constraints": ["cite_sources"]
-  },
-  "confidence": 0.92,
-  "fallback_agent": "generalist_spoke",
-  "safety_flags": ["none"],
-  "trace_id": "trace-xyz"
-}
+```mermaid
+flowchart LR
+    U[Client] --> G[Gateway Policy Layer]
+    G --> H[Hosted Hub Agent in Foundry]
+    H -->|connected agents| S1[Spoke Agent]
+    H -->|connected agents| S2[Spoke Agent]
+    S1 --> H
+    S2 --> H
+    H --> G
+    G --> U
 ```
 
-### 2. Apply Confidence-Based Routing
+## Deployment and Operations Notes
 
-- High confidence: route directly to `sub_agent_name`.
-- Medium confidence: route with additional Hub validation rules.
-- Low confidence: use `fallback_agent` or return a clarification prompt.
+From the repository implementation:
+- First-run sequencing is essential (init first, permissions, private agent availability, then core).
+- Private Key Vault operations should run from private agents after network path is available.
+- P2S VPN plus private DNS is required for local private endpoint testing.
 
-### 3. Keep the Hub as the Policy Enforcement Point
+Operationally important guidance:
+- Keep public exposure limited to required edge/control points (for example, Bastion, NAT egress identity, VPN gateway ingress).
+- Apply least privilege to deployment and runtime identities.
+- Review network and role assignments periodically to prevent drift.
 
-The Hub should always enforce governance before and after spoke execution:
-- authentication and authorization
-- rate limiting and abuse controls
-- prompt-injection and safety checks
-- output schema validation and optional redaction
+## Phased Hardening Roadmap
 
-### 4. Build Observability at Route and Spoke Levels
+Phase 1: Security baseline (target 4-6 weeks)
+- Token validation and RBAC enforcement.
+- Input validation and sensitive data controls.
+- Route envelope validation and allowed-agent checks.
 
-Track route quality and runtime health separately:
-- router latency and confidence distribution
-- spoke latency and error rate by agent
-- fallback frequency
-- user feedback and quality score by spoke
-- end-to-end request trace correlation with `trace_id`
+Phase 2: Compliance baseline (target 3-4 weeks)
+- Immutable audit logging for sensitive actions.
+- Telemetry redaction and retention policy controls.
+- Encryption and key management for persisted state.
 
-### 5. Design for Safe Failure
+Phase 3: Runtime hardening (target 2-3 weeks)
+- Container hardening and probe policies.
+- Capacity and timeout tuning.
+- Alerting and incident playbooks.
 
-- enforce timeout budgets per hop (Hub -> Router -> Spoke)
-- add retries with backoff for transient failures
-- use circuit breakers per spoke dependency
-- return deterministic fallback responses
+Phase 4: Assurance and release (target 3-4 weeks)
+- Penetration and abuse-path testing.
+- Route-quality and safety regression gates.
+- Production readiness sign-off.
 
-### 6. Version and Evaluate Continuously
+## Final Recommendations
 
-- version router prompts and spoke prompts independently
-- maintain route-accuracy datasets from real traffic traces
-- run regression evaluation before promoting new router or spoke versions
-- gate releases on quality and safety thresholds
-
-### 7. Clarify Responsibility Boundaries
-
-- Router Agent returns routing metadata only (`sub_agent_name`, `query`, `context`, confidence).
-- Spoke Agent returns the final domain response.
-- Hub owns orchestration, policy, and response normalization.
-
-## Router Contract Design
-
-A strongly typed routing contract reduces ambiguity and runtime failures.
-
-Example response schema:
-
-```json
-{
-  "sub_agent_name": "retrieval_spoke",
-  "query": "summarized or rewritten task for the selected spoke",
-  "context": {
-    "user_intent": "knowledge_lookup",
-    "conversation_id": "abc-123",
-    "constraints": ["cite_sources"]
-  },
-  "confidence": 0.92,
-  "fallback_agent": "generalist_spoke",
-  "safety_flags": ["none"],
-  "trace_id": "trace-xyz"
-}
-```
-
-## Hub API Contract (FastAPI)
-
-Suggested minimal interfaces:
-- `POST /chat`: end-user request entry point
-- `POST /route`: internal endpoint for route simulation/testing
-- `GET /healthz`: liveness probe
-- `GET /readyz`: readiness probe
-- `GET /metrics`: Prometheus/OpenTelemetry export
-
-Minimal pseudo-code:
-
-```python
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    route = await router_agent.route(request)
-    enforce_policy(route, request)
-  spoke = spoke_registry.resolve(route.sub_agent_name)
-    result = await spoke.handle(request, route)
-    return normalize_response(result)
-```
-
-## Security Model
-
-### Identity
-
-- Use user-assigned managed identity for AI Foundry platform operations.
-- Use separate user-assigned managed identity for AKS workloads.
-- Assign only required roles:
-  - Key Vault Secrets User
-  - AcrPull
-  - Search Index Data Contributor
-  - Cosmos DB SQL Data Contributor
-
-### Network
-
-- Use private endpoints for AI Services, Storage, Key Vault, Cosmos DB, Redis, ACR, and Search.
-- Use private DNS zones linked to workload VNet.
-- Keep AKS private and avoid public control plane exposure.
-
-### Secrets and Configuration
-
-- Keep keys and connection metadata in Key Vault.
-- Prefer managed identity over static secrets.
-- Rotate and audit all credentials that cannot be eliminated.
-
-## Reliability and Scalability
-
-- Scale the Hub API with Agent Framework & Spokes with Agent Service independently.
-- Add timeout budgets and retry policy per spoke.
-- Use circuit breakers for unstable downstream dependencies.
-- Define deterministic fallback routing when router confidence is low.
-- Cache repeated retrieval workloads with Redis.
-
-## Observability and Evaluation
-
-Capture at least these telemetry dimensions:
-- Route decision latency
-- Spoke execution latency
-- Router confidence distribution
-- Route mismatch rate (offline adjudication)
-- User feedback score by agent
-- Safety intervention counts
-
-Evaluation recommendations:
-- Build route-accuracy datasets from real traces.
-- Run periodic regression tests when prompts or models change.
-- Track quality by route, not only aggregate chatbot metrics.
-
-## Governance and Operating Model
-
-- Platform team owns hub framework, router policy, and infra baseline.
-- Domain teams own spoke prompts, tools, and domain evaluation sets.
-- Release spoke agents independently with contract tests.
-- Version routing policy separately from spoke behavior.
-
-## Common Anti-Patterns
-
-- Treating router output as untrusted free text instead of typed JSON.
-- Sharing one identity across hub, router, and all spokes.
-- Running without route-level observability.
-- Hard-coding route rules in multiple services.
-- No fallback route for uncertain intent.
-
-## Implementation Roadmap
-
-1. Phase 1: Core platform
-   - Deploy Terraform modules and validate private networking.
-2. Phase 2: Hub and router integration
-   - Implement FastAPI Hub and route contract.
-3. Phase 3: Initial spokes
-   - Add retrieval spoke and operations spoke.
-4. Phase 4: Evaluation
-   - Build route and answer quality benchmark datasets.
-5. Phase 5: Production hardening
-   - SLOs, autoscaling, canary rollout, and incident playbooks.
+1. Keep the typed route contract as a non-negotiable interface in both models.
+2. Treat the policy gate as mandatory, not optional, for regulated workloads.
+3. Prioritize security and compliance controls before feature expansion.
+4. Select Hub model based on governance needs first, operational preference second.
+5. Use this repository infrastructure baseline to standardize private-first deployments and identity separation.
 
 ## Conclusion
 
-The AI Foundry Hub API with Agent Framework & Spokes with Agent Service pattern provides a practical architecture for scaling multi-agent systems safely. By separating ingress, routing, and domain execution, organizations can improve governance, reliability, and team velocity without sacrificing model agility.
+The reviewed architecture is strong and extensible. The two Hub implementations are both valid, but they optimize for different priorities:
+- FastAPI Hub optimizes for deterministic control.
+- Hosted Hub Agent optimizes for managed simplicity.
 
-## Appendix A: Suggested Figures for Publication
+With the control framework and hardening plan in this paper, either path can be evolved into an enterprise-ready multi-agent platform. For banking or similarly regulated domains, production readiness depends on implementing security, data protection, auditability, and governance controls as first-class release gates.
 
-- Figure 1: Logical architecture (Hub, Router, Spokes)
-- Figure 2: Sequence diagram of request lifecycle
-- Figure 3: Identity and RBAC boundary diagram
-- Figure 4: Private endpoint and DNS topology
-- Figure 5: Evaluation loop (trace -> dataset -> benchmark -> prompt update)
+## Appendix: Source Documents Reviewed
 
-## Appendix B: Suggested Audience
-
-- Enterprise architects
-- Platform engineers
-- AI engineering leads
-- Security and governance stakeholders
+- DESIGN_REVIEW.md
+- infrastructure/README.md
+- infrastructure/README-hosted-hub-agent.md
