@@ -177,8 +177,8 @@ These services allow the hub and spokes to keep conversational or workflow state
 The identity and platform support modules around it include:
 
 - `modules/ai_foundry_identity`
-- `modules/ai_foundry_voiceliveapi_model_mode`
-- `modules/ai_foundry_voiceliveapi_agent_mode`
+- `modules/voiceliveapi_model_mode`
+- `modules/voiceliveapi_agent_mode`
 
 For this PoC, the key runtime is the agent-mode Voice Live setup, which exposes the websocket transport path and connects to the private hub agent.
 

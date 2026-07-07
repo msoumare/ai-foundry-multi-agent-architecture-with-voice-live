@@ -354,7 +354,7 @@ module "aks_identity" {
   redis_id                = module.redis.id
   ai_search_id            = module.ai_search.id
   foundry_ai_services_id  = module.ai_foundry.ai_services_id
-  realtime_ai_services_id = module.ai_foundry_voiceliveapi_model_mode.ai_realtime_id
+  realtime_ai_services_id = module.voiceliveapi_model_mode.ai_realtime_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
