@@ -424,8 +424,8 @@ stages:
             -target=module.redis \
             -target=module.storage \
             -target=module.ai_foundry \
-            -target=module.ai_foundry_voiceliveapi_agent_mode \
-            # -target=module.ai_foundry_voiceliveapi_model_mode \
+            -target=module.voiceliveapi_agent_mode \
+            # -target=module.voiceliveapi_model_mode \
             -target=module.ai_search \
             -target=module.ai_foundry_identity \
             -target=module.aks \

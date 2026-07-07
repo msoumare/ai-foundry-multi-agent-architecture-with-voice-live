@@ -296,8 +296,8 @@ module "ai_foundry" {
 }
 
 # --- AI Real-Time (Voice Live API, Sweden Central) ---
-module "ai_foundry_voiceliveapi_model_mode" {
-  source = "./modules/ai_foundry_voiceliveapi_model_mode"
+module "voiceliveapi_model_mode" {
+  source = "./modules/voiceliveapi_model_mode"
 
   ai_services_name          = "ai-rt-${var.workload}-${var.environment}-${var.region}"
   location                  = var.location
@@ -310,8 +310,8 @@ module "ai_foundry_voiceliveapi_model_mode" {
   })
 }
 
-module "ai_foundry_voiceliveapi_agent_mode" {
-  source = "./modules/ai_foundry_voiceliveapi_agent_mode"
+module "voiceliveapi_agent_mode" {
+  source = "./modules/voiceliveapi_agent_mode"
 
   ai_services_name          = substr("ai-rtag-${var.workload}-${var.environment}-${var.region}", 0, 64)
   location                  = var.location

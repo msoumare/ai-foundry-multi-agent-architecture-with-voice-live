@@ -59,6 +59,16 @@ resource "azurerm_private_dns_resolver" "workload" {
   resource_group_name = var.resource_group_name
   virtual_network_id  = azurerm_virtual_network.workload.id
   tags                = var.tags
+
+  # Prevent transient Azure NRP race where resolver create starts while
+  # the VNet is still "Updating" because subnets are being provisioned.
+  depends_on = [
+    azurerm_subnet.workload_aks,
+    azurerm_subnet.workload_private_endpoints,
+    azurerm_subnet.workload_devops,
+    azurerm_subnet.bastion,
+    azurerm_subnet.dns_resolver_inbound,
+  ]
 }
 
 resource "azurerm_private_dns_resolver_inbound_endpoint" "workload" {
