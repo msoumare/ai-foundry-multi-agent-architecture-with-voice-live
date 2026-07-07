@@ -40,7 +40,9 @@ resource "azurerm_virtual_network_gateway" "p2s" {
 
   type     = "Vpn"
   vpn_type = "RouteBased"
-  sku      = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", ""))) ? "VpnGw1AZ" : "VpnGw1"
+  # Azure now requires AZ SKUs for new VPN gateways (VpnGw1-5).
+  # Keep AZ SKU regardless of region; Public IP zones are still region-conditional above.
+  sku      = "VpnGw1AZ"
 
   active_active = false
   enable_bgp    = false
