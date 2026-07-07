@@ -40,7 +40,7 @@ resource "azurerm_virtual_network_gateway" "p2s" {
 
   type     = "Vpn"
   vpn_type = "RouteBased"
-  sku      = "VpnGw1AZ"
+  sku      = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", ""))) ? "VpnGw1AZ" : "VpnGw1"
 
   active_active = false
   enable_bgp    = false
@@ -63,4 +63,11 @@ resource "azurerm_virtual_network_gateway" "p2s" {
   }
 
   tags = var.tags
+
+  # Gateway deployment can take a long time and occasionally needs extra provisioning window.
+  timeouts {
+    create = "90m"
+    update = "90m"
+    delete = "90m"
+  }
 }

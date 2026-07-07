@@ -30,16 +30,20 @@ The practical outcome we are trying to achieve is a production-oriented blueprin
 1. Understanding the Components of the PoC
 2. Our Target Architecture
 3. The Infrastructure Foundation
-3.1 Virtual Network
-3.2 Key Vault
-3.3 Monitoring
-3.4 Azure Container Registry
-3.5 Storage
-3.6 Cosmos DB and Redis
-3.7 Azure AI Foundry and AI Services
-3.8 Azure AI Search
-3.9 AKS and Workload Identities
-3.10 DevOps Build Agent
+3.1 Terraform Build Model
+3.2 Virtual Network
+3.3 Key Vault
+3.4 Monitoring
+3.5 Azure Container Registry
+3.6 Storage
+3.7 Cosmos DB and Redis
+3.8 Azure AI Foundry
+3.9 Voice Live API Agent Mode
+3.10 AI Foundry Identity
+3.11 Azure AI Search
+3.12 AKS and Workload Identities
+3.13 DevOps Build Agent
+3.14 Point-to-Site VPN for Local Private Access
 4. Deployment with Azure DevOps and CI/CD
 5. Hub Agent Runtime and Request Flow
 6. Security and Trust Boundaries
@@ -170,25 +174,36 @@ Two supporting data services provide persistence and low-latency state handling:
 
 These services allow the hub and spokes to keep conversational or workflow state without relying on the client session alone.
 
-### 3.8 Azure AI Foundry and AI Services
+### 3.8 Azure AI Foundry
 
 `modules/ai_foundry` provisions the Foundry hub/project foundation and the AI Services layer.
 
-The identity and platform support modules around it include:
+This is the private AI control plane where the hosted hub agent and related AI project resources are anchored.
 
-- `modules/ai_foundry_identity`
-- `modules/voiceliveapi_model_mode`
+### 3.9 Voice Live API Agent Mode
+
+The PoC uses the Voice Live API in agent mode as the public real-time ingress path.
+
+This capability is provisioned through:
+
 - `modules/voiceliveapi_agent_mode`
+- `modules/voiceliveapi_model_mode`
 
-For this PoC, the key runtime is the agent-mode Voice Live setup, which exposes the websocket transport path and connects to the private hub agent.
+For this architecture, the key runtime path is agent mode because it allows the realtime session to target the hosted hub-agent instead of a direct model-only interaction.
 
-### 3.9 Azure AI Search
+### 3.10 AI Foundry Identity
+
+`modules/ai_foundry_identity` provisions the user-assigned identity and access model used by Foundry workloads.
+
+This identity is what allows the private Foundry resources to authenticate to dependent Azure services such as Key Vault, Storage, AI Search, Cosmos DB, and other governed dependencies.
+
+### 3.11 Azure AI Search
 
 `modules/ai_search` is the retrieval layer for knowledge-oriented domain agents.
 
 When a spoke needs retrieval, the hub can route to an agent that uses search as its domain-specific execution engine.
 
-### 3.10 AKS and Workload Identities
+### 3.12 AKS and Workload Identities
 
 `modules/aks` and `modules/aks_identity` support private containerized workloads and workload identity patterns.
 
@@ -196,7 +211,7 @@ In this PoC, AKS is required to host the frontend application that connects to t
 
 While the hub agent itself is hosted in Foundry, AKS remains available for any private container-based spokes or services that the broader architecture may require.
 
-#### 3.10.1 AKS Frontend Deployment Path
+#### 3.12.1 AKS Frontend Deployment Path
 
 The frontend is deployed as a containerized web application on AKS, which gives the PoC a private, managed runtime for the client UI.
 
@@ -204,36 +219,36 @@ The deployment path is typically:
 
 1. Build the frontend image and publish it to the private container registry.
 2. Deploy the frontend workload to AKS using the cluster identity and registry access.
-3. Expose the frontend through the cluster service or ingress layer.
+3. Expose the frontend through Application Gateway for Containers in front of the cluster service.
 4. Serve the UI to the user from AKS.
 5. Have the UI open a websocket connection to the public Voice Live API endpoint.
 6. Let Voice Live forward the real-time session to the private hub-agent over `invocations_ws`.
 
 This means AKS is not the orchestration layer. It is the host for the browser-facing frontend, while the public Voice Live API remains the websocket bridge into the private Foundry hub-agent.
 
-#### 3.10.2 Ingress Recommendation
+#### 3.12.2 Ingress Recommendation
 
-For this PoC, the recommended default ingress option is **NGINX Ingress**.
+For this PoC, the selected ingress option is **Application Gateway for Containers**.
 
 Why:
 
-- It is the simplest path for exposing the AKS-hosted frontend and works well with websocket traffic.
-- It keeps the deployment lightweight, which matches a PoC focused on proving the Voice Live and hub-agent flow.
-- It avoids introducing additional Azure platform complexity before the architecture is production-hardened.
+- It provides an Azure-native ingress layer for exposing the AKS-hosted frontend.
+- It is a better fit when the PoC is intended to evolve toward a more production-oriented platform architecture.
+- It gives a cleaner path for managed ingress policy, traffic control, and future hardening than a minimal in-cluster ingress controller.
 
-Use **Application Gateway for Containers** if you want a more Azure-native long-term ingress layer with stronger managed integration and future production emphasis.
+`NGINX Ingress` would still be a valid lighter-weight PoC option, but it is not the preferred choice for this implementation.
 
-Use **AGIC** only if the environment already has an existing Application Gateway and you want to reuse that investment. For a new build, it is not the preferred choice.
+`AGIC` is only preferred when an existing Application Gateway footprint is already part of the target platform and the goal is to preserve that design.
 
-### 3.11 DevOps Build Agent
+### 3.13 DevOps Build Agent
 
 `modules/devops_identity` and `modules/devops` provision the private build agent infrastructure used by the CI/CD path.
 
 This is important because private-only operations, especially those involving Key Vault or private resources, should be performed from a trusted private build context.
 
-### 3.12 Point-to-Site VPN for Local Private Access
+### 3.14 Point-to-Site VPN for Local Private Access
 
-The PoC uses an optional Point-to-Site VPN so a local PC can join the private Azure virtual network and reach private endpoints, including the private Foundry project path.
+In this PoC, Point-to-Site VPN is the local testing path to Azure AI Foundry private networking. A local PC must connect through P2S VPN to join the private Azure virtual network and reach private endpoints, including the private Foundry project path.
 
 The VPN module is implemented in `modules/p2s_vpn` and creates:
 
@@ -260,9 +275,9 @@ Local setup flow:
 6. Import the downloaded profile and sign in with the same Entra ID identity used for access.
 7. Confirm that private DNS resolves private endpoint names while the VPN is connected.
 
-This VPN path matters because private Foundry resources, Key Vault, AI Search, Cosmos DB, Storage, and other private endpoints are not intended to be accessed directly from the public internet.
+This VPN path is what enables AI Foundry testing from a local machine in a private-network design. Private Foundry resources, Key Vault, AI Search, Cosmos DB, Storage, and other private endpoints are not intended to be accessed directly from the public internet.
 
-#### 3.12.1 p2s_vpn Deployment
+#### 3.14.1 p2s_vpn Deployment
 
 The `p2s_vpn` module is deployed as part of the network layer. It is optional and only created when `enable_p2s_vpn = true` in the selected environment tfvars file.
 
@@ -345,6 +360,8 @@ These define the hosted runtime, protocol, and websocket path for the private hu
 ### 4.4 Local Developer Access to Private Foundry
 
 After the VPN is connected, a local developer can use the private network path to access the Foundry project and related private services.
+
+For this PoC, P2S VPN is the required connectivity method from a local PC to test private Azure AI Foundry resources.
 
 The practical validation steps are:
 
