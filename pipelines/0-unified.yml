@@ -26,6 +26,7 @@ parameters:
   - ne
   - eus
   - sdc
+  - ncus
 
 - name: deploy_core
   displayName: Deploy Core (requires private pool ready)
