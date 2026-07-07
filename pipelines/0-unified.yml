@@ -91,7 +91,7 @@ stages:
       inputs:
         azureSubscription: $(service_connection_name)
         scriptType: bash
-        scriptLocation: inlineScript
+        scriptLocation: inlineScript 
         inlineScript: |
           echo "Creating resource group tfstate"
           az group create \
