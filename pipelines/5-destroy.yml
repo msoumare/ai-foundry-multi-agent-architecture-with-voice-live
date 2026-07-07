@@ -26,6 +26,7 @@ parameters:
   - ne
   - eus
   - sdc
+  - ncus
   
 - name: destroy_tfstate
   displayName: Destroy Terraform state backend after infra destroy
