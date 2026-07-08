@@ -140,6 +140,7 @@ stages:
           echo "### TERRAFORM PLAN - Core Infrastructure ###"
           # Plan remaining core modules/resources explicitly.
           # Excludes resources already handled in earlier pipelines (network/devops bootstrap).
+          # Voice Live model mode is intentionally excluded from this pipeline target list.
           terraform plan \
             -target=module.monitoring \
             -target=module.acr \
@@ -148,7 +149,6 @@ stages:
             -target=module.storage \
             -target=module.ai_foundry \
             -target=module.voiceliveapi_agent_mode \
-            # -target=module.voiceliveapi_model_mode \
             -target=module.ai_search \
             -target=module.ai_foundry_identity \
             -target=module.aks \

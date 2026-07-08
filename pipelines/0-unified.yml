@@ -417,6 +417,7 @@ stages:
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
           echo "### TERRAFORM PLAN - Core Infrastructure ###"
+          # Voice Live model mode is intentionally excluded from this pipeline target list.
           terraform plan \
             -target=module.monitoring \
             -target=module.acr \
@@ -425,7 +426,6 @@ stages:
             -target=module.storage \
             -target=module.ai_foundry \
             -target=module.voiceliveapi_agent_mode \
-            # -target=module.voiceliveapi_model_mode \
             -target=module.ai_search \
             -target=module.ai_foundry_identity \
             -target=module.aks \
