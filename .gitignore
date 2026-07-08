@@ -5,3 +5,9 @@
 *.tfstate.*
 crash.log
 crash.*.log
+
+# Python virtual environments
+.venv/
+venv/
+**/.venv/
+**/venv/
