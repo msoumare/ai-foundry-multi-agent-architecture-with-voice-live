@@ -49,4 +49,8 @@ variable "ai_services_ai_dns_zone_id" {
   type        = string
 }
 
+variable "user_assigned_identity_id" {
+  description = "Resource ID of the user-assigned managed identity to attach"
+  type        = string
+}
 

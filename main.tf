@@ -256,16 +256,16 @@ module "storage" {
 module "ai_foundry_identity" {
   source = "./modules/ai_foundry_identity"
 
-  name                         = "id-foundry-${var.workload}-${var.environment}-${var.region}"
-  location                     = var.location
-  resource_group_name          = azurerm_resource_group.main.name
-  key_vault_id                 = module.keyvault.id
-  storage_account_id           = module.storage.id
-  acr_id                       = module.acr.id
-  ai_search_id                 = module.ai_search.id
-  cosmos_db_account_id         = module.cosmosdb.id
-  ai_services_id               = module.ai_foundry.ai_services_id
-  ai_services_principal_id     = module.ai_foundry.ai_services_principal_id
+  name                     = "id-foundry-${var.workload}-${var.environment}-${var.region}"
+  location                 = var.location
+  resource_group_name      = azurerm_resource_group.main.name
+  key_vault_id             = module.keyvault.id
+  storage_account_id       = module.storage.id
+  acr_id                   = module.acr.id
+  ai_search_id             = module.ai_search.id
+  cosmos_db_account_id     = module.cosmosdb.id
+  ai_services_id           = module.ai_foundry.ai_services_id
+  ai_services_principal_id = module.ai_foundry.ai_services_principal_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -288,6 +288,7 @@ module "ai_foundry" {
   ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
   ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
   ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
+  user_assigned_identity_id  = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

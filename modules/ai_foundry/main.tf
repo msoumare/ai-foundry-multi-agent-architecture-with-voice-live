@@ -13,13 +13,13 @@ resource "azurerm_cognitive_account" "ai_services" {
   kind                          = "AIServices"
   sku_name                      = "S0"
   custom_subdomain_name         = var.ai_services_name
-  allow_project_management      = true
   local_auth_enabled            = false
   public_network_access_enabled = false
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [var.user_assigned_identity_id]
   }
-  tags                          = var.tags
+  tags = var.tags
 
   # lifecycle {
   #   # Temporary guard: keep the existing account in place while projects under the account

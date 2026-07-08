@@ -42,7 +42,7 @@ resource "azurerm_virtual_network_gateway" "p2s" {
   vpn_type = "RouteBased"
   # Azure now requires AZ SKUs for new VPN gateways (VpnGw1-5).
   # Keep AZ SKU regardless of region; Public IP zones are still region-conditional above.
-  sku      = "VpnGw1AZ"
+  sku = "VpnGw1AZ"
 
   active_active = false
   enable_bgp    = false

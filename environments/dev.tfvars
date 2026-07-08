@@ -1,10 +1,10 @@
-environment                  = "dev"
-workload                     = "agenthubspoke"
-region                       = "ncu"
-location                     = "northcentralus"
-resource_group_workload      = "rg-agenthubspoke-dev-ncu"
-log_analytics_workspace      = "log-agenthubspoke-dev-ncu"
-subscription_id              = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
+environment             = "dev"
+workload                = "agenthubspoke"
+region                  = "sdc"
+location                = "swedencentral"
+resource_group_workload = "rg-agenthubspoke-dev-sdc"
+log_analytics_workspace = "log-agenthubspoke-dev-sdc"
+subscription_id         = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
 
 address_space                     = ["10.0.0.0/16"]
 aks_subnet_prefixes               = ["10.0.1.0/24"]
