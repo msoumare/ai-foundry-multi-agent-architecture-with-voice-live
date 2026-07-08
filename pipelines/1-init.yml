@@ -97,13 +97,12 @@ jobs:
             --account-name $(storage_account_tfstate) \
             --auth-mode login    
 
-          echo "Assigne Storage Blob Data Contributortfstate to the Service Connection"
+          echo "Assigne Storage Blob Data Contributor to the Service Connection"
           az role assignment create \
-          --assignee-object-id 6a38f1de-f54b-4a2d-b294-f47801b19c5b \
-          --role "Storage Blob Data Contributor" \
-          --scope /subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/$(resource_group_tfstate)/providers/Microsoft.Storage/storageAccounts/$(storage_account_tfstate) \
-          --subscription 3c9d7b7f-4666-43a3-a852-062c5b18c783 \
-          --assignee-principal-type ServicePrincipal
+            --assignee-object-id 6a38f1de-f54b-4a2d-b294-f47801b19c5b \
+            --assignee-principal-type ServicePrincipal \
+            --role "Storage Blob Data Contributor" \
+            --scope /subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/$(resource_group_tfstate)/providers/Microsoft.Storage/storageAccounts/$(storage_account_tfstate)
         scriptLocation: 'inlineScript'
         scriptType: 'bash' 
 
