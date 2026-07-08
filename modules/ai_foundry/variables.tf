@@ -48,9 +48,3 @@ variable "ai_services_ai_dns_zone_id" {
   description = "Private DNS zone ID for Services AI (privatelink.services.ai.azure.com)"
   type        = string
 }
-
-variable "user_assigned_identity_id" {
-  description = "Resource ID of the user-assigned managed identity to attach"
-  type        = string
-}
-

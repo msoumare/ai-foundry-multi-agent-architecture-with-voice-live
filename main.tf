@@ -288,7 +288,6 @@ module "ai_foundry" {
   ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
   ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
   ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
-  user_assigned_identity_id  = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

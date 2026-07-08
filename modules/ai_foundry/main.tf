@@ -16,8 +16,7 @@ resource "azurerm_cognitive_account" "ai_services" {
   local_auth_enabled            = false
   public_network_access_enabled = false
   identity {
-    type         = "UserAssigned"
-    identity_ids = [var.user_assigned_identity_id]
+    type = "SystemAssigned"
   }
   tags = var.tags
 
