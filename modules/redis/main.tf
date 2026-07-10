@@ -34,4 +34,14 @@ resource "azurerm_private_endpoint" "this" {
   }
 
   tags = var.tags
+
+  # Imported Redis private endpoints can fail during update due to Azure/Provider LRO issues.
+  # Ignore non-critical drift to keep applies stable while preserving the existing endpoint.
+  lifecycle {
+    ignore_changes = [
+      private_service_connection,
+      private_dns_zone_group,
+      tags,
+    ]
+  }
 }
