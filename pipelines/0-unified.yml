@@ -54,13 +54,6 @@ variables:
 - name: key_tfstate
   value: tfs${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}.key
 
-- name: location
-  value: northeurope
-
-- ${{ if eq(parameters.region, 'eus') }}:
-  - name: location
-    value: eastus
-
 - name: terraform_version
   value: '1.11.3'
 

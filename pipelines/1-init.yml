@@ -28,7 +28,7 @@ parameters:
   - sdc
   - ncu
   - gwc
-  
+
 variables:
 - group: ${{ parameters.workload }}.infra
 
@@ -53,12 +53,23 @@ variables:
 - name: region
   value: ${{ parameters.region }}
 
+# Default region → NE
 - name: location
   value: northeurope
 
+# Override
 - ${{ if eq(parameters.region, 'eus') }}:
   - name: location
     value: eastus
+- ${{ if eq(parameters.region, 'sdc') }}:
+  - name: location
+    value: swedencentral
+- ${{ if eq(parameters.region, 'ncu') }}:
+  - name: location
+    value: northcentralus
+- ${{ if eq(parameters.region, 'gwc') }}:
+  - name: location
+    value: germanywestcentral
 
 pool:
   name: Azure Pipelines
