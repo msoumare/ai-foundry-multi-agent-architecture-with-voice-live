@@ -104,10 +104,10 @@ jobs:
             --location $(location)
 
           echo "Creating tfstate container"
-          az storage container create \
+          az storage container-rm create \
+            --storage-account $(storage_account_tfstate) \
             --name $(container_tfstate) \
-            --account-name $(storage_account_tfstate) \
-            --auth-mode login    
+            --resource-group $(resource_group_tfstate)
 
         scriptLocation: 'inlineScript'
         scriptType: 'bash' 

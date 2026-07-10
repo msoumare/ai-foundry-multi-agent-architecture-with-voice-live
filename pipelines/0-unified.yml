@@ -100,10 +100,10 @@ stages:
             --location $(location) || echo "Storage account already exists"
 
           echo "Creating tfstate container"
-          az storage container create \
+          az storage container-rm create \
+            --storage-account $(storage_account_tfstate) \
             --name $(container_tfstate) \
-            --account-name $(storage_account_tfstate) \
-            --auth-mode login || echo "Container already exists"
+            --resource-group $(resource_group_tfstate) || echo "Container already exists"
 
 ########################################
 # STAGE 1 - PLAN NETWORK
