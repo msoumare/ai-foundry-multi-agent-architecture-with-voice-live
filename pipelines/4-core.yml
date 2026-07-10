@@ -130,6 +130,51 @@ stages:
             -backend-config="use_azuread_auth=true"
 
     - task: AzureCLI@2
+      displayName: "Terraform Import Existing Core Resources (if needed)"
+      inputs:
+        azureSubscription: $(service_connection_name)
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: "$(terraform_working_directory)"
+        inlineScript: |
+          set -euo pipefail
+
+          SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
+          RG_NAME="$(resource_group_workload)"
+          AI_NAME="ai-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
+          REDIS_NAME="redis-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
+
+          AI_RESOURCE_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.CognitiveServices/accounts/${AI_NAME}"
+          DIAG_NAME="diag-${AI_NAME}"
+          DIAG_RESOURCE_ID="${AI_RESOURCE_ID}|${DIAG_NAME}"
+          REDIS_RESOURCE_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Cache/redis/${REDIS_NAME}"
+
+          import_if_exists() {
+            local state_address="$1"
+            local resource_id="$2"
+
+            if terraform state show "$state_address" >/dev/null 2>&1; then
+              echo "State already contains ${state_address}; skipping import."
+              return 0
+            fi
+
+            echo "Importing ${state_address}..."
+            terraform import "$state_address" "$resource_id"
+          }
+
+          if az redis show --name "$REDIS_NAME" --resource-group "$RG_NAME" >/dev/null 2>&1; then
+            import_if_exists "module.redis.azurerm_redis_cache.this" "$REDIS_RESOURCE_ID"
+          else
+            echo "Redis ${REDIS_NAME} not found; skipping import."
+          fi
+
+          if az monitor diagnostic-settings show --resource "$AI_RESOURCE_ID" --name "$DIAG_NAME" >/dev/null 2>&1; then
+            import_if_exists "module.ai_foundry.azurerm_monitor_diagnostic_setting.ai_services" "$DIAG_RESOURCE_ID"
+          else
+            echo "Diagnostic setting ${DIAG_NAME} not found on ${AI_NAME}; skipping import."
+          fi
+
+    - task: AzureCLI@2
       displayName: "Terraform Plan - Core Infrastructure"
       inputs:
         azureSubscription: $(service_connection_name)
@@ -231,6 +276,51 @@ stages:
                   -backend-config="container_name=$(container_tfstate)" \
                   -backend-config="key=$(key_tfstate)" \
                   -backend-config="use_azuread_auth=true"
+
+          - task: AzureCLI@2
+            displayName: "Terraform Import Existing Core Resources (if needed)"
+            inputs:
+              azureSubscription: $(service_connection_name)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: "$(terraform_working_directory)"
+              inlineScript: |
+                set -euo pipefail
+
+                SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
+                RG_NAME="$(resource_group_workload)"
+                AI_NAME="ai-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
+                REDIS_NAME="redis-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
+
+                AI_RESOURCE_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.CognitiveServices/accounts/${AI_NAME}"
+                DIAG_NAME="diag-${AI_NAME}"
+                DIAG_RESOURCE_ID="${AI_RESOURCE_ID}|${DIAG_NAME}"
+                REDIS_RESOURCE_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Cache/redis/${REDIS_NAME}"
+
+                import_if_exists() {
+                  local state_address="$1"
+                  local resource_id="$2"
+
+                  if terraform state show "$state_address" >/dev/null 2>&1; then
+                    echo "State already contains ${state_address}; skipping import."
+                    return 0
+                  fi
+
+                  echo "Importing ${state_address}..."
+                  terraform import "$state_address" "$resource_id"
+                }
+
+                if az redis show --name "$REDIS_NAME" --resource-group "$RG_NAME" >/dev/null 2>&1; then
+                  import_if_exists "module.redis.azurerm_redis_cache.this" "$REDIS_RESOURCE_ID"
+                else
+                  echo "Redis ${REDIS_NAME} not found; skipping import."
+                fi
+
+                if az monitor diagnostic-settings show --resource "$AI_RESOURCE_ID" --name "$DIAG_NAME" >/dev/null 2>&1; then
+                  import_if_exists "module.ai_foundry.azurerm_monitor_diagnostic_setting.ai_services" "$DIAG_RESOURCE_ID"
+                else
+                  echo "Diagnostic setting ${DIAG_NAME} not found on ${AI_NAME}; skipping import."
+                fi
 
           - task: AzureCLI@2
             displayName: "Terraform Apply - Core Infrastructure"
