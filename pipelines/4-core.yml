@@ -159,7 +159,10 @@ stages:
             fi
 
             echo "Importing ${state_address}..."
-            terraform import "$state_address" "$resource_id"
+            terraform import \
+              -input=false \
+              -var-file="./environments/${{ parameters.env }}.tfvars" \
+              "$state_address" "$resource_id"
           }
 
           if az redis show --name "$REDIS_NAME" --resource-group "$RG_NAME" >/dev/null 2>&1; then
@@ -307,7 +310,10 @@ stages:
                   fi
 
                   echo "Importing ${state_address}..."
-                  terraform import "$state_address" "$resource_id"
+                  terraform import \
+                    -input=false \
+                    -var-file="./environments/${{ parameters.env }}.tfvars" \
+                    "$state_address" "$resource_id"
                 }
 
                 if az redis show --name "$REDIS_NAME" --resource-group "$RG_NAME" >/dev/null 2>&1; then
