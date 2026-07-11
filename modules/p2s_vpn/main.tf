@@ -10,6 +10,8 @@ locals {
     "northcentralus",
     "germanywestcentral",
   ]
+
+  is_zonal_public_ip_location = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", "")))
 }
 
 resource "azurerm_subnet" "gateway" {
@@ -20,17 +22,18 @@ resource "azurerm_subnet" "gateway" {
 }
 
 resource "azurerm_public_ip" "vpn_gateway" {
-  name                = "pip-vpngw-${var.workload}-${var.env}-${var.region}"
+  name                = local.is_zonal_public_ip_location ? "pip-vpngw-${var.workload}-${var.env}-${var.region}-az" : "pip-vpngw-${var.workload}-${var.env}-${var.region}"
   location            = var.location
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", ""))) ? ["1", "2", "3"] : null
+  zones               = local.is_zonal_public_ip_location ? ["1", "2", "3"] : null
   tags                = var.tags
 
   # Keep tag drift from forcing updates, but allow functional properties (like zones)
   # to converge so AZ VPN gateway requirements can be satisfied.
   lifecycle {
+    create_before_destroy = true
     ignore_changes = [
       tags,
     ]
