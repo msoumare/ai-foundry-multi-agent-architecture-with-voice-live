@@ -7,6 +7,8 @@ locals {
     "northeurope",
     "eastus",
     "swedencentral",
+    "northcentralus",
+    "germanywestcentral",
   ]
 }
 
@@ -26,10 +28,12 @@ resource "azurerm_public_ip" "vpn_gateway" {
   zones               = contains(local.zonal_public_ip_locations, lower(replace(var.location, " ", ""))) ? ["1", "2", "3"] : null
   tags                = var.tags
 
-  # This IP is attached to the VPN gateway and should never be replaced by incidental drift.
-  # Ignoring all changes avoids destructive replacement attempts that fail while attached.
+  # Keep tag drift from forcing updates, but allow functional properties (like zones)
+  # to converge so AZ VPN gateway requirements can be satisfied.
   lifecycle {
-    ignore_changes = all
+    ignore_changes = [
+      tags,
+    ]
   }
 }
 
