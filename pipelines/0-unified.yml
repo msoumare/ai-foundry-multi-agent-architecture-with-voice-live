@@ -170,7 +170,7 @@ stages:
             local state_address="$1"
             local resource_id="$2"
 
-            if terraform state show "$state_address" >/dev/null 2>&1; then
+            if terraform state list | grep -Fx "$state_address" >/dev/null 2>&1; then
               echo "State already contains ${state_address}; skipping import."
               return 0
             fi
@@ -294,7 +294,7 @@ stages:
                   local state_address="$1"
                   local resource_id="$2"
 
-                  if terraform state show "$state_address" >/dev/null 2>&1; then
+                  if terraform state list | grep -Fx "$state_address" >/dev/null 2>&1; then
                     echo "State already contains ${state_address}; skipping import."
                     return 0
                   fi
