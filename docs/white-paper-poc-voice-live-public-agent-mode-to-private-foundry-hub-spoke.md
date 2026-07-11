@@ -55,7 +55,7 @@ The practical outcome we are trying to achieve is a production-oriented blueprin
 
 The PoC is built from two main application areas:
 
-- `poc_voice_live_api_agent/frontend`: the client application that is hosted on AKS and connects to the Voice Live websocket endpoint.
+- `poc_voice_live_api_agent/frontend`: a reference web client application hosted on AKS that connects to the Voice Live websocket endpoint. In the same architecture, the client can also be a native mobile app on iOS or Android.
 - `poc_voice_live_api_agent/hub_agent`: the hosted hub agent implementation that runs in private Azure AI Foundry.
 
 The hub agent runtime is defined by:
@@ -68,7 +68,7 @@ The hub agent runtime is defined by:
 
 The important runtime contract is simple:
 
-- AKS hosts the frontend UI and websocket client,
+- the client app (web, iOS, or Android) opens the realtime session,
 - public Voice Live handles session transport,
 - private hub agent handles routing and orchestration,
 - domain agents handle domain-specific work.
@@ -79,7 +79,7 @@ The target architecture is a hub-and-spoke pattern with a public ingress and a p
 
 ```mermaid
 flowchart LR
-    U[End User / Client UI] -->|wss| V[Public Voice Live API\nAgent Mode]
+  U[End User / Client App\nWeb, iOS, Android] -->|wss| V[Public Voice Live API\nAgent Mode]
     V -->|invocations_ws| H[Private Foundry Hosted Hub Agent\n/voice-live/realtime]
     H -->|route envelope| D1[Domain Agent A]
     H -->|route envelope| D2[Domain Agent B]
@@ -207,13 +207,13 @@ When a spoke needs retrieval, the hub can route to an agent that uses search as 
 
 `modules/aks` and `modules/aks_identity` support private containerized workloads and workload identity patterns.
 
-In this PoC, AKS is required to host the frontend application that connects to the public Voice Live websocket endpoint. From there, the frontend bridges user interaction into the hub-agent over `invocations_ws`.
+In this PoC, AKS hosts a reference web frontend application that connects to the public Voice Live websocket endpoint. The same realtime contract can also be implemented by native iOS and Android apps, which connect to Voice Live and bridge user interaction into the hub-agent over `invocations_ws`.
 
 While the hub agent itself is hosted in Foundry, AKS remains available for any private container-based spokes or services that the broader architecture may require.
 
 #### 3.12.1 AKS Frontend Deployment Path
 
-The frontend is deployed as a containerized web application on AKS, which gives the PoC a private, managed runtime for the client UI.
+The reference frontend is deployed as a containerized web application on AKS, which gives the PoC a private, managed runtime for browser-based client UI.
 
 The deployment path is typically:
 

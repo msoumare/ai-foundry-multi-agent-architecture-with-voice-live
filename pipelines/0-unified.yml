@@ -27,6 +27,7 @@ parameters:
   - eus
   - sdc
   - ncu
+  - gwc  
 
 - name: deploy_core
   displayName: Deploy Core (requires private pool ready)
