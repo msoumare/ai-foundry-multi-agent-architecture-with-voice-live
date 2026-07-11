@@ -16,8 +16,7 @@ resource "azurerm_public_ip" "vpn_gateway" {
   zones               = null
   tags                = var.tags
 
-  # Keep tag drift from forcing updates, but allow functional properties (like zones)
-  # to converge so AZ VPN gateway requirements can be satisfied.
+  # Keep tag drift from forcing unnecessary updates for the shared gateway IP.
   lifecycle {
     ignore_changes = [
       tags,
