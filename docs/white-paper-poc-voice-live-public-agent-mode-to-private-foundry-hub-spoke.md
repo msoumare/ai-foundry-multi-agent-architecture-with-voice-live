@@ -91,6 +91,77 @@ flowchart LR
     V --> U
 ```
 
+  At a high level, the architecture has four distinct layers:
+
+  - the **client layer**, which can be a web app or a native mobile app on iOS or Android,
+  - the **public realtime ingress layer**, which is Azure AI Foundry Voice Live API in agent mode,
+  - the **private orchestration layer**, which is the hosted hub agent running in private Foundry,
+  - and the **domain execution layer**, which contains one or more spoke agents and supporting company systems.
+
+  The design goal is to keep the user experience public and responsive while keeping the reasoning, policy enforcement, and enterprise integration inside the private boundary.
+
+  ### 2.1 Client Layer
+
+  The client is intentionally thin. It should handle:
+
+  - user interaction,
+  - realtime session setup,
+  - message streaming,
+  - and presentation of the final answer.
+
+  The client should not contain business routing logic or direct access to internal company systems. It simply starts the conversation and receives the response stream.
+
+  ### 2.2 Public Ingress Layer
+
+  Voice Live API in agent mode is the public entry point for the realtime conversation.
+
+  Its role is to:
+
+  - terminate the public websocket session,
+  - forward the session to the private hub agent,
+  - preserve the realtime event contract,
+  - and return streamed outputs back to the client.
+
+  This layer is the transport bridge, not the business brain of the system.
+
+  ### 2.3 Private Orchestration Layer
+
+  The hosted hub agent is the central control point for the architecture.
+
+  It is responsible for:
+
+  - understanding the user intent,
+  - deciding whether the request is conversational, retrieval-based, or action-based,
+  - selecting the correct spoke agent or tool,
+  - enforcing policy before delegation,
+  - and shaping the final response.
+
+  This is where the architecture gains governance. The hub is the place where the platform can apply routing rules, confidence thresholds, safety checks, and tool selection policies.
+
+  ### 2.4 Domain Execution Layer
+
+  The spoke agents and their connected business systems perform the specialized work.
+
+  Examples include:
+
+  - retrieval over enterprise knowledge sources,
+  - customer or order lookups,
+  - workflow actions,
+  - compliance checks,
+  - and domain-specific automation.
+
+  Each spoke should own one narrow responsibility set. That keeps the system modular and makes it easier to add, test, and govern new capabilities without changing the entire assistant.
+
+  ### 2.5 Why This Shape Works
+
+  This architecture is useful because it separates the concerns that usually get mixed together in a single-agent design:
+
+  - session transport stays public and simple,
+  - reasoning and policy stay centralized,
+  - and enterprise actions stay behind controlled tools or delegate agents.
+
+  That separation lets the platform evolve in two directions at once: the client experience can stay fast and low-latency, while the enterprise integration and governance model can become more sophisticated over time.
+
 In this design:
 
 - the public endpoint is only the interaction surface,
@@ -466,6 +537,206 @@ sequenceDiagram
     H-->>V: truncated/cancelled/done lifecycle
     V-->>C: cancellation events
 ```
+
+  ### 5.4 How Agents Call Company APIs Through Tools
+
+  The hub agent and spoke agents should not call business systems directly from arbitrary prompts. Instead, they should use a controlled tool layer that exposes approved company capabilities in a governed way.
+
+  In practice, the flow is:
+
+  1. The client sends a user request to the public Voice Live endpoint.
+  2. Voice Live forwards the session to the private hub agent.
+  3. The hub classifies the request and decides whether it should be answered from reasoning, retrieval, or a business action.
+  4. If a business action is required, the hub selects the correct tool and passes a structured request to it.
+  5. The tool executes the operation against the company API, MCP server, or agent-to-agent endpoint.
+  6. The tool returns a normalized result to the hub.
+  7. The hub formats the result into a user-facing response and sends it back through Voice Live.
+
+  This keeps the architecture safe because the model never gets unrestricted access to enterprise systems. It only sees the tool contracts that the platform explicitly exposes.
+
+  The recommended tool categories are:
+
+  - **Direct API tools** for synchronous company operations such as lookup, create, update, and status checks.
+  - **MCP tools** for discoverable, schema-driven integrations where the agent needs a standardized tool contract.
+  - **A2A tools** for delegating a task to another specialized agent when the work is better handled by a separate agent boundary.
+
+    #### 5.4.0 When the Hub Invokes a Spoke Agent vs Calls Tools Directly
+
+    The hub should make this decision explicitly on every turn.
+
+    Invoke a **spoke agent** when:
+
+    - the request maps to a known domain capability,
+    - domain-specific reasoning is required,
+    - the task may involve multiple tool calls in sequence,
+    - the task needs a separate policy or ownership boundary,
+    - or the response should come from a domain-owned logic path.
+
+    Call a **tool directly from the hub** when:
+
+    - the operation is simple and cross-domain,
+    - no deep domain reasoning is needed,
+    - the response can be produced from a single controlled call,
+    - and central platform ownership is preferred over domain delegation.
+
+    Practical execution order:
+
+    1. Hub classifies user intent and confidence.
+    2. Hub checks route allowlist and policy gates.
+    3. Hub chooses either:
+      - direct tool path (hub -> tool), or
+      - domain path (hub -> spoke -> tool[s]).
+    4. If domain path is selected, the spoke performs domain reasoning and decides which tools to call.
+    5. Spoke returns a structured domain result to the hub.
+    6. Hub applies final response shaping and sends output back through Voice Live.
+
+    This keeps routing decisions centralized while allowing domain agents to own domain-specific tool orchestration.
+
+  #### 5.4.1 Direct API Tool Pattern
+
+  Use direct API tools when the company already has REST or GraphQL services that are stable and well governed.
+
+  Typical examples:
+
+  - customer profile lookup,
+  - order status,
+  - service request creation,
+  - knowledge base search,
+  - workflow approval,
+  - and ticket updates.
+
+  In this pattern, the agent does not call the company API itself. Instead, it calls a tool function such as `lookup_customer_profile` or `create_service_ticket`. The tool then:
+
+  1. validates the input,
+  2. acquires credentials using managed identity or service connection,
+  3. calls the company API,
+  4. handles retries, timeouts, and error mapping,
+  5. and returns a compact response object to the agent.
+
+  This is the simplest and most common approach for enterprise systems that already have standard APIs.
+
+  #### 5.4.2 MCP Tool Pattern
+
+  Use MCP when you want the agent to discover tools through a standardized protocol instead of binding directly to each API surface.
+
+  This is useful when:
+
+  - multiple agents need the same capability set,
+  - the tool inventory changes over time,
+  - the enterprise wants a unified tool schema,
+  - or the platform team wants to publish tools once and reuse them across domains.
+
+  In this pattern, a company API is wrapped by an MCP server. The agent connects to the MCP server and uses the published tool definitions. The MCP server is responsible for:
+
+  1. presenting the tool catalog,
+  2. validating arguments,
+  3. translating tool calls into internal API requests,
+  4. enforcing authorization and auditing,
+  5. and returning structured tool results.
+
+  MCP is a strong fit when you want to standardize how many tools are exposed to many agents without creating a separate custom adapter for every agent.
+
+  #### 5.4.3 A2A Delegation Pattern
+
+  Use A2A when the task should be delegated to another agent rather than a raw business API.
+
+  This is appropriate when the target capability requires:
+
+  - deeper domain logic,
+  - multi-step reasoning,
+  - a separate policy boundary,
+  - a specialized skill set,
+  - or a different ownership team.
+
+  Examples:
+
+  - a support-routing agent that hands a case to a claims agent,
+  - a procurement agent that delegates supplier checks to a sourcing agent,
+  - or a research agent that delegates to a compliance agent for policy validation.
+
+  In this pattern, the hub agent sends a structured task to a peer agent through an A2A contract. The downstream agent may itself use direct APIs or MCP tools. The key point is that the first agent is delegating intent, not directly performing the full enterprise operation.
+
+  #### 5.4.3.1 Spoke Agent Tool Invocation Model
+
+  After the hub delegates to a spoke, the spoke can call tools as part of domain execution.
+
+  The recommended spoke execution pattern is:
+
+  1. Spoke receives a route envelope from hub (`intent`, `context`, `constraints`).
+  2. Spoke validates that the requested action is inside its domain boundary.
+  3. Spoke selects one or more allowed tools (API, MCP, or nested A2A where approved).
+  4. Spoke executes tool calls with schema validation, retries, and policy checks.
+  5. Spoke returns a normalized domain result (not raw tool payload) to the hub.
+  6. Hub combines that result with conversation context and emits the final user response.
+
+  This model prevents the hub from becoming overloaded with domain-specific tool logic while preserving centralized governance.
+
+  #### 5.4.4 Recommended Decision Rule
+
+  Choose the tool pattern based on the shape of the company capability:
+
+  - Use **direct API tools** when the operation is simple, synchronous, and already exposed as a stable service.
+  - Use **MCP** when you want a standardized, catalog-driven tool layer with many reusable capabilities.
+  - Use **A2A** when the work is really another agent's job and should remain a separate decision boundary.
+
+  #### 5.4.5 Enterprise Control Requirements
+
+  Regardless of the tool type, the platform should enforce the same control points:
+
+  - authentication and authorization before tool execution,
+  - input validation against a strict schema,
+  - secret access through managed identity or vault-backed credentials,
+  - request and response logging for auditability,
+  - rate limiting and timeout controls,
+  - and output filtering so the agent only receives the data needed to answer the user.
+
+  This ensures the LLM remains an orchestrator and not an uncontrolled integration layer.
+
+  #### 5.4.6 Example Tool Chain
+
+  ```mermaid
+  sequenceDiagram
+    participant C as Client
+    participant V as Voice Live API
+    participant H as Hub Agent
+    participant T as Tool Adapter
+    participant M as MCP Server
+    participant A as Company API
+
+    C->>V: user asks for order status
+    V->>H: invocations_ws event
+    H->>T: call tool(order_status)
+    T->>M: MCP tool request
+    M->>A: authenticated API request
+    A-->>M: response payload
+    M-->>T: normalized result
+    T-->>H: tool result
+    H-->>V: response.create
+    V-->>C: spoken or visual answer
+  ```
+
+  ### 5.5 Tool Placement in the Architecture
+
+  The safest place to host tools is inside the private boundary, not in the public Voice Live layer.
+
+  Recommended placement:
+
+  - **Voice Live** handles realtime session transport only.
+  - **Hub agent** decides when to call a tool.
+  - **Tool adapter or MCP server** executes the company API call.
+  - **Spoke agents** may also use tools when they need their own domain-specific actions.
+
+  This keeps business credentials, audit logic, and service-specific policy enforcement away from the public ingress path.
+
+  ### 5.6 Practical Pattern for Existing Company Systems
+
+  For an existing enterprise landscape, the recommended modernization order is:
+
+  1. Wrap stable existing APIs as direct tools.
+  2. Move repeated or shared capabilities behind MCP servers.
+  3. Promote complex domain workflows into separate A2A-capable agents when they need their own ownership boundary.
+
+  That gives you a path from simple integration to a fully multi-agent operating model without rewriting everything at once.
 
 ## 6. Security and Trust Boundaries
 
