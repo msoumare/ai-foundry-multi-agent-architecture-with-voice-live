@@ -149,7 +149,7 @@ stages:
         scriptLocation: inlineScript
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
-          echo "### TERRAFORM PLAN - Network Infrastructure ###
+          echo "### TERRAFORM PLAN - Network Infrastructure ###"
 
           terraform plan \
             -target=azurerm_resource_group.main \
