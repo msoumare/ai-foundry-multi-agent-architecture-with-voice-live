@@ -338,7 +338,6 @@ When the VPN is enabled in the environment tfvars, the network pipeline includes
 
 Local setup flow:
 
-1. Set `enable_p2s_vpn = true` in the environment tfvars file.
 2. Provide `gateway_subnet_prefixes` and `p2s_vpn_client_address_space` values.
 3. Apply the network and core Terraform stages.
 4. In Azure Portal, open the Virtual Network Gateway and download the VPN client profile.
@@ -350,7 +349,7 @@ This VPN path is what enables AI Foundry testing from a local machine in a priva
 
 #### 3.14.1 p2s_vpn Deployment
 
-The `p2s_vpn` module is deployed as part of the network layer. It is optional and only created when `enable_p2s_vpn = true` in the selected environment tfvars file.
+The `p2s_vpn` module is deployed as part of the network layer. 
 
 Deployment inputs required by the module are:
 
@@ -448,7 +447,6 @@ If the VPN is not connected, the local PC should not be able to reach the privat
 
 When you deploy `p2s_vpn`, use this checklist to confirm it is ready for local access:
 
-1. Confirm `enable_p2s_vpn = true` in the environment tfvars file.
 2. Confirm `gateway_subnet_prefixes` is defined and large enough for `GatewaySubnet`.
 3. Confirm `p2s_vpn_client_address_space` does not overlap with the VNet or any connected network.
 4. Run the network pipeline and verify the VPN gateway is created.

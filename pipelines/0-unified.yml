@@ -142,56 +142,6 @@ stages:
             -backend-config="use_azuread_auth=true"
 
     - task: AzureCLI@2
-      displayName: "Terraform Import Existing P2S Resources (if needed)"
-      inputs:
-        azureSubscription: $(service_connection_name)
-        scriptType: bash
-        scriptLocation: inlineScript
-        workingDirectory: "$(terraform_working_directory)"
-        inlineScript: |
-          set -euo pipefail
-
-          if ! grep -E '^enable_p2s_vpn\s*=\s*true' "./environments/${{ parameters.env }}.tfvars" >/dev/null; then
-            echo "P2S VPN disabled in tfvars; skipping P2S import step."
-            exit 0
-          fi
-
-          SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
-          RG_NAME="$(resource_group_workload)"
-          VNET_NAME="vnet-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-          PIP_NAME="pip-vpngw-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-          VNG_NAME="vpngw-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-
-          SUBNET_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/virtualNetworks/${VNET_NAME}/subnets/GatewaySubnet"
-          PIP_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/publicIPAddresses/${PIP_NAME}"
-          VNG_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/virtualNetworkGateways/${VNG_NAME}"
-
-          import_if_exists() {
-            local state_address="$1"
-            local resource_id="$2"
-
-            if terraform state list | grep -Fx "$state_address" >/dev/null 2>&1; then
-              echo "State already contains ${state_address}; skipping import."
-              return 0
-            fi
-
-            if ! az resource show --ids "$resource_id" >/dev/null 2>&1; then
-              echo "Resource not found for ${state_address}; skipping import."
-              return 0
-            fi
-
-            echo "Importing ${state_address}"
-            terraform import \
-              -input=false \
-              -var-file="./environments/${{ parameters.env }}.tfvars" \
-              "$state_address" "$resource_id"
-          }
-
-          import_if_exists "module.p2s_vpn[0].azurerm_subnet.gateway" "$SUBNET_ID"
-          import_if_exists "module.p2s_vpn[0].azurerm_public_ip.vpn_gateway" "$PIP_ID"
-          import_if_exists "module.p2s_vpn[0].azurerm_virtual_network_gateway.p2s" "$VNG_ID"
-
-    - task: AzureCLI@2
       displayName: "Terraform Plan - Network"
       inputs:
         azureSubscription: $(service_connection_name)
@@ -199,19 +149,14 @@ stages:
         scriptLocation: inlineScript
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
-          echo "### TERRAFORM PLAN - Network Infrastructure ###"
-          P2S_TARGET=""
-          if grep -E '^enable_p2s_vpn\s*=\s*true' "./environments/${{ parameters.env }}.tfvars" >/dev/null; then
-            echo "P2S VPN is enabled in tfvars; including module.p2s_vpn[0] in target plan."
-            P2S_TARGET="-target=module.p2s_vpn[0]"
-          fi
+          echo "### TERRAFORM PLAN - Network Infrastructure ###
 
           terraform plan \
             -target=azurerm_resource_group.main \
             -target=module.vnet \
             -target=azurerm_public_ip.bastion \
             -target=azurerm_bastion_host.main \
-            ${P2S_TARGET} \
+
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network 
 
@@ -264,56 +209,6 @@ stages:
                   -backend-config="container_name=$(container_tfstate)" \
                   -backend-config="key=$(key_tfstate)" \
                   -backend-config="use_azuread_auth=true"
-
-          - task: AzureCLI@2
-            displayName: "Terraform Import Existing P2S Resources (if needed)"
-            inputs:
-              azureSubscription: $(service_connection_name)
-              scriptType: bash
-              scriptLocation: inlineScript
-              workingDirectory: "$(terraform_working_directory)"
-              inlineScript: |
-                set -euo pipefail
-
-                if ! grep -E '^enable_p2s_vpn\s*=\s*true' "./environments/${{ parameters.env }}.tfvars" >/dev/null; then
-                  echo "P2S VPN disabled in tfvars; skipping P2S import step."
-                  exit 0
-                fi
-
-                SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
-                RG_NAME="$(resource_group_workload)"
-                VNET_NAME="vnet-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-                PIP_NAME="pip-vpngw-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-                VNG_NAME="vpngw-${{ parameters.workload }}-${{ parameters.env }}-${{ parameters.region }}"
-
-                SUBNET_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/virtualNetworks/${VNET_NAME}/subnets/GatewaySubnet"
-                PIP_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/publicIPAddresses/${PIP_NAME}"
-                VNG_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RG_NAME}/providers/Microsoft.Network/virtualNetworkGateways/${VNG_NAME}"
-
-                import_if_exists() {
-                  local state_address="$1"
-                  local resource_id="$2"
-
-                  if terraform state list | grep -Fx "$state_address" >/dev/null 2>&1; then
-                    echo "State already contains ${state_address}; skipping import."
-                    return 0
-                  fi
-
-                  if ! az resource show --ids "$resource_id" >/dev/null 2>&1; then
-                    echo "Resource not found for ${state_address}; skipping import."
-                    return 0
-                  fi
-
-                  echo "Importing ${state_address}"
-                  terraform import \
-                    -input=false \
-                    -var-file="./environments/${{ parameters.env }}.tfvars" \
-                    "$state_address" "$resource_id"
-                }
-
-                import_if_exists "module.p2s_vpn[0].azurerm_subnet.gateway" "$SUBNET_ID"
-                import_if_exists "module.p2s_vpn[0].azurerm_public_ip.vpn_gateway" "$PIP_ID"
-                import_if_exists "module.p2s_vpn[0].azurerm_virtual_network_gateway.p2s" "$VNG_ID"
 
           - task: AzureCLI@2
             displayName: "Terraform Apply - Network (NAT Gateway)"

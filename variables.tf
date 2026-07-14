@@ -95,12 +95,6 @@ variable "bastion_subnet_prefixes" {
   type        = list(string)
 }
 
-variable "enable_p2s_vpn" {
-  description = "Enable Point-to-Site VPN gateway for local development access"
-  type        = bool
-  default     = false
-}
-
 variable "gateway_subnet_prefixes" {
   description = "Address prefixes for the GatewaySubnet used by the VPN gateway"
   type        = list(string)

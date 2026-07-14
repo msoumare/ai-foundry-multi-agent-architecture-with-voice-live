@@ -37,8 +37,6 @@ module "vnet" {
 
 # --- Point-to-Site VPN (Optional) ---
 module "p2s_vpn" {
-  count = var.enable_p2s_vpn ? 1 : 0
-
   source = "./modules/p2s_vpn"
 
   workload                     = var.workload
