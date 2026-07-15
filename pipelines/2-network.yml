@@ -108,7 +108,7 @@ stages:
             -target=module.vnet \
             -target=azurerm_public_ip.bastion \
             -target=azurerm_bastion_host.main \
-            -target=module.p2s_vpn[0] \
+            -target=module.p2s_vpn \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network 
 
