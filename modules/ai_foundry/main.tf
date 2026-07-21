@@ -27,6 +27,27 @@ resource "azurerm_cognitive_account" "ai_services" {
   # }
 }
 
+# resource "azurerm_cognitive_account_project" "project" {
+#   name                 = var.cognitive_account_project_name
+#   cognitive_account_id = azurerm_cognitive_account.ai_services.id
+#   location             = var.location
+#   description          = var.project_description
+#   display_name         = var.project_display_name
+
+#   identity {
+#     type         = "SystemAssigned, UserAssigned"
+#     identity_ids = [var.user_assigned_identity_id]
+#   }
+
+#   tags = var.tags
+
+#   lifecycle {
+#     ignore_changes = [description, display_name]
+
+#   }
+# }
+
+
 resource "azurerm_cognitive_deployment" "gpt4o" {
   name                 = "gpt-4o"
   cognitive_account_id = azurerm_cognitive_account.ai_services.id
