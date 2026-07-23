@@ -269,24 +269,25 @@ module "ai_foundry_identity" {
     workload    = var.workload
     managed-by  = "terraform"
   })
-
-  depends_on = [module.ai_foundry]
 }
 
 # --- AI Foundry (AI Services) ---
 module "ai_foundry" {
   source = "./modules/ai_foundry"
 
-  ai_services_name           = "ai-${var.workload}-${var.environment}-${var.region}"
-  storage_account_id         = module.storage.id
-  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
-  location                   = var.location
-  resource_group_name        = azurerm_resource_group.main.name
-  private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
-  ai_services_dns_zone_id    = module.vnet.ai_services_dns_zone_id
-  ai_openai_dns_zone_id      = module.vnet.ai_openai_dns_zone_id
-  ai_services_ai_dns_zone_id = module.vnet.ai_services_ai_dns_zone_id
-  user_assigned_identity_id  = module.ai_foundry_identity.id
+  ai_services_name               = "ai-${var.workload}-${var.environment}-${var.region}"
+  storage_account_id             = module.storage.id
+  log_analytics_workspace_id      = module.monitoring.log_analytics_workspace_id
+  location                        = var.location
+  resource_group_name             = azurerm_resource_group.main.name
+  private_endpoint_subnet_id      = module.vnet.private_endpoints_subnet_id
+  ai_services_dns_zone_id         = module.vnet.ai_services_dns_zone_id
+  ai_openai_dns_zone_id           = module.vnet.ai_openai_dns_zone_id
+  ai_services_ai_dns_zone_id      = module.vnet.ai_services_ai_dns_zone_id
+  cognitive_account_project_name  = "proj-${var.workload}-${var.environment}-${var.region}"
+  project_display_name            = "AI Foundry Project - ${var.workload} ${var.environment}"
+  project_description             = "AI Foundry project for ${var.workload} in ${var.environment}"
+  user_assigned_identity_id       = module.ai_foundry_identity.id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

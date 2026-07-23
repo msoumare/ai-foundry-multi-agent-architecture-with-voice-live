@@ -48,3 +48,23 @@ variable "ai_services_ai_dns_zone_id" {
   description = "Private DNS zone ID for Services AI (privatelink.services.ai.azure.com)"
   type        = string
 }
+
+variable "user_assigned_identity_id" {
+  description = "User assigned identity ID for AI Foundry"
+  type        = string
+}
+
+variable "cognitive_account_project_name" {
+  description = "Cognitive account project name"
+  type        = string
+}
+
+variable "project_description" {
+  description = "Project description"
+  type        = string
+}
+
+variable "project_display_name" {
+  description = "Project display name"
+  type        = string
+}
