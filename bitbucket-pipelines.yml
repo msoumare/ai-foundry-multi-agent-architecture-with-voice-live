@@ -1,0 +1,103 @@
+image: mcr.microsoft.com/azure-cli:2.64.0
+
+definitions:
+  steps:
+    - step: &deploy-hub-agent
+        name: Deploy hosted hub agent to Foundry
+        script:
+          - set -euo pipefail
+          - export WORKLOAD="${WORKLOAD:-agenthubspoke}"
+          - export ENV_NAME="${ENV_NAME:-dev}"
+          - export REGION="${REGION:-ne}"
+          - export HUB_AGENT_PATH="poc_voice_live_api_agent/hub_agent"
+          - export RESOURCE_GROUP_WORKLOAD="${RESOURCE_GROUP_WORKLOAD:-${resource_group_workload:-}}"
+          - export ACR_LOGIN_SERVER="${ACR_LOGIN_SERVER:-${acr_login_server:-}}"
+          - export AGENTHUB_MODEL_DEPLOYMENT="${AGENTHUB_MODEL_DEPLOYMENT:-gpt-4.1-mini}"
+          - export AZD_ENV_NAME="${AZD_ENV_NAME:-${WORKLOAD}-${ENV_NAME}-${REGION}}"
+          - |
+            required=(
+              AZURE_CLIENT_ID
+              AZURE_CLIENT_SECRET
+              AZURE_TENANT_ID
+              AZURE_SUBSCRIPTION_ID
+              RESOURCE_GROUP_WORKLOAD
+              FOUNDRY_PROJECT_ID
+              FOUNDRY_PROJECT_ENDPOINT
+              ACR_LOGIN_SERVER
+            )
+
+            for key in "${required[@]}"; do
+              val="${!key:-}"
+              if [ -z "$val" ]; then
+                echo "Missing required Bitbucket variable: $key"
+                exit 1
+              fi
+            done
+          - az login --service-principal --username "$AZURE_CLIENT_ID" --password "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+          - az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          - apt-get update
+          - apt-get install -y curl
+          - |
+            if ! command -v azd >/dev/null 2>&1; then
+              curl -fsSL https://aka.ms/install-azd.sh | bash
+              export PATH="$HOME/.azd/bin:$PATH"
+            fi
+          - export PATH="$HOME/.azd/bin:$PATH"
+          - azd version
+          - azd ext install azure.ai.agents || true
+          - azd ext upgrade azure.ai.agents || true
+          - cd "$HUB_AGENT_PATH"
+          - azd env new "$AZD_ENV_NAME" --no-prompt || true
+          - azd env select "$AZD_ENV_NAME"
+          - azd env set AZURE_SUBSCRIPTION_ID "$AZURE_SUBSCRIPTION_ID"
+          - azd env set AZURE_TENANT_ID "$AZURE_TENANT_ID"
+          - azd env set AZURE_RESOURCE_GROUP "$RESOURCE_GROUP_WORKLOAD"
+          - azd env set AZURE_RESOURCE_GROUP_NAME "$RESOURCE_GROUP_WORKLOAD"
+          - azd env set AZURE_AI_PROJECT_ID "$FOUNDRY_PROJECT_ID"
+          - azd env set FOUNDRY_PROJECT_ID "$FOUNDRY_PROJECT_ID"
+          - azd env set AZURE_AI_PROJECT_ENDPOINT "$FOUNDRY_PROJECT_ENDPOINT"
+          - azd env set FOUNDRY_PROJECT_ENDPOINT "$FOUNDRY_PROJECT_ENDPOINT"
+          - azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT "$ACR_LOGIN_SERVER"
+          - azd env set AGENTHUB_MODEL_DEPLOYMENT "$AGENTHUB_MODEL_DEPLOYMENT"
+          - azd env set DEFAULT_MODEL_DEPLOYMENT "$AGENTHUB_MODEL_DEPLOYMENT"
+          - |
+            if [ -n "${VOICE_LIVE_UAI_CLIENT_ID:-}" ]; then
+              azd env set VOICE_LIVE_UAI_CLIENT_ID "$VOICE_LIVE_UAI_CLIENT_ID"
+            fi
+          - azd deploy --no-prompt
+          - azd ai agent show --output table
+
+pipelines:
+  branches:
+    main:
+      - step:
+          <<: *deploy-hub-agent
+          name: Deploy hosted hub agent (main)
+          condition:
+            changesets:
+              includePaths:
+                - "poc_voice_live_api_agent/hub_agent/**"
+                - "pipelines/6-hub-agent-foundry.yml"
+                - "bitbucket-pipelines.yml"
+
+  custom:
+    deploy-hub-agent:
+      - variables:
+          - name: WORKLOAD
+            default: agenthubspoke
+            allowed-values:
+              - agenthubspoke
+          - name: ENV_NAME
+            default: dev
+            allowed-values:
+              - dev
+              - prd
+          - name: REGION
+            default: ne
+            allowed-values:
+              - ne
+              - eus
+              - sdc
+      - step:
+          <<: *deploy-hub-agent
+          name: Deploy hosted hub agent (manual)

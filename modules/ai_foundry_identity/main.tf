@@ -86,3 +86,17 @@ resource "azurerm_role_assignment" "foundry_user_on_project" {
   principal_id         = azurerm_user_assigned_identity.foundry.principal_id
   principal_type       = "ServicePrincipal"
 }
+
+resource "azurerm_role_assignment" "project_acr_push_on_system_identity" {
+  scope                = var.acr_id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_role_assignment" "project_acr_pull_on_system_identity" {
+  scope                = var.acr_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.foundry.principal_id
+  principal_type       = "ServicePrincipal"
+}
