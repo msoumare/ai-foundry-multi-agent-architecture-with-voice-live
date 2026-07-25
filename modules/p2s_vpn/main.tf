@@ -13,7 +13,7 @@ resource "azurerm_public_ip" "vpn_gateway" {
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = null
+  zones               = ["1"]
   tags                = var.tags
 
   # Keep tag drift from forcing unnecessary updates for the shared gateway IP.
