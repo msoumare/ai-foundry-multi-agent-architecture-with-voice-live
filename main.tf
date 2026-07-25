@@ -127,6 +127,10 @@ resource "azurerm_role_assignment" "deployer_kv_secrets_officer" {
 resource "tls_private_key" "devops" {
   algorithm = "RSA"
   rsa_bits  = 4096
+
+  lifecycle {
+    ignore_changes = all  # Key should not be regenerated once created
+  }
 }
 
 resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
