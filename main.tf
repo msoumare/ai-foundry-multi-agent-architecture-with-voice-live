@@ -86,6 +86,13 @@ resource "azurerm_bastion_host" "main" {
     public_ip_address_id = azurerm_public_ip.bastion.id
   }
 
+  # Bastion creation can exceed default provider polling windows in some regions.
+  timeouts {
+    create = "120m"
+    update = "120m"
+    delete = "120m"
+  }
+
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
