@@ -1,6 +1,6 @@
 environment             = "dev"
 workload                = "agenthubspoke"
-region                  = "swc"
+region                  = "gwc"
 location                = "germanywestcentral"
 resource_group_workload = "rg-agenthubspoke-dev-gwc"
 log_analytics_workspace = "log-agenthubspoke-dev-gwc"
