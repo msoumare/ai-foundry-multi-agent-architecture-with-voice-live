@@ -14,6 +14,26 @@ $ErrorActionPreference = "Stop"
 if (-not $env:AZURE_TOKEN_CREDENTIALS) {
     $env:AZURE_TOKEN_CREDENTIALS = "AzureCliCredential"
 }
+
+# Force azd into non-interactive behavior in CI to avoid hidden prompts.
+$env:CI = "true"
+$env:AZD_NON_INTERACTIVE = "true"
+
+function Invoke-AzdStep {
+    Param(
+        [Parameter(Mandatory = $true)]
+        [string]$Description,
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$Command,
+        [string]$ErrorMessage = "azd command failed"
+    )
+
+    Write-Host "[$(Get-Date -Format o)] $Description" -ForegroundColor DarkGray
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw $ErrorMessage
+    }
+}
 function Invoke-AzdDeploy {
     Param(
         [Parameter(Mandatory = $true)]
@@ -47,51 +67,28 @@ function Invoke-AzdDeploy {
         if (-not (Test-Path "azure.yaml")) {
             throw "azure.yaml not found in '$Path'. Run 'azd ai agent init' in this folder first."
         }
-        azd env set AZURE_SUBSCRIPTION_ID $SubscriptionId
+        $envName = if ([string]::IsNullOrWhiteSpace($env:AZURE_ENV_NAME)) { "ci" } else { $env:AZURE_ENV_NAME }
+        Write-Host "Using azd environment '$envName'" -ForegroundColor DarkGray
+        azd env select $envName --no-prompt 2>$null
         if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_SUBSCRIPTION_ID failed for $Name"
+            Invoke-AzdStep -Description "Creating azd environment '$envName'" -Command { azd env new $envName --no-prompt } -ErrorMessage "azd env new failed for $Name"
+            Invoke-AzdStep -Description "Selecting azd environment '$envName'" -Command { azd env select $envName --no-prompt } -ErrorMessage "azd env select failed for $Name"
         }
-        azd env set AZURE_TENANT_ID $TenantId
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_TENANT_ID failed for $Name"
-        }
-        azd env set AZURE_RESOURCE_GROUP $ResourceGroup
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_RESOURCE_GROUP failed for $Name"
-        }
-        azd env set AZURE_RESOURCE_GROUP_NAME $ResourceGroup
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_RESOURCE_GROUP_NAME failed for $Name"
-        }
-        azd env set AZURE_AI_PROJECT_ID $ProjectId
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_AI_PROJECT_ID failed for $Name"
-        }
-        azd env set FOUNDRY_PROJECT_ID $ProjectId
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set FOUNDRY_PROJECT_ID failed for $Name"
-        }
-        azd env set AZURE_AI_PROJECT_ENDPOINT $ProjectEndpoint
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_AI_PROJECT_ENDPOINT failed for $Name"
-        }
-        azd env set FOUNDRY_PROJECT_ENDPOINT $ProjectEndpoint
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set FOUNDRY_PROJECT_ENDPOINT failed for $Name"
-        }
-        azd env set AGENTHUB_MODEL_DEPLOYMENT $ModelDeployment
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AGENTHUB_MODEL_DEPLOYMENT failed for $Name"
-        }
-        azd env set DEFAULT_MODEL_DEPLOYMENT $ModelDeployment
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set DEFAULT_MODEL_DEPLOYMENT failed for $Name"
-        }
-        azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT $ContainerRegistryEndpoint
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT failed for $Name"
-        }
-        azd deploy 2>&1 | Tee-Object -FilePath $deployLog
+
+        Invoke-AzdStep -Description "Setting AZURE_SUBSCRIPTION_ID" -Command { azd env set AZURE_SUBSCRIPTION_ID $SubscriptionId --no-prompt } -ErrorMessage "azd env set AZURE_SUBSCRIPTION_ID failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_TENANT_ID" -Command { azd env set AZURE_TENANT_ID $TenantId --no-prompt } -ErrorMessage "azd env set AZURE_TENANT_ID failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_RESOURCE_GROUP" -Command { azd env set AZURE_RESOURCE_GROUP $ResourceGroup --no-prompt } -ErrorMessage "azd env set AZURE_RESOURCE_GROUP failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_RESOURCE_GROUP_NAME" -Command { azd env set AZURE_RESOURCE_GROUP_NAME $ResourceGroup --no-prompt } -ErrorMessage "azd env set AZURE_RESOURCE_GROUP_NAME failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_AI_PROJECT_ID" -Command { azd env set AZURE_AI_PROJECT_ID $ProjectId --no-prompt } -ErrorMessage "azd env set AZURE_AI_PROJECT_ID failed for $Name"
+        Invoke-AzdStep -Description "Setting FOUNDRY_PROJECT_ID" -Command { azd env set FOUNDRY_PROJECT_ID $ProjectId --no-prompt } -ErrorMessage "azd env set FOUNDRY_PROJECT_ID failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_AI_PROJECT_ENDPOINT" -Command { azd env set AZURE_AI_PROJECT_ENDPOINT $ProjectEndpoint --no-prompt } -ErrorMessage "azd env set AZURE_AI_PROJECT_ENDPOINT failed for $Name"
+        Invoke-AzdStep -Description "Setting FOUNDRY_PROJECT_ENDPOINT" -Command { azd env set FOUNDRY_PROJECT_ENDPOINT $ProjectEndpoint --no-prompt } -ErrorMessage "azd env set FOUNDRY_PROJECT_ENDPOINT failed for $Name"
+        Invoke-AzdStep -Description "Setting AGENTHUB_MODEL_DEPLOYMENT" -Command { azd env set AGENTHUB_MODEL_DEPLOYMENT $ModelDeployment --no-prompt } -ErrorMessage "azd env set AGENTHUB_MODEL_DEPLOYMENT failed for $Name"
+        Invoke-AzdStep -Description "Setting DEFAULT_MODEL_DEPLOYMENT" -Command { azd env set DEFAULT_MODEL_DEPLOYMENT $ModelDeployment --no-prompt } -ErrorMessage "azd env set DEFAULT_MODEL_DEPLOYMENT failed for $Name"
+        Invoke-AzdStep -Description "Setting AZURE_CONTAINER_REGISTRY_ENDPOINT" -Command { azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT $ContainerRegistryEndpoint --no-prompt } -ErrorMessage "azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT failed for $Name"
+
+        Write-Host "[$(Get-Date -Format o)] Starting azd deploy for '$Name'..." -ForegroundColor Cyan
+        azd deploy --no-prompt 2>&1 | Tee-Object -FilePath $deployLog
         if ($LASTEXITCODE -ne 0) {
             Write-Host "`n--- Last 30 lines from $deployLog ---" -ForegroundColor Yellow
             Get-Content -Path $deployLog -Tail 30 | ForEach-Object { Write-Host $_ }
@@ -101,10 +98,7 @@ function Invoke-AzdDeploy {
             }
             throw "azd deploy failed for $Name (log: $deployLog)"
         }
-        azd ai agent show --output table
-        if ($LASTEXITCODE -ne 0) {
-            throw "azd ai agent show failed for $Name"
-        }
+        Invoke-AzdStep -Description "Fetching deployed agent details" -Command { azd ai agent show --output table --no-prompt } -ErrorMessage "azd ai agent show failed for $Name"
         Write-Host "Deploy log: $deployLog" -ForegroundColor DarkGray
     }
     finally {
