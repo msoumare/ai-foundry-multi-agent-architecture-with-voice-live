@@ -14,7 +14,7 @@ resource "azurerm_cognitive_account" "ai_services" {
   kind                          = "AIServices"
   sku_name                      = "S0"
   custom_subdomain_name         = var.ai_services_name
-  project_management_enabled    = true
+  project_management_enabled    = true  
   local_auth_enabled            = false
   public_network_access_enabled = false
   identity {

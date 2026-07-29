@@ -1,0 +1,15 @@
+name: tf-deploy-hosted-agent-$(Date:yyyyMMdd)$(Rev:.r)
+trigger: none
+extends:
+  template: templates/hosted-agents.yml
+  parameters:
+    pipelineName: 7-hosted-agents
+    azureServiceConnection: sp-agenthubspoke-dev
+    subscriptionId: "3c9d7b7f-4666-43a3-a852-062c5b18c783"
+    tenantId: "2d75a51b-29e5-45d5-a5c5-5aa979cb6a28"
+    resourceGroup: "rg-agenthubspoke-dev-gwc"
+    projectId: "/subscriptions/3c9d7b7f-4666-43a3-a852-062c5b18c783/resourceGroups/rg-agenthubspoke-dev-gwc/providers/Microsoft.CognitiveServices/accounts/ai-agenthubspoke-dev-gwc/projects/proj-agenthubspoke-dev-gwc"
+    projectEndpoint: "https://ai-agenthubspoke-dev-gwc.services.ai.azure.com/api/projects/proj-agenthubspoke-dev-gwc"
+    containerRegistryEndpoint: "acragenthubspokedevgwc.azurecr.io"
+    modelDeployment: "gpt-4.1-mini"
+    agentFolders: "hub"

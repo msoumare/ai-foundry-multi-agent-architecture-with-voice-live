@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/ContainerAgent.yaml
+
+kind: hosted
+name: hub-agent
+description: HubAgent that routes to domain agents.
+protocols:
+  - protocol: responses
+    version: 1.0.0
+resources:
+  cpu: "0.25"
+  memory: 0.5Gi
+environment_variables:
+  - name: APP_ENV
+    value: "production"
+  - name: SERVICE_NAME
+    value: "hub-agent"
+  - name: HOST
+    value: "0.0.0.0"
+  - name: FORWARD_MODE
+    value: "foundry"
+  - name: CARD_AGENT_NAME
+    value: "card-agent"
+  - name: ACCOUNT_AGENT_NAME
+    value: "account-agent"
+  - name: PAYMENT_AGENT_NAME
+    value: "payment-agent"
+  - name: RAG_AGENT_NAME
+    value: "rag-agent"
+  - name: COGNIGY_AGENT_NAME
+    value: "cognigy-agent"
+  - name: DOMAIN_AGENT_TIMEOUT
+    value: "30"
+  - name: AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED
+    value: "true"
