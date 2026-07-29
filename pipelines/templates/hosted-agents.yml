@@ -82,6 +82,54 @@ stages:
       displayName: Bootstrap agent prerequisites
       condition: eq(variables['Agent.OS'], 'Linux')
 
+    - task: PowerShell@2
+      displayName: Bootstrap agent prerequisites (Windows)
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      inputs:
+        pwsh: false
+        targetType: inline
+        script: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Host "Bootstrapping agent prerequisites (az, pwsh, azd)..."
+
+          if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+            Write-Host "Installing Azure CLI..."
+            $azCliMsi = Join-Path $env:TEMP "AzureCLI.msi"
+            Invoke-WebRequest -Uri "https://aka.ms/installazurecliwindows" -OutFile $azCliMsi
+            Start-Process -FilePath msiexec.exe -ArgumentList "/I `"$azCliMsi`" /qn /norestart" -Wait
+
+            $azPaths = @(
+              "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin",
+              "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin"
+            )
+            foreach ($p in $azPaths) {
+              if (Test-Path $p) {
+                Write-Host "##vso[task.prependpath]$p"
+              }
+            }
+          }
+
+          if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+            Write-Host "Installing PowerShell 7 (portable)..."
+            $psVer = "7.4.4"
+            $zipPath = Join-Path $env:TEMP "powershell-$psVer-win-x64.zip"
+            $extractPath = Join-Path $env:AGENT_TEMPDIRECTORY "pwsh-$psVer"
+            Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v$psVer/PowerShell-$psVer-win-x64.zip" -OutFile $zipPath
+            if (Test-Path $extractPath) { Remove-Item -Path $extractPath -Recurse -Force }
+            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+            Write-Host "##vso[task.prependpath]$extractPath"
+          }
+
+          if (-not (Get-Command azd -ErrorAction SilentlyContinue)) {
+            Write-Host "Installing Azure Developer CLI (azd)..."
+            winget install Microsoft.Azd --accept-source-agreements --accept-package-agreements --silent
+          }
+
+          az version
+          pwsh --version
+          azd version
+
     - task: AzureCLI@2
       displayName: Deploy agents
       env:

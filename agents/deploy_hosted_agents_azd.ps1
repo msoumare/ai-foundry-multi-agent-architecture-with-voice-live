@@ -158,6 +158,16 @@ function Invoke-AzdDeploy {
         Pop-Location
     }
 }
+if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+    if ($IsLinux) {
+        Write-Host "[$(Get-Date -Format o)] Azure CLI not found. Installing Azure CLI on Linux agent..." -ForegroundColor DarkGray
+        bash -lc "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+    }
+
+    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        throw "Azure CLI (az) is required. Install Azure CLI and try again."
+    }
+}
 azd version | Out-Null
 if ($LASTEXITCODE -ne 0) {
     if ($IsLinux) {
@@ -166,8 +176,7 @@ if ($LASTEXITCODE -ne 0) {
         if ($LASTEXITCODE -eq 0) {
             $azdBin = Join-Path $HOME ".azd/bin"
             if (Test-Path $azdBin) {
-                $currentPath = (Get-Item -Path Env:PATH).Value
-                Set-Item -Path Env:PATH -Value ($azdBin + ":" + $currentPath)
+                $env:PATH = @($azdBin, $env:PATH) -join [System.IO.Path]::PathSeparator
             }
             azd version | Out-Null
         }
