@@ -25,7 +25,6 @@ resource "azurerm_role_assignment" "acr_push" {
 
 # Foundry Project Manager - minimum role required to publish/manage hosted agents.
 resource "azurerm_role_assignment" "foundry_project_manager" {
-  count                = var.ai_services_id != "" ? 1 : 0
   scope                = var.ai_services_id
   role_definition_name = "Foundry Project Manager"
   principal_id         = azurerm_user_assigned_identity.this.principal_id
