@@ -117,15 +117,6 @@ stages:
         targetPath: "$(terraform_working_directory)/tfplan-network"
 
 ########################################
-# STAGE 2 — APPLY NETWORK
-########################################
-- stage: Apply
-  displayName: "Terraform Apply - Network Infrastructure"
-  dependsOn: Plan
-  condition: succeeded()
-  jobs:
-
-########################################
 # STAGE 2 - APPROVE NETWORK PLAN
 ########################################
 - stage: Approve
