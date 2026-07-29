@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/ContainerAgent.yaml
+
+kind: hosted
+name: card-agent
+description: Card domain custom code hosted agent
+protocols:
+  - protocol: responses
+    version: 1.0.0
+resources:
+  cpu: "0.25"
+  memory: 0.5Gi
+environment_variables:
+  - name: APP_ENV
+    value: "production"
+  - name: SERVICE_NAME
+    value: "card-agent"
+  - name: HOST
+    value: "0.0.0.0"
+  - name: ACCOUNT_AGENT_NAME
+    value: "account-agent"
+  - name: PAYMENT_AGENT_NAME
+    value: "payment-agent"
+  - name: DOWNSTREAM_AGENT_TIMEOUT
+    value: "30"
+  - name: AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED
+    value: "true"

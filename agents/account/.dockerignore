@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Local env / secrets
+.env
+.env.*
+
+# Azure Developer CLI state
+.azure/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs and deploy artefacts
+*.log
+deploy-logs/
+
+# Tests
+tests/
+
+# Git
+.git/
+.gitignore
