@@ -35,25 +35,36 @@ function Invoke-AzdStep {
     }
 }
 
-function Set-AzdAuthenticated {
+function Initialize-AzdAuthentication {
     Write-Host "[$(Get-Date -Format o)] Checking azd auth status" -ForegroundColor DarkGray
     azd auth login --check-status --no-prompt 2>$null
     if ($LASTEXITCODE -eq 0) {
         return
     }
 
-    # AzureCLI@2 can expose service principal credentials when addSpnToEnvironment=true.
+    # Workload identity path (federated) for Azure DevOps.
+    if (-not [string]::IsNullOrWhiteSpace($env:servicePrincipalId) -and
+        -not [string]::IsNullOrWhiteSpace($env:tenantId) -and
+        -not [string]::IsNullOrWhiteSpace($env:SYSTEM_ACCESSTOKEN)) {
+
+        Invoke-AzdStep -Description "Logging into azd with Azure DevOps workload identity federation" `
+            -Command { azd auth login --client-id $env:servicePrincipalId --tenant-id $env:tenantId --federated-credential-provider azure-pipelines --no-prompt } `
+            -ErrorMessage "azd workload identity login failed"
+        return
+    }
+
+    # Service principal with secret fallback.
     if (-not [string]::IsNullOrWhiteSpace($env:servicePrincipalId) -and
         -not [string]::IsNullOrWhiteSpace($env:servicePrincipalKey) -and
         -not [string]::IsNullOrWhiteSpace($env:tenantId)) {
 
-        Invoke-AzdStep -Description "Logging into azd with Azure DevOps service principal" `
+        Invoke-AzdStep -Description "Logging into azd with Azure DevOps service principal secret" `
             -Command { azd auth login --client-id $env:servicePrincipalId --client-secret $env:servicePrincipalKey --tenant-id $env:tenantId --no-prompt } `
-            -ErrorMessage "azd auth login with service principal failed"
+            -ErrorMessage "azd service principal login failed"
         return
     }
 
-    throw "azd is not authenticated. In Azure DevOps, set AzureCLI@2 input addSpnToEnvironment=true so deploy_hosted_agents_azd.ps1 can login non-interactively."
+    throw "azd is not authenticated. For workload identity, ensure addSpnToEnvironment=true and SYSTEM_ACCESSTOKEN is available to the task."
 }
 
 function Invoke-AzdDeploy {
@@ -133,7 +144,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 azd ext install azure.ai.agents | Out-Null
 azd ext upgrade azure.ai.agents | Out-Null
-Set-AzdAuthenticated
+Initialize-AzdAuthentication
 $repoRoot = Resolve-Path $PSScriptRoot
 if (-not $SubscriptionId) {
     $SubscriptionId = (Read-Host "Enter target Azure subscription ID or name").Trim()

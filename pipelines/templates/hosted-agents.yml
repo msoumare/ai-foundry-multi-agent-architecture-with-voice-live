@@ -40,6 +40,8 @@ stages:
     - checkout: self
     - task: AzureCLI@2
       displayName: Deploy agents
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
         azureSubscription: ${{ parameters.azureServiceConnection }}
         addSpnToEnvironment: true
@@ -72,6 +74,19 @@ stages:
           az version
           azd version
           # Keep azd extension auth pinned to Azure CLI identity.
+          Write-Host "Checking azd auth status in pipeline step..."
+          azd auth login --check-status --no-prompt 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            if ([string]::IsNullOrWhiteSpace($env:servicePrincipalId) -or [string]::IsNullOrWhiteSpace($env:tenantId)) {
+              throw "azd is not authenticated and workload identity context is missing. Ensure AzureCLI@2 uses addSpnToEnvironment: true."
+            }
+
+            Write-Host "Logging into azd with Azure DevOps workload identity federation..."
+            azd auth login --client-id $env:servicePrincipalId --tenant-id $env:tenantId --federated-credential-provider azure-pipelines --no-prompt
+            if ($LASTEXITCODE -ne 0) {
+              throw "azd auth login failed in pipeline step."
+            }
+          }
           $env:AZURE_TOKEN_CREDENTIALS = "AzureCliCredential"
           # Normalize folder list from CSV string.
           $folders = "${{ parameters.agentFolders }}".Split(",") |
