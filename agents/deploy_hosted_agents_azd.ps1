@@ -34,6 +34,28 @@ function Invoke-AzdStep {
         throw $ErrorMessage
     }
 }
+
+function Set-AzdAuthenticated {
+    Write-Host "[$(Get-Date -Format o)] Checking azd auth status" -ForegroundColor DarkGray
+    azd auth login --check-status --no-prompt 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return
+    }
+
+    # AzureCLI@2 can expose service principal credentials when addSpnToEnvironment=true.
+    if (-not [string]::IsNullOrWhiteSpace($env:servicePrincipalId) -and
+        -not [string]::IsNullOrWhiteSpace($env:servicePrincipalKey) -and
+        -not [string]::IsNullOrWhiteSpace($env:tenantId)) {
+
+        Invoke-AzdStep -Description "Logging into azd with Azure DevOps service principal" `
+            -Command { azd auth login --client-id $env:servicePrincipalId --client-secret $env:servicePrincipalKey --tenant-id $env:tenantId --no-prompt } `
+            -ErrorMessage "azd auth login with service principal failed"
+        return
+    }
+
+    throw "azd is not authenticated. In Azure DevOps, set AzureCLI@2 input addSpnToEnvironment=true so deploy_hosted_agents_azd.ps1 can login non-interactively."
+}
+
 function Invoke-AzdDeploy {
     Param(
         [Parameter(Mandatory = $true)]
@@ -111,6 +133,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 azd ext install azure.ai.agents | Out-Null
 azd ext upgrade azure.ai.agents | Out-Null
+Set-AzdAuthenticated
 $repoRoot = Resolve-Path $PSScriptRoot
 if (-not $SubscriptionId) {
     $SubscriptionId = (Read-Host "Enter target Azure subscription ID or name").Trim()
