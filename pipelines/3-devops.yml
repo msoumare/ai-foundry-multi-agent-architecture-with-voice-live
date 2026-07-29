@@ -138,57 +138,77 @@ stages:
         artifactName: "tfplan-devops"
         targetPath: "$(terraform_working_directory)/tfplan-devops"
 
-########################################
-# STAGE 2 — APPLY DEVOPS
-########################################
-- stage: Apply
-  displayName: "Terraform Apply - DevOps Infrastructure"
-  dependsOn: Plan
-  condition: succeeded()
-  jobs:
-  - deployment: TerraformApply
-    displayName: "Apply DevOps Infrastructure"
-    environment: "Infra-${{ parameters.env }}-DevOps"
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+    ########################################
+    # STAGE 2 - APPROVE DEVOPS PLAN
+    ########################################
+    - stage: Approve
+      displayName: "Approve DevOps Plan"
+      dependsOn: Plan
+      condition: succeeded()
+      jobs:
+      - job: ManualApproval
+        displayName: "Review and approve DevOps plan"
+        pool: server
+        timeoutInMinutes: 1440
+        steps:
+        - task: ManualValidation@0
+          inputs:
+            instructions: |
+              Review the published tfplan-devops artifact before approving.
+              Approve only if the plan matches the intended Foundry role update or recovery action.
+            onTimeout: reject
 
-          - task: TerraformInstaller@1
-            displayName: "Install Terraform"
-            inputs:
-              terraformVersion: $(terraform_version)
+    ########################################
+    # STAGE 3 - APPLY DEVOPS
+    ########################################
+    - stage: Apply
+      displayName: "Terraform Apply - DevOps Infrastructure"
+      dependsOn: Approve
+      condition: succeeded()
+      jobs:
+      - deployment: TerraformApply
+        displayName: "Apply DevOps Infrastructure"
+        environment: "Infra-${{ parameters.env }}-DevOps"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - checkout: self
 
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              artifactName: "tfplan-devops"
-              downloadPath: "$(terraform_working_directory)"
+              - task: TerraformInstaller@1
+                displayName: "Install Terraform"
+                inputs:
+                  terraformVersion: $(terraform_version)
 
-          - task: AzureCLI@2
-            displayName: "Terraform Init"
-            inputs:
-              azureSubscription: $(service_connection_name)
-              scriptType: bash
-              scriptLocation: inlineScript
-              workingDirectory: "$(terraform_working_directory)"
-              inlineScript: |
-                echo "### Terraform INIT (DevOps Apply) ###"
-                rm -rf .terraform
-                terraform init \
-                  -backend-config="resource_group_name=$(resource_group_tfstate)" \
-                  -backend-config="storage_account_name=$(storage_account_tfstate)" \
-                  -backend-config="container_name=$(container_tfstate)" \
-                  -backend-config="key=$(key_tfstate)" \
-                  -backend-config="use_azuread_auth=true"
+              - task: DownloadPipelineArtifact@2
+                inputs:
+                  artifactName: "tfplan-devops"
+                  downloadPath: "$(terraform_working_directory)"
 
-          - task: AzureCLI@2
-            displayName: "Terraform Apply - DevOps"
-            inputs:
-              azureSubscription: $(service_connection_name)
-              scriptType: bash
-              scriptLocation: inlineScript
-              workingDirectory: "$(terraform_working_directory)"
-              inlineScript: |
-                echo "### APPLY DevOps Infrastructure ###"
-                terraform apply -input=false tfplan-devops
+              - task: AzureCLI@2
+                displayName: "Terraform Init"
+                inputs:
+                  azureSubscription: $(service_connection_name)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  workingDirectory: "$(terraform_working_directory)"
+                  inlineScript: |
+                    echo "### Terraform INIT (DevOps Apply) ###"
+                    rm -rf .terraform
+                    terraform init \
+                      -backend-config="resource_group_name=$(resource_group_tfstate)" \
+                      -backend-config="storage_account_name=$(storage_account_tfstate)" \
+                      -backend-config="container_name=$(container_tfstate)" \
+                      -backend-config="key=$(key_tfstate)" \
+                      -backend-config="use_azuread_auth=true"
+
+              - task: AzureCLI@2
+                displayName: "Terraform Apply - DevOps"
+                inputs:
+                  azureSubscription: $(service_connection_name)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  workingDirectory: "$(terraform_working_directory)"
+                  inlineScript: |
+                    echo "### APPLY DevOps Infrastructure ###"
+                    terraform apply -input=false tfplan-devops

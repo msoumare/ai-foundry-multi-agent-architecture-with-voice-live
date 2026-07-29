@@ -167,11 +167,31 @@ stages:
         targetPath: "$(terraform_working_directory)/tfplan-network"
 
 ########################################
-# STAGE 2 - APPLY NETWORK (WITH NAT)
+# STAGE 2 - APPROVE NETWORK PLAN
+########################################
+- stage: ApproveNetwork
+  displayName: "Approve Network Plan"
+  dependsOn: PlanNetwork
+  condition: succeeded()
+  jobs:
+  - job: ManualApproval
+    displayName: "Review and approve network plan"
+    pool: server
+    timeoutInMinutes: 1440
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Review the published tfplan-network artifact before approving.
+          Approve only if the plan matches the intended network update.
+        onTimeout: reject
+
+########################################
+    # STAGE 3 — APPLY NETWORK (WITH NAT)
 ########################################
 - stage: ApplyNetwork
   displayName: "Terraform Apply - Network Infrastructure"
-  dependsOn: PlanNetwork
+  dependsOn: ApproveNetwork
   condition: succeeded()
   jobs:
   - deployment: TerraformApply
@@ -281,11 +301,31 @@ stages:
         targetPath: "$(terraform_working_directory)/tfplan-devops"
 
 ########################################
-# STAGE 4 - APPLY DEVOPS
+# STAGE 4 - APPROVE DEVOPS PLAN
+########################################
+- stage: ApproveDevOps
+  displayName: "Approve DevOps Plan"
+  dependsOn: PlanDevOps
+  condition: succeeded()
+  jobs:
+  - job: ManualApproval
+    displayName: "Review and approve devops plan"
+    pool: server
+    timeoutInMinutes: 1440
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Review the published tfplan-devops artifact before approving.
+          Approve only if the plan matches the intended DevOps update.
+        onTimeout: reject
+
+########################################
+    # STAGE 5 - APPLY DEVOPS
 ########################################
 - stage: ApplyDevOps
   displayName: "Terraform Apply - DevOps Infrastructure"
-  dependsOn: PlanDevOps
+  dependsOn: ApproveDevOps
   condition: succeeded()
   jobs:
   - deployment: TerraformApply
@@ -430,11 +470,31 @@ stages:
         targetPath: "$(terraform_working_directory)/tfplan-core"
 
 ########################################
-# STAGE 6 - APPLY CORE
+# STAGE 6 - APPROVE CORE PLAN
+########################################
+- stage: ApproveCore
+  displayName: "Approve Core Plan"
+  dependsOn: PlanCore
+  condition: succeeded()
+  jobs:
+  - job: ManualApproval
+    displayName: "Review and approve core plan"
+    pool: server
+    timeoutInMinutes: 1440
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Review the published tfplan-core artifact before approving.
+          Approve only if the plan matches the intended core infrastructure update.
+        onTimeout: reject
+
+########################################
+    # STAGE 7 - APPLY CORE
 ########################################
 - stage: ApplyCore
   displayName: "Terraform Apply - Core Infrastructure"
-  dependsOn: PlanCore
+  dependsOn: ApproveCore
   condition: and(succeeded(), ${{ eq(parameters.deploy_core, true) }})
   jobs:
   - deployment: TerraformApply

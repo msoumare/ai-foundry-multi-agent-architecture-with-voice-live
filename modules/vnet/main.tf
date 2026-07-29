@@ -19,6 +19,10 @@ resource "azurerm_subnet" "workload_private_endpoints" {
   virtual_network_name            = azurerm_virtual_network.workload.name
   address_prefixes                = var.private_endpoints_subnet_prefixes
   default_outbound_access_enabled = false
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_subnet" "workload_devops" {
@@ -88,60 +92,100 @@ resource "azurerm_private_dns_zone" "keyvault" {
   name                = "privatelink.vaultcore.azure.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "cosmosdb" {
   name                = "privatelink.documents.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "redis" {
   name                = "privatelink.redis.cache.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "search" {
   name                = "privatelink.search.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "storage" {
   name                = "privatelink.blob.core.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "acr" {
   name                = "privatelink.azurecr.io"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "ai_services" {
   name                = "privatelink.cognitiveservices.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "ai_openai" {
   name                = "privatelink.openai.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "ai_services_ai" {
   name                = "privatelink.services.ai.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_dns_zone" "log_analytics" {
   name                = "privatelink.oms.opinsights.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Private DNS Zone Virtual Network Links

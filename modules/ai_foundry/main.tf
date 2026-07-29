@@ -22,11 +22,9 @@ resource "azurerm_cognitive_account" "ai_services" {
   }
   tags = var.tags
 
-  # lifecycle {
-  #   # Temporary guard: keep the existing account in place while projects under the account
-  #   # are not managed by Terraform.
-  #   ignore_changes = all
-  # }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_cognitive_account_project" "project" {

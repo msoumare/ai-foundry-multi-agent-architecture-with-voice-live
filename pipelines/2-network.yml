@@ -126,6 +126,35 @@ stages:
   dependsOn: Plan
   condition: succeeded()
   jobs:
+
+########################################
+# STAGE 2 - APPROVE NETWORK PLAN
+########################################
+- stage: Approve
+  displayName: "Approve Network Plan"
+  dependsOn: Plan
+  condition: succeeded()
+  jobs:
+  - job: ManualApproval
+    displayName: "Review and approve network plan"
+    pool: server
+    timeoutInMinutes: 1440
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Review the published tfplan-network artifact before approving.
+          Approve only if the plan matches the intended network update.
+        onTimeout: reject
+
+########################################
+# STAGE 3 - APPLY NETWORK (WITH NAT)
+########################################
+- stage: ApplyNetwork
+  displayName: "Terraform Apply - Network Infrastructure"
+  dependsOn: Approve
+  condition: succeeded()
+  jobs:
   - deployment: TerraformApply
     displayName: "Apply Network Infrastructure"
     environment: "Infra-${{ parameters.env }}-Network"
@@ -146,7 +175,7 @@ stages:
               downloadPath: "$(terraform_working_directory)"
 
           - task: AzureCLI@2
-            displayName: "Terraform Init"
+            displayName: "Terraform Init (Network Apply)"
             inputs:
               azureSubscription: $(service_connection_name)
               scriptType: bash

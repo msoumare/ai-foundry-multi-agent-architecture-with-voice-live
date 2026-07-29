@@ -156,83 +156,102 @@ stages:
         artifactName: "tfplan-infra"
         targetPath: "$(terraform_working_directory)/tfplan-infra"
 
-########################################
-# STAGE 2 — APPLY INFRASTRUCTURE
-########################################
-- stage: Apply
-  displayName: "Terraform Apply - Core Infrastructure"
-  dependsOn: Plan
-  condition: succeeded()
-  jobs:
-  - deployment: TerraformApply
-    displayName: "Apply Core Infrastructure"
-    environment: "Infra-${{ parameters.env }}-Core"
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+    ########################################
+    # STAGE 2 - APPROVE INFRA PLAN
+    ########################################
+    - stage: Approve
+      displayName: "Approve Core Plan"
+      dependsOn: Plan
+      condition: succeeded()
+      jobs:
+      - job: ManualApproval
+        displayName: "Review and approve core plan"
+        pool: server
+        timeoutInMinutes: 1440
+        steps:
+        - task: ManualValidation@0
+          inputs:
+            instructions: |
+              Review the published tfplan-infra artifact before approving.
+              Approve only if the plan matches the intended core infrastructure update.
+            onTimeout: reject
 
-          - bash: |
-              set -e
-              required_tools=(az unzip terraform kubectl helm kubelogin curl jq wget gpg lsb_release)
-              missing_tools=()
+    ########################################
+    # STAGE 3 - APPLY INFRASTRUCTURE
+    ########################################
+    - stage: Apply
+      displayName: "Terraform Apply - Core Infrastructure"
+      dependsOn: Approve
+      condition: succeeded()
+      jobs:
+      - deployment: TerraformApply
+        displayName: "Apply Core Infrastructure"
+        environment: "Infra-${{ parameters.env }}-Core"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - checkout: self
 
-              for tool in "${required_tools[@]}"; do
-                if ! command -v "$tool" >/dev/null 2>&1; then
-                  missing_tools+=("$tool")
-                fi
-              done
+              - bash: |
+                  set -e
+                  required_tools=(az unzip terraform kubectl helm kubelogin curl jq wget gpg lsb_release)
+                  missing_tools=()
 
-              if [[ ${#missing_tools[@]} -eq 0 ]]; then
-                echo "All required tools already exist. Skipping bootstrap."
-                exit 0
-              fi
+                  for tool in "${required_tools[@]}"; do
+                    if ! command -v "$tool" >/dev/null 2>&1; then
+                      missing_tools+=("$tool")
+                    fi
+                  done
 
-              echo "Missing tools: ${missing_tools[*]}"
-              echo "Running agent tooling bootstrap..."
-              if command -v sudo >/dev/null 2>&1; then
-                sudo bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
-              else
-                bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
-              fi
-            displayName: "Run agent bootstrap script"
+                  if [[ ${#missing_tools[@]} -eq 0 ]]; then
+                    echo "All required tools already exist. Skipping bootstrap."
+                    exit 0
+                  fi
 
-          - task: TerraformInstaller@1
-            displayName: "Install Terraform"
-            inputs:
-              terraformVersion: $(terraform_version)
+                  echo "Missing tools: ${missing_tools[*]}"
+                  echo "Running agent tooling bootstrap..."
+                  if command -v sudo >/dev/null 2>&1; then
+                    sudo bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
+                  else
+                    bash "$(System.DefaultWorkingDirectory)/modules/devops/install-agent.sh"
+                  fi
+                displayName: "Run agent bootstrap script"
 
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              artifactName: "tfplan-infra"
-              downloadPath: "$(terraform_working_directory)"
+              - task: TerraformInstaller@1
+                displayName: "Install Terraform"
+                inputs:
+                  terraformVersion: $(terraform_version)
 
-          - task: AzureCLI@2
-            displayName: "Terraform Init"
-            inputs:
-              azureSubscription: $(service_connection_name)
-              scriptType: bash
-              scriptLocation: inlineScript
-              workingDirectory: "$(terraform_working_directory)"
-              inlineScript: |
-                echo "### Terraform INIT (Infra Apply) ###"
-                rm -rf .terraform
-                terraform init \
-                  -backend-config="resource_group_name=$(resource_group_tfstate)" \
-                  -backend-config="storage_account_name=$(storage_account_tfstate)" \
-                  -backend-config="container_name=$(container_tfstate)" \
-                  -backend-config="key=$(key_tfstate)" \
-                  -backend-config="use_azuread_auth=true"
+              - task: DownloadPipelineArtifact@2
+                inputs:
+                  artifactName: "tfplan-infra"
+                  downloadPath: "$(terraform_working_directory)"
 
-   
-          - task: AzureCLI@2
-            displayName: "Terraform Apply - Core Infrastructure"
-            inputs:
-              azureSubscription: $(service_connection_name)
-              scriptType: bash
-              scriptLocation: inlineScript
-              workingDirectory: "$(terraform_working_directory)"
-              inlineScript: |
-                echo "### APPLY Core Infrastructure ###"
-                terraform apply -input=false tfplan-infra
+              - task: AzureCLI@2
+                displayName: "Terraform Init"
+                inputs:
+                  azureSubscription: $(service_connection_name)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  workingDirectory: "$(terraform_working_directory)"
+                  inlineScript: |
+                    echo "### Terraform INIT (Infra Apply) ###"
+                    rm -rf .terraform
+                    terraform init \
+                      -backend-config="resource_group_name=$(resource_group_tfstate)" \
+                      -backend-config="storage_account_name=$(storage_account_tfstate)" \
+                      -backend-config="container_name=$(container_tfstate)" \
+                      -backend-config="key=$(key_tfstate)" \
+                      -backend-config="use_azuread_auth=true"
+
+              - task: AzureCLI@2
+                displayName: "Terraform Apply - Core Infrastructure"
+                inputs:
+                  azureSubscription: $(service_connection_name)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  workingDirectory: "$(terraform_working_directory)"
+                  inlineScript: |
+                    echo "### APPLY Core Infrastructure ###"
+                    terraform apply -input=false tfplan-infra
