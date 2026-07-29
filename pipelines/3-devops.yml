@@ -29,14 +29,6 @@ parameters:
   - ncu
   - gwc  
 
-- name: deploymentMode
-  displayName: Deployment Mode
-  type: string
-  default: rbac-only
-  values:
-  - rbac-only
-  - recover-devops
-  
 variables:
 - group: ${{ parameters.workload }}.infra
 
@@ -109,27 +101,13 @@ stages:
         scriptLocation: inlineScript
         workingDirectory: "$(terraform_working_directory)"
         inlineScript: |
-          if [[ "${{ parameters.deploymentMode }}" == "recover-devops" ]]; then
-            echo "### TERRAFORM PLAN - DevOps recovery mode ###"
-            # One-time recovery of DevOps resources that were deleted.
-            terraform plan \
-              -target=module.keyvault \
-              -target=module.acr \
-              -target=azurerm_role_assignment.deployer_kv_secrets_officer \
-              -target=tls_private_key.devops \
-              -target=module.devops_identity \
-              -target=module.devops \
-              -var-file="./environments/${{ parameters.env }}.tfvars" \
-              -out=tfplan-devops
-          else
-            echo "### TERRAFORM PLAN - DevOps RBAC only ###"
-            # Target only Foundry role assignment for the DevOps managed identity.
-            # This avoids accidental updates/deletes in network, private endpoints, and core services.
-            terraform plan \
-              -target=module.devops_identity.azurerm_role_assignment.foundry_project_manager \
-              -var-file="./environments/${{ parameters.env }}.tfvars" \
-              -out=tfplan-devops
-          fi
+          terraform plan \
+            -target=module.keyvault \
+            -target=module.acr \
+            -target=module.devops_identity \
+            -target=module.devops \
+            -var-file="./environments/${{ parameters.env }}.tfvars" \
+            -out=tfplan-devops
 
 
     - task: PublishPipelineArtifact@1

@@ -19,10 +19,6 @@ resource "azurerm_subnet" "workload_private_endpoints" {
   virtual_network_name            = azurerm_virtual_network.workload.name
   address_prefixes                = var.private_endpoints_subnet_prefixes
   default_outbound_access_enabled = false
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_subnet" "workload_devops" {
@@ -37,6 +33,42 @@ resource "azurerm_subnet" "bastion" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.workload.name
   address_prefixes     = var.bastion_subnet_prefixes
+}
+
+resource "azurerm_public_ip" "bastion" {
+  name                = "pip-bastion-${var.workload}-${var.env}-${var.region}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
+
+resource "azurerm_bastion_host" "main" {
+  name                   = "bas-${var.workload}-${var.env}-${var.region}"
+  location               = var.location
+  resource_group_name    = var.resource_group_name
+  sku                    = "Standard"
+  copy_paste_enabled     = true
+  file_copy_enabled      = false
+  ip_connect_enabled     = true
+  shareable_link_enabled = false
+  tunneling_enabled      = true
+
+  ip_configuration {
+    name                 = "bastion-ipconfig"
+    subnet_id            = azurerm_subnet.bastion.id
+    public_ip_address_id = azurerm_public_ip.bastion.id
+  }
+
+  # Bastion creation can exceed default provider polling windows in some regions.
+  timeouts {
+    create = "120m"
+    update = "120m"
+    delete = "120m"
+  }
+
+  tags = var.tags
 }
 
 resource "azurerm_subnet" "dns_resolver_inbound" {
@@ -92,100 +124,60 @@ resource "azurerm_private_dns_zone" "keyvault" {
   name                = "privatelink.vaultcore.azure.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "cosmosdb" {
   name                = "privatelink.documents.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "redis" {
   name                = "privatelink.redis.cache.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "search" {
   name                = "privatelink.search.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "storage" {
   name                = "privatelink.blob.core.windows.net"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "acr" {
   name                = "privatelink.azurecr.io"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "ai_services" {
   name                = "privatelink.cognitiveservices.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "ai_openai" {
   name                = "privatelink.openai.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "ai_services_ai" {
   name                = "privatelink.services.ai.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_private_dns_zone" "log_analytics" {
   name                = "privatelink.oms.opinsights.azure.com"
   resource_group_name = var.resource_group_name
   tags                = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # Private DNS Zone Virtual Network Links

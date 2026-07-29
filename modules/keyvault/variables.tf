@@ -23,6 +23,12 @@ variable "keyvault_dns_zone_id" {
   type        = string
 }
 
+variable "devops_ssh_private_key_secret_name" {
+  description = "Name of the secret that stores the DevOps VMSS private key"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

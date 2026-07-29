@@ -23,6 +23,11 @@ variable "user_assigned_identity_id" {
   type        = string
 }
 
+variable "acr_id" {
+  description = "Container Registry resource ID for AKS image pulls"
+  type        = string
+}
+
 variable "system_node_vm_size" {
   description = "VM size for system node pool"
   type        = string

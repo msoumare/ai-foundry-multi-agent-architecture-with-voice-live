@@ -145,8 +145,6 @@ stages:
             -target=module.ai_search \
             -target=module.ai_foundry_identity \
             -target=module.aks \
-            -target=azurerm_role_assignment.aks_acr_pull \
-            -target=azurerm_key_vault_secret.devops_ssh_private_key \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-infra
 

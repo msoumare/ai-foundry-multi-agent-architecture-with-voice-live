@@ -21,10 +21,6 @@ resource "azurerm_cognitive_account" "ai_services" {
     type = "SystemAssigned"
   }
   tags = var.tags
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_cognitive_account_project" "project" {

@@ -55,51 +55,6 @@ module "p2s_vpn" {
   })
 }
 
-# --- Azure Bastion ---
-resource "azurerm_public_ip" "bastion" {
-  name                = "pip-bastion-${var.workload}-${var.environment}-${var.region}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
-resource "azurerm_bastion_host" "main" {
-  name                   = "bas-${var.workload}-${var.environment}-${var.region}"
-  location               = var.location
-  resource_group_name    = azurerm_resource_group.main.name
-  sku                    = "Standard"
-  copy_paste_enabled     = true
-  file_copy_enabled      = false
-  ip_connect_enabled     = true
-  shareable_link_enabled = false
-  tunneling_enabled      = true
-
-  ip_configuration {
-    name                 = "bastion-ipconfig"
-    subnet_id            = module.vnet.bastion_subnet_id
-    public_ip_address_id = azurerm_public_ip.bastion.id
-  }
-
-  # Bastion creation can exceed default provider polling windows in some regions.
-  timeouts {
-    create = "120m"
-    update = "120m"
-    delete = "120m"
-  }
-
-  tags = merge(var.tags, {
-    environment = var.environment
-    workload    = var.workload
-    managed-by  = "terraform"
-  })
-}
-
 # --- Key Vault ---
 module "keyvault" {
   source = "./modules/keyvault"
@@ -109,6 +64,7 @@ module "keyvault" {
   resource_group_name        = azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.vnet.private_endpoints_subnet_id
   keyvault_dns_zone_id       = module.vnet.keyvault_dns_zone_id
+  devops_ssh_private_key_secret_name = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.region}"
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -116,35 +72,8 @@ module "keyvault" {
   })
 }
 
-# --- Key Vault RBAC: Secrets Officer for deploying principal ---
-resource "azurerm_role_assignment" "deployer_kv_secrets_officer" {
-  scope                = module.keyvault.id
-  role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
-# --- SSH Key for DevOps VMSS ---
-resource "tls_private_key" "devops" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-
-  lifecycle {
-    ignore_changes = all  # Key should not be regenerated once created
-  }
-}
-
-resource "azurerm_key_vault_secret" "devops_ssh_private_key" {
-  name         = "devops-ssh-private-key-${var.workload}-${var.environment}-${var.region}"
-  value        = tls_private_key.devops.private_key_pem
-  key_vault_id = module.keyvault.id
-
-  depends_on = [azurerm_role_assignment.deployer_kv_secrets_officer]
-}
-
-# --- DevOps Identity (Minimal) ---
 module "devops_identity" {
   source = "./modules/devops_identity"
-
   name                = "id-devops-${var.workload}-${var.environment}-${var.region}"
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
@@ -167,7 +96,7 @@ module "devops" {
   resource_group_name = azurerm_resource_group.main.name
   subnet_id           = module.vnet.devops_subnet_id
   admin_username      = "build_agent_user"
-  ssh_public_key      = tls_private_key.devops.public_key_openssh
+  ssh_public_key      = module.keyvault.devops_ssh_public_key
   identity_ids        = [module.devops_identity.id]
   tags = merge(var.tags, {
     environment = var.environment
@@ -383,6 +312,7 @@ module "aks" {
   resource_group_name        = azurerm_resource_group.main.name
   log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
   user_assigned_identity_id  = module.aks_identity.id
+  acr_id                     = module.acr.id
   system_node_vm_size        = var.aks_system_node_vm_size
   user_node_vm_size          = var.aks_user_node_vm_size
   user_node_count            = var.aks_user_node_count
@@ -395,10 +325,3 @@ module "aks" {
   })
 }
 
-# --- ACR Pull role for AKS kubelet identity ---
-resource "azurerm_role_assignment" "aks_acr_pull" {
-  scope                = module.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = module.aks.kubelet_identity_object_id
-  principal_type       = "ServicePrincipal"
-}
