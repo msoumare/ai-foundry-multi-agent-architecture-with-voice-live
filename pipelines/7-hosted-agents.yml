@@ -1,7 +1,7 @@
 name: tf-deploy-hosted-agent-$(Date:yyyyMMdd)$(Rev:.r)
 trigger: none
 extends:
-  template: ./templates/hosted-agents.yml
+  template: ./pipelines/templates/hosted-agents.yml
   parameters:
     pipelineName: 7-hosted-agents
     azureServiceConnection: sp-agenthubspoke-dev
