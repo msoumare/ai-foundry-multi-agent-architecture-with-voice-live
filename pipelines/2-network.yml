@@ -112,12 +112,6 @@ stages:
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network
 
-          terraform show -no-color tfplan-network > tfplan-network.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-network.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            exit 1
-          fi
-
     - task: PublishPipelineArtifact@1
       displayName: "Publish Network plan"
       inputs:

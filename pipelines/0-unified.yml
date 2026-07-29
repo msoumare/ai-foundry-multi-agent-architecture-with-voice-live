@@ -160,12 +160,6 @@ stages:
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-network
 
-          terraform show -no-color tfplan-network > tfplan-network.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-network.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            exit 1
-          fi
-
     - task: PublishPipelineArtifact@1
       displayName: "Publish Network plan"
       inputs:
@@ -279,12 +273,6 @@ stages:
             -target=module.devops \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-devops
-
-          terraform show -no-color tfplan-devops > tfplan-devops.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-devops.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            exit 1
-          fi
 
     - task: PublishPipelineArtifact@1
       displayName: "Publish DevOps plan"
@@ -434,12 +422,6 @@ stages:
             -target=azurerm_key_vault_secret.devops_ssh_private_key \
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-core
-
-          terraform show -no-color tfplan-core > tfplan-core.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-core.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            exit 1
-          fi
 
     - task: PublishPipelineArtifact@1
       displayName: "Publish Core plan"

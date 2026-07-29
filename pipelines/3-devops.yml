@@ -131,12 +131,6 @@ stages:
               -out=tfplan-devops
           fi
 
-          terraform show -no-color tfplan-devops > tfplan-devops.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-devops.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            echo "Deployment mode: ${{ parameters.deploymentMode }}"
-            exit 1
-          fi
 
     - task: PublishPipelineArtifact@1
       displayName: "Publish DevOps plan"

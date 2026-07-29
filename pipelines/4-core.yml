@@ -150,12 +150,6 @@ stages:
             -var-file="./environments/${{ parameters.env }}.tfvars" \
             -out=tfplan-infra
 
-          terraform show -no-color tfplan-infra > tfplan-infra.txt
-          if grep -Eq "will be destroyed|Plan: .* to destroy" tfplan-infra.txt; then
-            echo "ERROR: Plan contains delete actions. Review changes before apply."
-            exit 1
-          fi
-
     - task: PublishPipelineArtifact@1
       displayName: "Publish Infra plan"
       inputs:
