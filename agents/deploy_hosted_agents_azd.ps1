@@ -35,10 +35,23 @@ function Invoke-AzdStep {
     }
 }
 
+function Test-AzdAuthenticated {
+    $statusOutput = azd auth status --no-prompt 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        return $false
+    }
+
+    # azd status can still return exit code 0 when logged out, so inspect text.
+    if ($statusOutput -match "(?i)not logged in|logged out") {
+        return $false
+    }
+
+    return $true
+}
+
 function Initialize-AzdAuthentication {
     Write-Host "[$(Get-Date -Format o)] Checking azd auth status" -ForegroundColor DarkGray
-    azd auth login --check-status --no-prompt 2>$null
-    if ($LASTEXITCODE -eq 0) {
+    if (Test-AzdAuthenticated) {
         return
     }
 
@@ -50,7 +63,9 @@ function Initialize-AzdAuthentication {
         Invoke-AzdStep -Description "Logging into azd with Azure DevOps workload identity federation" `
             -Command { azd auth login --client-id $env:servicePrincipalId --tenant-id $env:tenantId --federated-credential-provider azure-pipelines --no-prompt } `
             -ErrorMessage "azd workload identity login failed"
-        return
+        if (Test-AzdAuthenticated) {
+            return
+        }
     }
 
     # Service principal with secret fallback.
@@ -61,7 +76,9 @@ function Initialize-AzdAuthentication {
         Invoke-AzdStep -Description "Logging into azd with Azure DevOps service principal secret" `
             -Command { azd auth login --client-id $env:servicePrincipalId --client-secret $env:servicePrincipalKey --tenant-id $env:tenantId --no-prompt } `
             -ErrorMessage "azd service principal login failed"
-        return
+        if (Test-AzdAuthenticated) {
+            return
+        }
     }
 
     throw "azd is not authenticated. For workload identity, ensure addSpnToEnvironment=true and SYSTEM_ACCESSTOKEN is available to the task."
@@ -119,6 +136,9 @@ function Invoke-AzdDeploy {
         Invoke-AzdStep -Description "Setting AGENTHUB_MODEL_DEPLOYMENT" -Command { azd env set AGENTHUB_MODEL_DEPLOYMENT $ModelDeployment --no-prompt } -ErrorMessage "azd env set AGENTHUB_MODEL_DEPLOYMENT failed for $Name"
         Invoke-AzdStep -Description "Setting DEFAULT_MODEL_DEPLOYMENT" -Command { azd env set DEFAULT_MODEL_DEPLOYMENT $ModelDeployment --no-prompt } -ErrorMessage "azd env set DEFAULT_MODEL_DEPLOYMENT failed for $Name"
         Invoke-AzdStep -Description "Setting AZURE_CONTAINER_REGISTRY_ENDPOINT" -Command { azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT $ContainerRegistryEndpoint --no-prompt } -ErrorMessage "azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT failed for $Name"
+
+        # Re-check auth in case token/cache state changed before deployment.
+        Initialize-AzdAuthentication
 
         Write-Host "[$(Get-Date -Format o)] Starting azd deploy for '$Name'..." -ForegroundColor Cyan
         azd deploy --no-prompt 2>&1 | Tee-Object -FilePath $deployLog

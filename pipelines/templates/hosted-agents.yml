@@ -75,8 +75,9 @@ stages:
           azd version
           # Keep azd extension auth pinned to Azure CLI identity.
           Write-Host "Checking azd auth status in pipeline step..."
-          azd auth login --check-status --no-prompt 2>$null
-          if ($LASTEXITCODE -ne 0) {
+          $azdStatus = azd auth status --no-prompt 2>&1 | Out-String
+          $isAzdLoggedIn = ($LASTEXITCODE -eq 0 -and ($azdStatus -notmatch "(?i)not logged in|logged out"))
+          if (-not $isAzdLoggedIn) {
             if ([string]::IsNullOrWhiteSpace($env:servicePrincipalId) -or [string]::IsNullOrWhiteSpace($env:tenantId)) {
               throw "azd is not authenticated and workload identity context is missing. Ensure AzureCLI@2 uses addSpnToEnvironment: true."
             }
@@ -85,6 +86,12 @@ stages:
             azd auth login --client-id $env:servicePrincipalId --tenant-id $env:tenantId --federated-credential-provider azure-pipelines --no-prompt
             if ($LASTEXITCODE -ne 0) {
               throw "azd auth login failed in pipeline step."
+            }
+
+            $azdStatus = azd auth status --no-prompt 2>&1 | Out-String
+            $isAzdLoggedIn = ($LASTEXITCODE -eq 0 -and ($azdStatus -notmatch "(?i)not logged in|logged out"))
+            if (-not $isAzdLoggedIn) {
+              throw "azd auth status still reports logged out after workload identity login. Ensure pipeline setting 'Allow scripts to access OAuth token' is enabled."
             }
           }
           $env:AZURE_TOKEN_CREDENTIALS = "AzureCliCredential"
