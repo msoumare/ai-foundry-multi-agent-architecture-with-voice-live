@@ -150,6 +150,7 @@ module "devops_identity" {
   resource_group_name = azurerm_resource_group.main.name
   key_vault_id        = module.keyvault.id
   acr_id              = module.acr.id
+  ai_services_id      = module.ai_foundry.ai_services_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

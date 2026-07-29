@@ -23,6 +23,12 @@ variable "acr_id" {
   type        = string
 }
 
+variable "ai_services_id" {
+  description = "Optional AI Services (Foundry account) resource ID for Foundry RBAC assignment"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)
