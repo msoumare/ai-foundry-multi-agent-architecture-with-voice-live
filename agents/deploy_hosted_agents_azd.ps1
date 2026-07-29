@@ -160,7 +160,22 @@ function Invoke-AzdDeploy {
 }
 azd version | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "Azure Developer CLI (azd) is required. Install azd and try again."
+    if ($IsLinux) {
+        Write-Host "[$(Get-Date -Format o)] azd not found. Installing azd on Linux agent..." -ForegroundColor DarkGray
+        bash -lc "curl -fsSL https://aka.ms/install-azd.sh | bash"
+        if ($LASTEXITCODE -eq 0) {
+            $azdBin = Join-Path $HOME ".azd/bin"
+            if (Test-Path $azdBin) {
+                $currentPath = (Get-Item -Path Env:PATH).Value
+                Set-Item -Path Env:PATH -Value ($azdBin + ":" + $currentPath)
+            }
+            azd version | Out-Null
+        }
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Azure Developer CLI (azd) is required. Install azd and try again."
+    }
 }
 azd ext install azure.ai.agents | Out-Null
 azd ext upgrade azure.ai.agents | Out-Null

@@ -43,6 +43,45 @@ stages:
     pool: ${{ parameters.jobPool }}
     steps:
     - checkout: self
+    - bash: |
+        set -euo pipefail
+
+        echo "Bootstrapping agent prerequisites (az, pwsh, azd)..."
+
+        if ! command -v az >/dev/null 2>&1; then
+          echo "Installing Azure CLI..."
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        fi
+
+        if ! command -v pwsh >/dev/null 2>&1; then
+          echo "Installing PowerShell..."
+          if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https software-properties-common
+            wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb
+            rm -f packages-microsoft-prod.deb
+            sudo apt-get update
+            sudo apt-get install -y powershell
+          else
+            echo "Unsupported Linux distribution for automatic PowerShell install. Install pwsh manually on this agent."
+            exit 1
+          fi
+        fi
+
+        if ! command -v azd >/dev/null 2>&1; then
+          echo "Installing Azure Developer CLI (azd)..."
+          curl -fsSL https://aka.ms/install-azd.sh | bash
+          echo "##vso[task.prependpath]$HOME/.azd/bin"
+          export PATH="$HOME/.azd/bin:$PATH"
+        fi
+
+        az version
+        pwsh --version
+        azd version
+      displayName: Bootstrap agent prerequisites
+      condition: eq(variables['Agent.OS'], 'Linux')
+
     - task: AzureCLI@2
       displayName: Deploy agents
       env:
