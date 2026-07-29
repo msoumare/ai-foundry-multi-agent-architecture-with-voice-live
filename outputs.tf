@@ -83,21 +83,6 @@ output "bastion_subnet_id" {
   value       = module.vnet.bastion_subnet_id
 }
 
-output "bastion_host_name" {
-  description = "Azure Bastion host name"
-  value       = azurerm_bastion_host.main.name
-}
-
-output "bastion_public_ip" {
-  description = "Azure Bastion public IP address"
-  value       = azurerm_public_ip.bastion.ip_address
-}
-
-output "devops_ssh_private_key_secret_name" {
-  description = "Key Vault secret name containing the DevOps VMSS SSH private key"
-  value       = azurerm_key_vault_secret.devops_ssh_private_key.name
-}
-
 output "ai_foundry_identity_client_id" {
   description = "Client ID of the Foundry User Assigned Identity"
   value       = module.ai_foundry_identity.client_id
