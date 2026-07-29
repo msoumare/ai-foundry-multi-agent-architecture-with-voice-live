@@ -4,6 +4,8 @@ extends:
   template: /pipelines/templates/hosted-agents.yml
   parameters:
     pipelineName: 7-hosted-agents
+    jobPool:
+      name: private-pool-agenthubspoke-dev-gwc
     azureServiceConnection: sp-agenthubspoke-dev
     subscriptionId: "3c9d7b7f-4666-43a3-a852-062c5b18c783"
     tenantId: "2d75a51b-29e5-45d5-a5c5-5aa979cb6a28"

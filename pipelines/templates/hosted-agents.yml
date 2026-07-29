@@ -30,12 +30,17 @@ parameters:
 - name: agentFolders
   type: string
   default: ""
+- name: jobPool
+  type: object
+  default:
+    vmImage: ubuntu-latest
 stages:
 - stage: DeployHostedAgents
   displayName: Deploy hosted agents with azd
   jobs:
   - job: Deploy
     displayName: Run deploy_hosted_agents_azd.ps1
+    pool: ${{ parameters.jobPool }}
     steps:
     - checkout: self
     - task: AzureCLI@2
