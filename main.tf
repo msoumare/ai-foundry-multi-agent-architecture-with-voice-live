@@ -69,6 +69,7 @@ module "keyvault" {
     environment = var.environment
     workload    = var.workload
     managed-by  = "terraform"
+    SecurityControl = "ignore"
   })
 }
 
