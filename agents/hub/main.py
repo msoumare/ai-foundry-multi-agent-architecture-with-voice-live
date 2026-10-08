@@ -36,11 +36,11 @@ def main() -> None:
         reason = telemetry.last_error or "missing APPLICATIONINSIGHTS_CONNECTION_STRING (Foundry reserved keyword)"
         print(f"[telemetry] disabled: {reason}")
 
-    project_endpoint = HubAgentConfig.FOUNDRY_PROJECT_ENDPOINT
-    model = HubAgentConfig.FOUNDRY_MODEL_DEPLOYMENT
+    project_endpoint = HubAgentConfig.SERVICE_PROJECT_ENDPOINT
+    model = HubAgentConfig.SERVICE_MODEL_DEPLOYMENT
 
     if not project_endpoint:
-        raise RuntimeError("FOUNDRY_PROJECT_ENDPOINT is required.")
+        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
 
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
@@ -58,7 +58,7 @@ def main() -> None:
     hub_agent = HubAgent(agent)
 
     server = ResponsesHostServer(hub_agent)    
-    server.run(host=HubAgentConfig.HOST, port=HubAgentConfig.PORT)
+    server.run(host=HubAgentConfig.SERVICE_HOST, port=HubAgentConfig.SERVICE_PORT)
 
 
 if __name__ == "__main__":

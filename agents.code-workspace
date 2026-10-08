@@ -1,0 +1,20 @@
+{
+    "folders": [
+        {
+            "name": "hub-agent",
+            "path": "agents/hub"
+        },
+        {
+            "name": "account-agent",
+            "path": "agents/account"
+        },
+        {
+            "name": "card-agent",
+            "path": "agents/card"
+        },
+        {
+            "name": "payment-agent",
+            "path": "agents/payment"
+        }
+    ]
+}

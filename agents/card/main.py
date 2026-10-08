@@ -31,12 +31,12 @@ def main() -> None:
         reason = telemetry.last_error or "missing APPLICATIONINSIGHTS_CONNECTION_STRING (Foundry reserved keyword)"
         print(f"[telemetry] disabled: {reason}")
 
-    project_endpoint = CardAgentConfig.FOUNDRY_PROJECT_ENDPOINT
-    model = CardAgentConfig.FOUNDRY_MODEL_DEPLOYMENT
+    project_endpoint = CardAgentConfig.SERVICE_PROJECT_ENDPOINT
+    model = CardAgentConfig.SERVICE_MODEL_DEPLOYMENT
     agent_name = CardAgentConfig.SERVICE_NAME
 
     if not project_endpoint:
-        raise RuntimeError("FOUNDRY_PROJECT_ENDPOINT is required.")
+        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
 
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
@@ -56,7 +56,7 @@ def main() -> None:
     )
 
     server = ResponsesHostServer(app_agent)
-    server.run(host=CardAgentConfig.HOST, port=CardAgentConfig.PORT)
+    server.run(host=CardAgentConfig.SERVICE_HOST, port=CardAgentConfig.SERVICE_PORT)
 
 
 if __name__ == "__main__":

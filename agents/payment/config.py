@@ -25,18 +25,25 @@ def _as_int(value: str | None, *, default: int) -> int:
         return default
 
 
+def _forward_mode() -> str:
+    value = (os.getenv("FORWARD_MODE", "foundry") or "foundry").strip().lower()
+    if value not in {"foundry", "local"}:
+        raise ValueError("FORWARD_MODE must be one of: foundry, local")
+    return value
+
+
 class PaymentAgentConfig:
     SERVICE_NAME = os.getenv("SERVICE_NAME", "payment-agent")
-    APP_ENV = os.getenv("APP_ENV", "ENV_LCL")
-    HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = _as_int(os.getenv("PORT"), default=8091)
+    SERVICE_HOST = os.getenv("SERVICE_HOST", "0.0.0.0")
+    SERVICE_PORT = _as_int(os.getenv("SERVICE_PORT"), default=8091)
+    FORWARD_MODE = _forward_mode()
 
-    FOUNDRY_PROJECT_ENDPOINT = (
-        os.getenv("FOUNDRY_PROJECT_ENDPOINT")
+    SERVICE_PROJECT_ENDPOINT = (
+        os.getenv("SERVICE_PROJECT_ENDPOINT")
         or os.getenv("AZURE_AI_PROJECT_ENDPOINT", "")
     )
-    FOUNDRY_MODEL_DEPLOYMENT = (
-        os.getenv("FOUNDRY_MODEL_DEPLOYMENT")
+    SERVICE_MODEL_DEPLOYMENT = (
+        os.getenv("SERVICE_MODEL_DEPLOYMENT")
         or os.getenv("AGENTHUB_MODEL_DEPLOYMENT")
         or os.getenv("DEFAULT_MODEL_DEPLOYMENT")
         or os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", "")

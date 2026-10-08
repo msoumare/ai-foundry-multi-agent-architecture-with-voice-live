@@ -59,7 +59,7 @@ class TelemetryManager:
             self.content_recording_enabled = content_recording_enabled
 
         if console_export is None:
-            console_export = CardAgentConfig.APP_ENV == "ENV_LCL"
+            console_export = CardAgentConfig.FORWARD_MODE == "local"
 
         if not self.connection_string:
             self._initialized = True

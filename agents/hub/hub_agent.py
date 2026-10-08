@@ -318,7 +318,7 @@ class HubAgent:
             self._normalize_agent_id(route_id): route_id
             for route_id in agent_registry
         }
-        fallback = "CognigyAgent" if "CognigyAgent" in agent_registry else (agent_registry[0] if agent_registry else "unknown")
+        fallback = agent_registry[0] if agent_registry else "unknown"
 
         try:
             payload = json.loads(raw)

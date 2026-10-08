@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import asyncio
-import os
 from pathlib import Path
 
 from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
-from azure.ai.agentserver.agentframework import from_agent_framework
+from agent_framework_foundry_hosting import ResponsesHostServer
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
+
+from config import AccountAgentConfig
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env", override=False)
@@ -21,36 +21,30 @@ def _read_instructions() -> str:
     return "You are the Account hosted agent. Help users with profile updates, account access, and account status checks."
 
 
-async def main() -> None:
-    project_endpoint = (
-        os.getenv("FOUNDRY_PROJECT_ENDPOINT")
-        or os.getenv("AZURE_AI_PROJECT_ENDPOINT", "")
-    ).strip().strip('"')
-    model = (
-        os.getenv("FOUNDRY_MODEL_DEPLOYMENT")
-        or os.getenv("DEFAULT_MODEL_DEPLOYMENT")
-        or os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME")
-        or os.getenv("AGENTHUB_MODEL_DEPLOYMENT")
-        or "gpt-4.1-mini"
-    ).strip().strip('"')
-    agent_name = os.getenv("SERVICE_NAME", "account-agent")
+def main() -> None:
+    project_endpoint = AccountAgentConfig.SERVICE_PROJECT_ENDPOINT
+    model = AccountAgentConfig.SERVICE_MODEL_DEPLOYMENT
+    agent_name = AccountAgentConfig.SERVICE_NAME
 
     if not project_endpoint:
-        raise RuntimeError("FOUNDRY_PROJECT_ENDPOINT is required.")
+        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
 
-    credential = DefaultAzureCredential()
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
         model=model,
-        credential=credential,
+        credential=DefaultAzureCredential(),
     )
 
-    async with Agent(client=client, name=agent_name, instructions=_read_instructions()) as agent:
-        await from_agent_framework(agent).run_async()
+    agent = Agent(
+        client=client,
+        name=agent_name,
+        instructions=_read_instructions(),
+        default_options={"store": False},
+    )
 
-    if hasattr(credential, "close"):
-        credential.close()
+    server = ResponsesHostServer(agent)
+    server.run(host=AccountAgentConfig.SERVICE_HOST, port=AccountAgentConfig.SERVICE_PORT)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
