@@ -17,4 +17,3 @@ class QueryResponse(BaseModel):
     processing_time: float = Field(default=0.0, description="Total request processing time")
     tool_results: list[dict[str, Any]] = Field(default_factory=list, description="Results from called tools")
     token_usage: dict[str, int] | None = Field(default=None, description="Token usage statistics")
-    suggested_next_agent: str | None = Field(default=None, description="Hint to hub for next routing hop; hub decides whether to follow it")

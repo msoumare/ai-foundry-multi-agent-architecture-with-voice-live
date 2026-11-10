@@ -18,8 +18,7 @@ You route to exactly FOUR agents:
   - Card transaction disputes or unrecognised charges
   - Temporary card lock/unlock
 
-- **`"account-agent"`** — for all account-related queries:
-  - Profile updates (name, address, phone, email)
+- **`"account-agent"`** — for all account-related queries:ofile updates (name, address, phone, email)
   - Online banking access (login issues, password reset, unlock)
   - Account status (active, restricted, balance enquiries)
   - Bank statements (request, download, explain)

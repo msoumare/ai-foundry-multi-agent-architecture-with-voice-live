@@ -233,27 +233,27 @@ class HubAgent:
                 },
             )
 
-            # # Step 2 — forward to domain agent; follow suggested_next_agent hints (hub decides)
-            # domain_agent_start = time.perf_counter()
-            # domain_agent_response = await self.agent_invoker.invoke(
-            #     agent_id=agent_id,
-            #     request=request,
-            #     history=history,
-            # )
+            # Step 2 — forward to domain agent; follow suggested_next_agent hints (hub decides)
+            domain_agent_start = time.perf_counter()
+            domain_agent_response = await self.agent_invoker.invoke(
+                agent_id=agent_id,
+                request=request,
+                history=history,
+            )
 
-            # domain_agent_duration = time.perf_counter() - domain_agent_start
-            # domain_token_usage = domain_agent_response.token_usage
-            # total_token_usage = self._combine_token_usage(hub_token_usage, domain_token_usage)
+            domain_agent_duration = time.perf_counter() - domain_agent_start
+            domain_token_usage = domain_agent_response.token_usage
+            total_token_usage = self._combine_token_usage(hub_token_usage, domain_token_usage)
 
-            # log_attributes(
-            #     span,
-            #     {
-            #         "domain_agent_duration": domain_agent_duration,
-            #         "domain_agent_response": domain_agent_response,
-            #         "domain_agent_token_usage": domain_token_usage,
-            #         "total_token_usage": total_token_usage,
-            #     },
-            # )
+            log_attributes(
+                span,
+                {
+                    "domain_agent_duration": domain_agent_duration,
+                    "domain_agent_response": domain_agent_response,
+                    "domain_agent_token_usage": domain_token_usage,
+                    "total_token_usage": total_token_usage,
+                },
+            )
 
             updated_history = history + [
                 Message(role=Role.USER, contents=[Content.from_text(request.query)]),

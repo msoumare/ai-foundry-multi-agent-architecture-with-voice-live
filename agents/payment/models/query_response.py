@@ -11,8 +11,7 @@ class QueryResponse(BaseModel):
     agent: str | None = None
     message_count: int = 0
     confidence: str | None = None
-    agent_response_time: float | None = None
-    domain_agent_response_time: float | None = None
+    payment_agent_response_time: float | None = None
     processing_time: float = 0.0
     tool_results: list[dict[str, Any]] = Field(default_factory=list)
     token_usage: dict[str, int] | None = None

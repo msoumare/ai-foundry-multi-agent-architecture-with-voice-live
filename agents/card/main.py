@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
 from agent_framework_foundry_hosting import ResponsesHostServer
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureCliCredential, ChainedTokenCredential, DefaultAzureCredential
 from dotenv import load_dotenv
 
 from card_agent import CardAgent
@@ -15,9 +16,17 @@ from services.telemetry import telemetry
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env", override=False)
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+
 
 def _read_instructions() -> str:
-    return (ROOT / "prompts" / "card_prompt.txt").read_text(encoding="utf-8").strip()
+    prompt_path = ROOT / "prompts" / "card_prompt.txt"
+    if prompt_path.exists():
+        return prompt_path.read_text(encoding="utf-8").strip()
+    return "You are the Card hosted agent. Help users with card activation, card limits, PIN, and card transaction issues."
 
 
 def main() -> None:
@@ -25,36 +34,39 @@ def main() -> None:
     if telemetry.is_enabled():
         print(f"[telemetry] enabled for service '{CardAgentConfig.SERVICE_NAME}'")
     else:
-        reason = telemetry.last_error or "missing APPLICATIONINSIGHTS_CONNECTION_STRING (Foundry reserved keyword)"
+        reason = telemetry.last_error or "missing APPLICATIONINSIGHTS_CONNECTION_STRING"
         print(f"[telemetry] disabled: {reason}")
 
-    project_endpoint = CardAgentConfig.AZURE_AI_PROJECT_ENDPOINT
-    model = CardAgentConfig.FOUNDRY_MODEL_DEPLOYMENT
-    agent_name = CardAgentConfig.SERVICE_NAME
+    project_endpoint = CardAgentConfig.SERVICE_PROJECT_ENDPOINT
+    model = CardAgentConfig.SERVICE_MODEL_DEPLOYMENT
 
     if not project_endpoint:
-        raise RuntimeError("AZURE_AI_PROJECT_ENDPOINT is required.")
+        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
+
+    credential = ChainedTokenCredential(
+        AzureCliCredential(),
+        DefaultAzureCredential(exclude_cli_credential=True),
+    )
 
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
         model=model,
-        credential=DefaultAzureCredential(),
+        credential=credential,
     )
 
     domain_agent = Agent(
         client=client,
-        name=agent_name,
+        name=CardAgentConfig.SERVICE_NAME,
         instructions=_read_instructions(),
         default_options={"store": False},
     )
 
-    app_agent = CardAgent(
-        card_agent=domain_agent,
-    )
-
+    app_agent = CardAgent(card_agent=domain_agent)
     server = ResponsesHostServer(app_agent)
-    server.run(host=CardAgentConfig.HOST, port=CardAgentConfig.PORT)
+    print(f"[card-agent] Starting responses-hosted agent on port {CardAgentConfig.SERVICE_PORT}")
+    server.run(host=CardAgentConfig.SERVICE_HOST, port=CardAgentConfig.SERVICE_PORT)
 
 
 if __name__ == "__main__":
     main()
+

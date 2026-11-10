@@ -2,31 +2,32 @@
 
 requiredVersions:
     extensions:
-        azure.ai.agents: '>=1.0.0'
+        azure.ai.agents: '>=0.1.0-preview'
 name: card
 services:
     card-agent:
-        name: card-agent
-        description: Card domain custom code hosted agent
         project: .
         host: azure.ai.agent
-        kind: hosted
         language: docker
-        protocols:
-            - protocol: responses
-              version: 1.0.0
         docker:
-            remoteBuild: true
+            image: card-agent
+            remoteBuild: false
         container:
             resources:
                 cpu: "0.25"
                 memory: 0.5Gi
-        startupCommand: python main.py
         env:
-            APP_ENV: production
-            SERVICE_NAME: card-agent
-            HOST: 0.0.0.0
-            ACCOUNT_AGENT_NAME: account-agent
-            PAYMENT_AGENT_NAME: payment-agent
-            DOWNSTREAM_AGENT_TIMEOUT: "30"
+            SERVICE_NAME: "card-agent"
+            SERVICE_HOST: "0.0.0.0"
+            SERVICE_PROJECT_ENDPOINT: "https://aifd-coba-poc-managed-dev-03.services.ai.azure.com/api/projects/aifd-coba-poc-managed-dev-03-project-alpha"
+            SERVICE_MODEL_DEPLOYMENT: "gpt-5.1-managed"
+            ACCOUNT_AGENT_NAME: "account-agent"
+            PAYMENT_AGENT_NAME: "payment-agent"
+            HUB_AGENT_NAME: "hub-agent"
             AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
+        kind: hosted
+        name: card-agent
+        description: Card domain agent — lost/stolen cards, replacements, activation, limits, and PIN management
+        protocols:
+            - protocol: responses
+              version: 1.0.0

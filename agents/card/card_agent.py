@@ -9,6 +9,7 @@ from typing import Any
 from agent_framework import Agent, AgentResponse, AgentResponseUpdate, Content, Message
 from opentelemetry import trace
 
+from config import CardAgentConfig
 from models.query_request import QueryRequest
 from models.query_response import QueryResponse
 from models.roles import Role
@@ -34,10 +35,7 @@ class CardAgent:
         self.fallback_session_id = fallback_session_id
         self._history: dict[str, list[Message]] = {}
 
-    # ------------------------------------------------------------------
     # Agent framework interface
-    # ------------------------------------------------------------------
-
     def run(
         self,
         messages: str | Message | list[str] | list[Message] | None = None,
@@ -51,10 +49,7 @@ class CardAgent:
             return self._build_response_stream(request=request, **kwargs)
         return self._build_response(request=request, **kwargs)
 
-    # ------------------------------------------------------------------
-    # Request Parsing
-    # ------------------------------------------------------------------
-
+    # Request parsing
     def _build_request(
         self,
         messages: str | Message | list[str] | list[Message] | None,
@@ -101,10 +96,7 @@ class CardAgent:
 
         return request
 
-    # ------------------------------------------------------------------
-    # Response Construction
-    # ------------------------------------------------------------------
-
+    # Response construction
     async def _build_response(
         self,
         request: QueryRequest,
@@ -134,10 +126,7 @@ class CardAgent:
             author_name="card-agent",
         )
 
-    # ------------------------------------------------------------------
-    # Execution Pipeline
-    # ------------------------------------------------------------------
-
+    # Execution pipeline
     @telemetry.trace_function(span_name="CardAgent._execute")
     async def _execute(
         self,
@@ -166,7 +155,6 @@ class CardAgent:
             confidence = result["confidence"]
             token_usage = result["token_usage"]
             card_time = result["card_agent_response_time"]
-            suggested_next_agent = result.get("suggested_next_agent")
 
             if not request.history:
                 self._store_turn(session_id=session_id, query=request.query, answer=final_text)
@@ -181,17 +169,13 @@ class CardAgent:
                 processing_time=time.perf_counter() - start_time,
                 tool_results=[],
                 token_usage=token_usage,
-                suggested_next_agent=suggested_next_agent,
             )
         except Exception as exc:
             log_status_error(span, exc)
             log_event(span, "card.processing.failed", {"session.id": session_id, "agent.name": "card-agent"})
             return self._build_error_response(session_id=session_id, started_at=start_time)
 
-    # ------------------------------------------------------------------
-    # Session History Helpers
-    # ------------------------------------------------------------------
-
+    # Session history helpers
     def _history_from_request(self, *, request: QueryRequest, session_id: str) -> list[Message]:
         """Merge incoming request history with in-memory session history."""
         session_history = self._history.get(session_id, [])
@@ -219,15 +203,18 @@ class CardAgent:
         if len(history) > self._MAX_HISTORY * 2:
             del history[: -(self._MAX_HISTORY * 2)]
 
-    # ------------------------------------------------------------------
-    # Query Processing
-    # ------------------------------------------------------------------
-
+    # Query processing
     async def _process_query(self, *, request: QueryRequest, history: list[Message]) -> dict[str, Any]:
         card_messages = self._build_prompt_history(request=request, history=history)
 
         card_started = time.perf_counter()
-        card_response = await self.card_agent.run(card_messages)
+        card_response = await asyncio.wait_for(
+            self.card_agent.run(
+                card_messages,
+                client_kwargs={"timeout": CardAgentConfig.A2A_AGENT_TIMEOUT},
+            ),
+            timeout=CardAgentConfig.A2A_AGENT_TIMEOUT,
+        )
         card_duration = time.perf_counter() - card_started
 
         card_output = (getattr(card_response, "text", "") or "").strip()
@@ -267,24 +254,11 @@ class CardAgent:
 
                 token_usage = result or None
 
-        # Signal the hub about a possible next routing hop — hub decides whether to act on it.
-        # Card never forwards directly; cross-domain routing is exclusively the hub's responsibility.
-        suggested_next_agent: str | None = None
-        if isinstance(request.context, dict):
-            candidate = request.context.get("delegate_to")
-            if isinstance(candidate, str) and candidate.strip():
-                suggested_next_agent = candidate.strip().lower()
-        if suggested_next_agent is None and isinstance(request.body, dict):
-            candidate = request.body.get("delegate_to")
-            if isinstance(candidate, str) and candidate.strip():
-                suggested_next_agent = candidate.strip().lower()
-
         return {
             "response": card_output,
             "agent": "card-agent",
             "confidence": "high",
             "token_usage": token_usage,
-            "suggested_next_agent": suggested_next_agent,
             "card_agent_response_time": card_duration,
         }
 
@@ -300,10 +274,7 @@ class CardAgent:
         messages.append(Message(role=Role.USER, contents=[Content.from_text(request.query)]))
         return messages
 
-    # ------------------------------------------------------------------
-    # Error Handling
-    # ------------------------------------------------------------------
-
+    # Error handling
     def _build_error_response(
         self,
         *,

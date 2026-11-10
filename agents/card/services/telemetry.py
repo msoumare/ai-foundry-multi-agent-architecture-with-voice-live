@@ -1,24 +1,23 @@
-"""OpenTelemetry tracing and observability configuration for Azure AI Foundry agents."""
+"""Lightweight application logging for the card agent (routes the telemetry singleton and log_* helpers to stdlib logging; the leading span arg is ignored)."""
 
 from __future__ import annotations
 
 import inspect
-import os
+import json
+import logging
 import threading
+import time
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.trace import Span, Status, StatusCode, Tracer
-
 from config import CardAgentConfig
+
+logger = logging.getLogger("card-agent")
 
 
 class TelemetryManager:
-    """Manages OpenTelemetry configuration and tracer instances."""
+    """Routes application telemetry to the standard library logger."""
 
     _instance: TelemetryManager | None = None
     _initialized = False
@@ -33,97 +32,41 @@ class TelemetryManager:
 
     def __init__(self) -> None:
         if not getattr(self, "_instance_ready", False):
-            self.tracer: Tracer | None = None
-            self.connection_string: str | None = None
             self.service_name: str | None = None
             self.content_recording_enabled = False
             self.last_error: str | None = None
             self._instance_ready = True
 
-    def initialize(
-        self,
-        connection_string: str | None = None,
-        service_name: str | None = None,
-        content_recording_enabled: bool | None = None,
-        console_export: bool | None = None,
-    ) -> None:
+    def initialize(self) -> None:
         if self._initialized:
             return
 
-        self.connection_string = connection_string or CardAgentConfig.APPLICATIONINSIGHTS_CONNECTION_STRING
-        self.service_name = service_name or CardAgentConfig.SERVICE_NAME
+        self.service_name = getattr(CardAgentConfig, "SERVICE_NAME", "card-agent")
 
-        if content_recording_enabled is None:
-            self.content_recording_enabled = CardAgentConfig.AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED
-        else:
-            self.content_recording_enabled = content_recording_enabled
+        self.content_recording_enabled = bool(
+            getattr(CardAgentConfig, "AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED", False)
+        )
 
-        if console_export is None:
-            console_export = CardAgentConfig.APP_ENV == "ENV_LCL"
+        if not logging.getLogger().handlers:
+            logging.basicConfig(
+                level=logging.INFO,
+                format="%(asctime)s %(levelname)s %(name)s %(message)s",
+            )
 
-        if not self.connection_string:
-            self._initialized = True
-            return
+        # agent_framework logs the full system prompt and every chat message at
+        # INFO on each run, flooding stderr with prompt dumps. Raise its level so
+        # only warnings/errors surface.
+        logging.getLogger("agent_framework").setLevel(logging.WARNING)
 
-        try:
-            os.environ.setdefault("OTEL_SERVICE_NAME", self.service_name)
-
-            # Prefer distro helper when available; some environments only have
-            # azure-monitor-opentelemetry-exporter installed.
-            try:
-                from azure.monitor.opentelemetry import configure_azure_monitor
-            except Exception:
-                configure_azure_monitor = None  # type: ignore[assignment]
-
-            if configure_azure_monitor is not None:
-                configure_kwargs: dict[str, Any] = {
-                    "connection_string": self.connection_string,
-                    "disable_logging": True,
-                    "disable_metrics": True,
-                    "enable_live_metrics": False,
-                    "enable_performance_counters": False,
-                }
-
-                configure_azure_monitor(**configure_kwargs)
-            else:
-                from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
-
-                provider = trace.get_tracer_provider()
-                if not isinstance(provider, TracerProvider):
-                    provider = TracerProvider()
-                    trace.set_tracer_provider(provider)
-
-                exporter = AzureMonitorTraceExporter(connection_string=self.connection_string)
-                provider.add_span_processor(BatchSpanProcessor(exporter))
-
-            if console_export:
-                provider = trace.get_tracer_provider()
-                if isinstance(provider, TracerProvider):
-                    provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
-
-            self.tracer = trace.get_tracer(__name__)
-
-            if self.content_recording_enabled:
-                CardAgentConfig.AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = True
-
-            self._initialized = True
-            self.last_error = None
-        except Exception as exc:
-            self._initialized = True
-            self.last_error = str(exc)
-            print(f"[telemetry] initialization failed for {self.service_name}: {self.last_error}")
-
-    def get_tracer(self, name: str | None = None) -> Any:
-        if not self._initialized:
-            self.initialize()
-
-        if self.tracer is not None:
-            return self.tracer
-
-        return trace.get_tracer(name or __name__)
+        self.last_error = None
+        self._initialized = True
+        logger.info("telemetry using raw Python logging (service=%s)", self.service_name)
 
     def is_enabled(self) -> bool:
-        return self._initialized and self.tracer is not None
+        return self._initialized
+
+    def get_tracer(self, name: str | None = None) -> Any:
+        return None
 
     def trace_function(
         self,
@@ -131,51 +74,31 @@ class TelemetryManager:
         attributes: dict[str, Any] | None = None,
     ) -> Callable:
         def decorator(func: Callable) -> Callable:
+            name = span_name or f"{func.__module__}.{func.__name__}"
+
             @wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                if not self.is_enabled():
-                    return await func(*args, **kwargs)
-
-                tracer = self.get_tracer()
-                name = span_name or f"{func.__module__}.{func.__name__}"
-
-                with tracer.start_as_current_span(name) as span:
-                    try:
-                        if attributes:
-                            for key, value in attributes.items():
-                                span.set_attribute(key, str(value))
-                        result = await func(*args, **kwargs)
-                        span.set_status(Status(StatusCode.OK))
-                        return result
-                    except Exception as exc:
-                        span.set_status(Status(StatusCode.ERROR, str(exc)))
-                        span.record_exception(exc)
-                        raise
+                start = time.perf_counter()
+                try:
+                    result = await func(*args, **kwargs)
+                    logger.debug("%s ok (%.1f ms)", name, (time.perf_counter() - start) * 1000)
+                    return result
+                except Exception:
+                    logger.exception("%s failed", name)
+                    raise
 
             @wraps(func)
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-                if not self.is_enabled():
-                    return func(*args, **kwargs)
+                start = time.perf_counter()
+                try:
+                    result = func(*args, **kwargs)
+                    logger.debug("%s ok (%.1f ms)", name, (time.perf_counter() - start) * 1000)
+                    return result
+                except Exception:
+                    logger.exception("%s failed", name)
+                    raise
 
-                tracer = self.get_tracer()
-                name = span_name or f"{func.__module__}.{func.__name__}"
-
-                with tracer.start_as_current_span(name) as span:
-                    try:
-                        if attributes:
-                            for key, value in attributes.items():
-                                span.set_attribute(key, str(value))
-                        result = func(*args, **kwargs)
-                        span.set_status(Status(StatusCode.OK))
-                        return result
-                    except Exception as exc:
-                        span.set_status(Status(StatusCode.ERROR, str(exc)))
-                        span.record_exception(exc)
-                        raise
-
-            if inspect.iscoroutinefunction(func):
-                return async_wrapper
-            return sync_wrapper
+            return async_wrapper if inspect.iscoroutinefunction(func) else sync_wrapper
 
         return decorator
 
@@ -183,100 +106,108 @@ class TelemetryManager:
 telemetry = TelemetryManager()
 
 
-def log_attribute(span: Span, key: str, value: Any) -> None:
-    if value is not None:
-        span.set_attribute(key, value)
+def _coerce(value: Any) -> Any:
+    if value is None or isinstance(value, (bool, str, int, float)):
+        return value
+    if isinstance(value, (list, tuple, dict)):
+        try:
+            return json.dumps(value, ensure_ascii=True, default=str)
+        except Exception:
+            return str(value)
+    return str(value)
 
 
-def log_attributes(span: Span, attributes: dict[str, Any] | None = None) -> None:
+def _render(attributes: dict[str, Any] | None) -> str:
     if not attributes:
-        return
-    for key, value in attributes.items():
-        if value is not None:
-            span.set_attribute(key, value)
+        return ""
+    return " ".join(f"{key}={_coerce(value)}" for key, value in attributes.items() if value is not None)
 
 
-def log_agent_attributes(span: Span, agent_name: str, agent_id: str, model: str | None = None) -> None:
-    span.set_attribute("gen_ai.agent.name", agent_name)
-    span.set_attribute("gen_ai.agent.id", agent_id)
-    if model:
-        span.set_attribute("gen_ai.request.model", model)
+def log_attribute(span: Any, key: str, value: Any) -> None:
+    if value is not None:
+        logger.info("%s=%s", key, _coerce(value))
 
 
-def log_response_attributes(span: Span, response: Any, max_payload_length: int = 2000) -> None:
-    span.set_attribute("gen_ai.response.type", response.__class__.__name__)
-    if not telemetry.content_recording_enabled:
-        return
-
-    payload = str(response)
-    span.set_attribute("gen_ai.response.payload", payload[:max_payload_length])
+def log_attributes(span: Any = None, attributes: dict[str, Any] | None = None) -> None:
+    rendered = _render(attributes)
+    if rendered:
+        logger.info(rendered)
 
 
-def log_query_attributes(span: Span, query: str, session_id: str, user_id: str | None = None) -> None:
-    span.set_attribute("session.id", session_id)
-    if user_id:
-        span.set_attribute("user.id", user_id)
+def log_event(span: Any, name: str, attributes: dict[str, Any] | None = None) -> None:
+    rendered = _render(attributes)
+    if rendered:
+        logger.info("event %s %s", name, rendered)
+    else:
+        logger.info("event %s", name)
 
+
+def log_agent_attributes(span: Any, agent_name: str, agent_id: str, model: str | None = None) -> None:
+    logger.info("agent name=%s id=%s model=%s", agent_name, agent_id, model or "")
+
+
+def log_response_attributes(span: Any, response: Any, max_payload_length: int = 2000) -> None:
+    logger.info("response type=%s", response.__class__.__name__)
     if telemetry.content_recording_enabled:
-        span.set_attribute("gen_ai.user.query", query[:500])
+        logger.info("response payload=%s", str(response)[:max_payload_length])
+
+
+def log_query_attributes(span: Any, query: str, session_id: str, user_id: str | None = None) -> None:
+    logger.info("query session=%s user=%s", session_id, user_id or "")
+    if telemetry.content_recording_enabled:
+        logger.info("query text=%s", query[:500])
 
 
 def log_tool_attributes(
-    span: Span,
+    span: Any,
     tool_name: str,
     tool_args: dict[str, Any] | None = None,
     tool_result: Any = None,
 ) -> None:
-    span.set_attribute("gen_ai.tool.name", tool_name)
-
-    if tool_args and telemetry.content_recording_enabled:
-        span.set_attribute("gen_ai.tool.arguments", str(tool_args)[:500])
-
-    if tool_result is not None and telemetry.content_recording_enabled:
-        span.set_attribute("gen_ai.tool.result", str(tool_result)[:500])
+    logger.info("tool name=%s", tool_name)
+    if telemetry.content_recording_enabled and tool_args:
+        logger.info("tool args=%s", str(tool_args)[:500])
+    if telemetry.content_recording_enabled and tool_result is not None:
+        logger.info("tool result=%s", str(tool_result)[:500])
 
 
 def log_orchestration_attributes(
-    span: Span,
+    span: Any,
     source_agent: str,
     target_agent: str,
     routing_reason: str | None = None,
+    confidence: str | None = None,
 ) -> None:
-    span.set_attribute("gen_ai.orchestration.source_agent", source_agent)
-    span.set_attribute("gen_ai.orchestration.target_agent", target_agent)
-    if routing_reason:
-        span.set_attribute("gen_ai.orchestration.routing_reason", routing_reason)
+    logger.info(
+        "orchestration source=%s target=%s reason=%s confidence=%s",
+        source_agent,
+        target_agent,
+        routing_reason or "",
+        confidence or "",
+    )
 
 
 def log_performance_attributes(
-    span: Span,
+    span: Any,
     duration_ms: float,
     input_tokens: int | None = None,
     output_tokens: int | None = None,
     total_tokens: int | None = None,
 ) -> None:
-    span.set_attribute("gen_ai.response.duration_ms", duration_ms)
-
-    if input_tokens is not None:
-        span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
-
-    if output_tokens is not None:
-        span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
-
-    if total_tokens is not None:
-        span.set_attribute("gen_ai.usage.total_tokens", total_tokens)
-    elif input_tokens is not None and output_tokens is not None:
-        span.set_attribute("gen_ai.usage.total_tokens", input_tokens + output_tokens)
+    logger.info(
+        "perf duration_ms=%.1f input=%s output=%s total=%s",
+        duration_ms,
+        input_tokens,
+        output_tokens,
+        total_tokens,
+    )
 
 
-def log_status_ok(span: Span) -> None:
-    span.set_status(Status(StatusCode.OK))
+def log_status_ok(span: Any = None) -> None:
+    return None
 
 
-def log_status_error(span: Span, exc: Exception) -> None:
-    span.set_status(Status(StatusCode.ERROR, str(exc)))
-    span.record_exception(exc)
-
-
-def log_event(span: Span, name: str, attributes: dict[str, Any] | None = None) -> None:
-    span.add_event(name, attributes or {})
+def log_status_error(span: Any, exc: Exception | None = None) -> None:
+    if exc is None and isinstance(span, BaseException):
+        exc = span
+    logger.error("error: %s", exc, exc_info=exc if isinstance(exc, BaseException) else None)

@@ -2,29 +2,30 @@
 
 requiredVersions:
     extensions:
-        azure.ai.agents: '>=1.0.0'
+        azure.ai.agents: '>=0.1.0-preview'
 name: payment
 services:
     payment-agent:
-        name: payment-agent
-        description: Payment domain custom code hosted agent
         project: .
         host: azure.ai.agent
-        kind: hosted
         language: docker
-        protocols:
-            - protocol: responses
-              version: 1.0.0
         docker:
-            remoteBuild: true
+            image: payment-agent
+            remoteBuild: false
         container:
             resources:
                 cpu: "0.25"
                 memory: 0.5Gi
-        startupCommand: python main.py
         env:
-            APP_ENV: ""
-            SERVICE_NAME: ""
-            HOST: ""
-            APPLICATIONINSIGHTS_USE_AAD_AUTH: "false"
+            SERVICE_NAME: "payment-agent"
+            SERVICE_HOST: "0.0.0.0"
+            SERVICE_PROJECT_ENDPOINT: "https://aifd-coba-poc-managed-dev-03.services.ai.azure.com/api/projects/aifd-coba-poc-managed-dev-03-project-alpha"
+            SERVICE_MODEL_DEPLOYMENT: "gpt-5.1-managed"
+            HUB_AGENT_NAME: "hub-agent"
             AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
+        kind: hosted
+        name: payment-agent
+        description: Payment domain agent — handles transfers, standing orders, direct debits, and payment history
+        protocols:
+            - protocol: responses
+              version: 1.0.0

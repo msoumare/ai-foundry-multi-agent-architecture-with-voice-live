@@ -1,11 +1,11 @@
-"""Configuration for the payment hosted agent runtime."""
+"""Configuration for the payment agent runtime."""
 
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
-
 
 load_dotenv(".env")
 
@@ -25,22 +25,40 @@ def _as_int(value: str | None, *, default: int) -> int:
         return default
 
 
+def _as_float(value: str | None, *, default: float) -> float:
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 class PaymentAgentConfig:
-    SERVICE_NAME = os.getenv("SERVICE_NAME", "payment-agent")
-    APP_ENV = os.getenv("APP_ENV", "ENV_LCL")
-    HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = _as_int(os.getenv("PORT"), default=8091)
+    SERVICE_NAME = os.getenv("SERVICE_NAME")
+    SERVICE_HOST = os.getenv("SERVICE_HOST")
+    # Foundry Hosted injects PORT and probes readiness on it; prefer it.
+    SERVICE_PORT = int(os.getenv("PORT") or os.getenv("SERVICE_PORT") or 8088)
+    SERVICE_PROJECT_ENDPOINT = os.getenv("SERVICE_PROJECT_ENDPOINT")
+    SERVICE_MODEL_DEPLOYMENT = os.getenv("SERVICE_MODEL_DEPLOYMENT")
+    AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = os.getenv('AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED')
 
-    AZURE_AI_PROJECT_ENDPOINT = os.getenv("AZURE_AI_PROJECT_ENDPOINT", "")
-    FOUNDRY_MODEL_DEPLOYMENT = (
-        os.getenv("FOUNDRY_MODEL_DEPLOYMENT")
-        or os.getenv("AGENTHUB_MODEL_DEPLOYMENT")
-        or os.getenv("DEFAULT_MODEL_DEPLOYMENT")
-        or os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", "")
-    )
+    A2A_AGENT_TIMEOUT = _as_float(os.getenv("A2A_AGENT_TIMEOUT"), default=30.0)
 
-    APPLICATIONINSIGHTS_CONNECTION_STRING = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-    APPLICATIONINSIGHTS_USE_AAD_AUTH = _as_bool(os.getenv("APPLICATIONINSIGHTS_USE_AAD_AUTH"), default=False)
-    AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = _as_bool(
-        os.getenv("AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED"), default=False
-    )
+
+@dataclass
+class A2AAgentConfig:
+    route_id: str
+    agent_name: str
+    url: str
+    timeout_seconds: float = field(default_factory=lambda: PaymentAgentConfig.A2A_AGENT_TIMEOUT)
+    enabled: bool = True
+
+
+PAYMENT_A2A_REGISTRY: list[A2AAgentConfig] = [
+    A2AAgentConfig(
+        route_id="hub",
+        agent_name=os.getenv("HUB_AGENT_NAME", "hub-agent"),
+        url=os.getenv("HUB_AGENT_URL", "http://localhost:8082"),
+    ),
+]
