@@ -83,6 +83,26 @@ output "bastion_subnet_id" {
   value       = module.vnet.bastion_subnet_id
 }
 
+output "alb_subnet_id" {
+  description = "Application Gateway for Containers association subnet resource ID"
+  value       = module.vnet.alb_subnet_id
+}
+
+output "alb_traffic_controller_id" {
+  description = "Resource ID of the Application Gateway for Containers traffic controller"
+  value       = module.application_gateway_for_containers.traffic_controller_id
+}
+
+output "alb_frontend_id" {
+  description = "Resource ID of the Application Gateway for Containers frontend"
+  value       = module.application_gateway_for_containers.frontend_id
+}
+
+output "alb_association_id" {
+  description = "Resource ID of the Application Gateway for Containers association"
+  value       = module.application_gateway_for_containers.association_id
+}
+
 output "ai_foundry_identity_client_id" {
   description = "Client ID of the Foundry User Assigned Identity"
   value       = module.ai_foundry_identity.client_id

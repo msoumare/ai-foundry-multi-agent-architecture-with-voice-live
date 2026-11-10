@@ -59,6 +59,12 @@ variable "dns_resolver_subnet_prefixes" {
   default     = []
 }
 
+variable "alb_subnet_prefixes" {
+  description = "Address prefixes for the Application Gateway for Containers association subnet (minimum /24)"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

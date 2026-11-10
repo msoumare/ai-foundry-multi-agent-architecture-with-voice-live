@@ -28,6 +28,7 @@ module "vnet" {
   devops_subnet_prefixes            = var.devops_subnet_prefixes
   bastion_subnet_prefixes           = var.bastion_subnet_prefixes
   dns_resolver_subnet_prefixes      = var.dns_resolver_subnet_prefixes
+  alb_subnet_prefixes               = var.alb_subnet_prefixes
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload
@@ -319,6 +320,23 @@ module "aks" {
   user_node_count            = var.aks_user_node_count
   vnet_subnet_id             = module.vnet.aks_subnet_id
   private_cluster_enabled    = true
+  tags = merge(var.tags, {
+    environment = var.environment
+    workload    = var.workload
+    managed-by  = "terraform"
+  })
+}
+
+# --- Application Gateway for Containers ---
+module "application_gateway_for_containers" {
+  source = "./modules/application_gateway_for_containers"
+
+  name                   = "alb-${var.workload}-${var.environment}-${var.region}"
+  frontend_name          = "fe-${var.workload}-${var.environment}-${var.region}"
+  association_name       = "assoc-${var.workload}-${var.environment}-${var.region}"
+  location               = var.location
+  resource_group_id      = azurerm_resource_group.main.id
+  association_subnet_id  = module.vnet.alb_subnet_id
   tags = merge(var.tags, {
     environment = var.environment
     workload    = var.workload

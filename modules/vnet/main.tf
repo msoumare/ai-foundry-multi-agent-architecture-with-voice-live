@@ -89,6 +89,24 @@ resource "azurerm_subnet" "dns_resolver_inbound" {
   }
 }
 
+resource "azurerm_subnet" "alb" {
+  name                 = "snet-alb-${var.workload}-${var.env}-${var.region}"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.workload.name
+  address_prefixes     = var.alb_subnet_prefixes
+
+  delegation {
+    name = "albDelegation"
+
+    service_delegation {
+      name = "Microsoft.ServiceNetworking/trafficControllers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
 resource "azurerm_private_dns_resolver" "workload" {
   name                = "dnsr-${var.workload}-${var.env}-${var.region}"
   location            = var.location

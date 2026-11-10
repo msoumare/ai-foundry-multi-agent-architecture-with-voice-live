@@ -14,4 +14,4 @@ extends:
     projectEndpoint: "https://ai-agenthubspoke-dev-gwc.services.ai.azure.com/api/projects/proj-agenthubspoke-dev-gwc"
     containerRegistryEndpoint: "acragenthubspokedevgwc.azurecr.io"
     modelDeployment: "gpt-4.1-mini"
-    agentFolders: "hub"
+    agentFolders: "hub, account, card, payment"

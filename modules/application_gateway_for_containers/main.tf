@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
+  }
+}
+
 resource "azapi_resource" "traffic_controller" {
   type      = "Microsoft.ServiceNetworking/trafficControllers@2025-03-01-preview"
   name      = var.name

@@ -1,9 +1,9 @@
 environment             = "dev"
 workload                = "agenthubspoke"
-region                  = "sdc"
-location                = "swedencentral"
-resource_group_workload = "rg-agenthubspoke-dev-sdc"
-log_analytics_workspace = "log-agenthubspoke-dev-sdc"
+region                  = "gwc"
+location                = "germanywestcentral"
+resource_group_workload = "rg-agenthubspoke-dev-gwc"
+log_analytics_workspace = "log-agenthubspoke-dev-gwc"
 subscription_id         = "3c9d7b7f-4666-43a3-a852-062c5b18c783"
 
 address_space                     = ["10.0.0.0/16"]
@@ -14,4 +14,5 @@ bastion_subnet_prefixes           = ["10.0.4.0/26"]
 
 gateway_subnet_prefixes      = ["10.0.5.0/27"]
 dns_resolver_subnet_prefixes = ["10.0.6.0/28"]
+alb_subnet_prefixes          = ["10.0.7.0/24"]
 p2s_vpn_client_address_space = ["172.16.10.0/24"]

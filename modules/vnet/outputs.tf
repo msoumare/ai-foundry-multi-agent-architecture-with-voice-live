@@ -28,6 +28,11 @@ output "bastion_subnet_id" {
   value       = azurerm_subnet.bastion.id
 }
 
+output "alb_subnet_id" {
+  description = "Application Gateway for Containers association subnet resource ID"
+  value       = azurerm_subnet.alb.id
+}
+
 output "keyvault_dns_zone_id" {
   description = "Key Vault private DNS zone ID"
   value       = azurerm_private_dns_zone.keyvault.id

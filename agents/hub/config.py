@@ -26,13 +26,6 @@ def _as_int(value: str | None, *, default: int) -> int:
         return default
 
 
-def _forward_mode() -> str:
-    value = (os.getenv("FORWARD_MODE", "foundry") or "foundry").strip().lower()
-    if value not in {"foundry", "local"}:
-        raise ValueError("FORWARD_MODE must be one of: foundry, local")
-    return value
-
-
 def _env_non_empty(*names: str, default: str = "") -> str:
     for name in names:
         value = os.getenv(name)
@@ -44,28 +37,13 @@ def _env_non_empty(*names: str, default: str = "") -> str:
 
 
 class HubAgentConfig:
-    SERVICE_NAME = os.getenv("SERVICE_NAME", "hub-agent")
-    SERVICE_HOST = os.getenv("SERVICE_HOST", "0.0.0.0")
-    SERVICE_PORT = _as_int(os.getenv("SERVICE_PORT"), default=8089)
-    FORWARD_MODE = _forward_mode()
-
-    # Support both local (.env) and azd-provided cloud names.
-    SERVICE_PROJECT_ENDPOINT = (
-        os.getenv("SERVICE_PROJECT_ENDPOINT")
-        or os.getenv("AZURE_AI_PROJECT_ENDPOINT")
-        or ""
-    )
-    SERVICE_MODEL_DEPLOYMENT = (
-        os.getenv("SERVICE_MODEL_DEPLOYMENT")
-        or os.getenv("AGENTHUB_MODEL_DEPLOYMENT")
-        or os.getenv("DEFAULT_MODEL_DEPLOYMENT")
-        or "gpt-4.1-mini"
-    )
-
-    APPLICATIONINSIGHTS_CONNECTION_STRING = (
-        os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-        or os.getenv("APPINSIGHTS_CONNECTION_STRING")
-    )
+    SERVICE_NAME = os.getenv("SERVICE_NAME")
+    SERVICE_HOST = os.getenv("SERVICE_HOST")
+    SERVICE_PORT = _as_int(os.getenv("PORT"), default=8088)
+    SERVICE_ENDPOINT = os.getenv("SERVICE_ENDPOINT")
+    SERVICE_MODEL = os.getenv("SERVICE_MODEL")
+    SERVICE_TELEMETRY = os.getenv("SERVICE_TELEMETRY")
+    FORWARD_MODE = os.getenv("FORWARD_MODE") 
     AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = _as_bool(
         os.getenv("AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED"), default=False
     )
@@ -105,18 +83,18 @@ DOMAIN_AGENT_REGISTRY: list[AgentConfig] = [
         agent_name=os.getenv("CARD_AGENT_NAME", "card-agent"),
         # In new Foundry, agent identity is name/version based. Keep legacy GUID override support.
         agent_id=_env_non_empty("CARD_AGENT_ID", "CARD_AGENT_NAME", default="card-agent"),
-        local_url=_env_non_empty("CARD_AGENT_URL", default="http://localhost:8088/responses"),
+        local_url=os.getenv("CARD_AGENT_URL", "http://localhost:8088/responses"),
     ),
     AgentConfig(
         route_id="AccountAgent",
         agent_name=os.getenv("ACCOUNT_AGENT_NAME", "account-agent"),
         agent_id=_env_non_empty("ACCOUNT_AGENT_ID", "ACCOUNT_AGENT_NAME", default="account-agent"),
-        local_url=_env_non_empty("ACCOUNT_AGENT_URL", default="http://localhost:8090/responses"),
+        local_url=os.getenv("ACCOUNT_AGENT_URL", ""),
     ),
     AgentConfig(
         route_id="PaymentAgent",
         agent_name=os.getenv("PAYMENT_AGENT_NAME", "payment-agent"),
         agent_id=_env_non_empty("PAYMENT_AGENT_ID", "PAYMENT_AGENT_NAME", default="payment-agent"),
-        local_url=_env_non_empty("PAYMENT_AGENT_URL", default="http://localhost:8091/responses"),
-    ),
+        local_url=os.getenv("PAYMENT_AGENT_URL", ""),
+    )
 ]

@@ -1,37 +1,48 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
 requiredVersions:
-  azd: '>=1.27.1'
-  extensions:
-    azure.ai.agents: '>=1.0.0-beta.9'
+    extensions:
+        azure.ai.agents: '>=1.0.0'
 name: hub
 services:
-  hub-agent:
-    project: .
-    host: azure.ai.agent
-    language: docker
-    docker:
-      remoteBuild: true
-    kind: hosted
-    name: hub-agent
-    description: HubAgent that routes to domain agents.
-    protocols:
-      - protocol: responses
-        version: 1.0.0
-    env:
-      SERVICE_NAME: hub-agent
-      SERVICE_HOST: 0.0.0.0
-      SERVICE_PORT: "8089"
-      SERVICE_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
-      SERVICE_MODEL_DEPLOYMENT: ${AGENTHUB_MODEL_DEPLOYMENT}
-      FORWARD_MODE: foundry
-      CARD_AGENT_NAME: card-agent
-      ACCOUNT_AGENT_NAME: account-agent
-      PAYMENT_AGENT_NAME: payment-agent
-      DOMAIN_AGENT_TIMEOUT: "30"
-      AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
-    container:
-      resources:
-        cpu: "0.25"
-        memory: 0.5Gi
-    startupCommand: python main.py
+    hub-agent:
+        name: hub-agent
+        description: HubAgent that routes to domain agents.
+        project: .
+        host: azure.ai.agent
+        kind: hosted
+        language: docker
+        protocols:
+            - protocol: responses
+              version: 1.0.0
+        # metadata:
+        #     voiceLiveCompatible: "true"
+        docker:
+            remoteBuild: true
+        container:
+            resources:
+                cpu: "0.25"
+                memory: 0.5Gi
+        startupCommand: python main.py
+        env:
+            SERVICE_NAME: hub-agent
+            SERVICE_HOST: 0.0.0.0
+            SERVICE_PORT: "8088"
+            # Sourced from the azd environment set by deploy_hosted_agents_azd.ps1
+            SERVICE_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
+            SERVICE_MODEL: ${AGENTHUB_MODEL_DEPLOYMENT}
+            SERVICE_TELEMETRY: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+            FORWARD_MODE: foundry
+            CARD_AGENT_NAME: card-agent
+            CARD_AGENT_ID: card-agent
+            CARD_AGENT_URL: http://0.0.0.0:8089/responses
+            ACCOUNT_AGENT_NAME: account-agent
+            ACCOUNT_AGENT_ID: account-agent
+            ACCOUNT_AGENT_URL: http://0.0.0.0:8090/responses
+            PAYMENT_AGENT_NAME: payment-agent
+            PAYMENT_AGENT_ID: payment-agent
+            PAYMENT_AGENT_URL: http://0.0.0.0:8091/responses
+            DOMAIN_AGENT_TIMEOUT: "30"
+            AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
+
+

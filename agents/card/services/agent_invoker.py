@@ -56,7 +56,7 @@ class AgentInvoker:
         )
 
         effective_timeout = timeout_seconds if timeout_seconds is not None else config.timeout_seconds
-        project_endpoint = CardAgentConfig.SERVICE_PROJECT_ENDPOINT
+        project_endpoint = CardAgentConfig.AZURE_AI_PROJECT_ENDPOINT
 
         try:
             from agent_framework.foundry import AzureAIAgentClient

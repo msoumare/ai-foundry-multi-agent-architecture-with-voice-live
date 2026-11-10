@@ -9,25 +9,23 @@ from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 from config import AccountAgentConfig
+from structured_spoke_agent import StructuredSpokeAgent
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env", override=False)
 
 
 def _read_instructions() -> str:
-    prompt_path = ROOT / "prompts" / "account_prompt.txt"
-    if prompt_path.exists():
-        return prompt_path.read_text(encoding="utf-8").strip()
-    return "You are the Account hosted agent. Help users with profile updates, account access, and account status checks."
+    return (ROOT / "prompts" / "account_prompt.txt").read_text(encoding="utf-8").strip()
 
 
 def main() -> None:
-    project_endpoint = AccountAgentConfig.SERVICE_PROJECT_ENDPOINT
-    model = AccountAgentConfig.SERVICE_MODEL_DEPLOYMENT
+    project_endpoint = AccountAgentConfig.AZURE_AI_PROJECT_ENDPOINT
+    model = AccountAgentConfig.FOUNDRY_MODEL_DEPLOYMENT
     agent_name = AccountAgentConfig.SERVICE_NAME
 
     if not project_endpoint:
-        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
+        raise RuntimeError("AZURE_AI_PROJECT_ENDPOINT is required.")
 
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
@@ -35,15 +33,16 @@ def main() -> None:
         credential=DefaultAzureCredential(),
     )
 
-    agent = Agent(
+    domain_agent = Agent(
         client=client,
         name=agent_name,
         instructions=_read_instructions(),
         default_options={"store": False},
     )
+    app_agent = StructuredSpokeAgent(domain_agent=domain_agent, agent_name=agent_name)
 
-    server = ResponsesHostServer(agent)
-    server.run(host=AccountAgentConfig.SERVICE_HOST, port=AccountAgentConfig.SERVICE_PORT)
+    server = ResponsesHostServer(app_agent)
+    server.run(host=AccountAgentConfig.HOST, port=AccountAgentConfig.PORT)
 
 
 if __name__ == "__main__":

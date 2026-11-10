@@ -107,6 +107,12 @@ variable "dns_resolver_subnet_prefixes" {
   default     = []
 }
 
+variable "alb_subnet_prefixes" {
+  description = "Address prefixes for the Application Gateway for Containers association subnet (minimum /24)"
+  type        = list(string)
+  default     = []
+}
+
 variable "p2s_vpn_client_address_space" {
   description = "Client address pool for Point-to-Site VPN clients"
   type        = list(string)

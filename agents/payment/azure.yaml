@@ -1,34 +1,30 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
 requiredVersions:
-  azd: '>=1.27.1'
-  extensions:
-    azure.ai.agents: '>=1.0.0-beta.9'
+    extensions:
+        azure.ai.agents: '>=1.0.0'
 name: payment
 services:
-  payment-agent:
-    project: .
-    host: azure.ai.agent
-    language: docker
-    docker:
-      remoteBuild: true
-    kind: hosted
-    name: payment-agent
-    description: Payment domain custom code hosted agent
-    protocols:
-      - protocol: responses
-        version: 1.0.0
-    env:
-      SERVICE_NAME: payment-agent
-      SERVICE_HOST: 0.0.0.0
-      SERVICE_PORT: "8091"
-      SERVICE_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
-      SERVICE_MODEL_DEPLOYMENT: ${AGENTHUB_MODEL_DEPLOYMENT}
-      FORWARD_MODE: foundry
-      APPLICATIONINSIGHTS_USE_AAD_AUTH: "false"
-      AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
-    container:
-      resources:
-        cpu: "0.25"
-        memory: 0.5Gi
-    startupCommand: python main.py
+    payment-agent:
+        name: payment-agent
+        description: Payment domain custom code hosted agent
+        project: .
+        host: azure.ai.agent
+        kind: hosted
+        language: docker
+        protocols:
+            - protocol: responses
+              version: 1.0.0
+        docker:
+            remoteBuild: true
+        container:
+            resources:
+                cpu: "0.25"
+                memory: 0.5Gi
+        startupCommand: python main.py
+        env:
+            APP_ENV: ""
+            SERVICE_NAME: ""
+            HOST: ""
+            APPLICATIONINSIGHTS_USE_AAD_AUTH: "false"
+            AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"

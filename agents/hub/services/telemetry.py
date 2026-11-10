@@ -74,7 +74,7 @@ class TelemetryManager:
         if self._initialized:
             return
 
-        raw_connection_string = connection_string or HubAgentConfig.APPLICATIONINSIGHTS_CONNECTION_STRING
+        raw_connection_string = connection_string or HubAgentConfig.SERVICE_TELEMETRY
         self.connection_string = (
             self._normalize_connection_string(raw_connection_string)
             if raw_connection_string
@@ -86,9 +86,6 @@ class TelemetryManager:
             self.content_recording_enabled = HubAgentConfig.AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED
         else:
             self.content_recording_enabled = content_recording_enabled
-
-        if console_export is None:
-            console_export = HubAgentConfig.FORWARD_MODE == "local"
 
         if not self.connection_string:
             self._initialized = True
