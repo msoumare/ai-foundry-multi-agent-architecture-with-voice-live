@@ -11,42 +11,17 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 
-def _as_bool(value: str | None, *, default: bool = False) -> bool:
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _as_int(value: str | None, *, default: int) -> int:
-    if value is None:
-        return default
-    try:
-        return int(value)
-    except ValueError:
-        return default
-
-
-def _env_non_empty(*names: str, default: str = "") -> str:
-    for name in names:
-        value = os.getenv(name)
-        if value is not None:
-            value = value.strip()
-            if value:
-                return value
-    return default
-
-
 class HubAgentConfig:
     SERVICE_NAME = os.getenv("SERVICE_NAME")
     SERVICE_HOST = os.getenv("SERVICE_HOST")
-    SERVICE_PORT = _as_int(os.getenv("PORT"), default=8088)
-    SERVICE_ENDPOINT = os.getenv("SERVICE_ENDPOINT")
-    SERVICE_MODEL = os.getenv("SERVICE_MODEL")
+    SERVICE_PORT = int(os.getenv("PORT", "8088"))
+    SERVICE_PROJECT_ENDPOINT = os.getenv("SERVICE_PROJECT_ENDPOINT")
+    SERVICE_MODEL_DEPLOYMENT = os.getenv("SERVICE_MODEL_DEPLOYMENT")
     SERVICE_TELEMETRY = os.getenv("SERVICE_TELEMETRY")
     FORWARD_MODE = os.getenv("FORWARD_MODE") 
-    AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = _as_bool(
-        os.getenv("AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED"), default=False
-    )
+    AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED = (
+        os.getenv("AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED") or ""
+    ).strip().lower() in {"1", "true", "yes", "on"}
 
     # Timeout applied per downstream domain agent invocation (seconds)
     DOMAIN_AGENT_TIMEOUT = float(os.getenv("DOMAIN_AGENT_TIMEOUT", "30"))
@@ -65,9 +40,7 @@ class HubAgentResponseMessages:
 class AgentConfig:
     """Registry entry for a downstream domain agent."""
 
-    route_id: str
     agent_name: str
-    agent_id: str = ""
     local_url: str = ""
     timeout_seconds: float = field(default_factory=lambda: HubAgentConfig.DOMAIN_AGENT_TIMEOUT)
     enabled: bool = True
@@ -79,22 +52,15 @@ class AgentConfig:
 # ---------------------------------------------------------------------------
 DOMAIN_AGENT_REGISTRY: list[AgentConfig] = [
     AgentConfig(
-        route_id="CardAgent",
         agent_name=os.getenv("CARD_AGENT_NAME", "card-agent"),
-        # In new Foundry, agent identity is name/version based. Keep legacy GUID override support.
-        agent_id=_env_non_empty("CARD_AGENT_ID", "CARD_AGENT_NAME", default="card-agent"),
-        local_url=os.getenv("CARD_AGENT_URL", "http://localhost:8088/responses"),
+        local_url=os.getenv("CARD_AGENT_URL", "http://localhost:8081/responses"),
     ),
     AgentConfig(
-        route_id="AccountAgent",
         agent_name=os.getenv("ACCOUNT_AGENT_NAME", "account-agent"),
-        agent_id=_env_non_empty("ACCOUNT_AGENT_ID", "ACCOUNT_AGENT_NAME", default="account-agent"),
-        local_url=os.getenv("ACCOUNT_AGENT_URL", ""),
+        local_url=os.getenv("ACCOUNT_AGENT_URL", "http://localhost:8080/responses"),
     ),
     AgentConfig(
-        route_id="PaymentAgent",
         agent_name=os.getenv("PAYMENT_AGENT_NAME", "payment-agent"),
-        agent_id=_env_non_empty("PAYMENT_AGENT_ID", "PAYMENT_AGENT_NAME", default="payment-agent"),
-        local_url=os.getenv("PAYMENT_AGENT_URL", ""),
+        local_url=os.getenv("PAYMENT_AGENT_URL", "http://localhost:8082/responses"),
     )
 ]

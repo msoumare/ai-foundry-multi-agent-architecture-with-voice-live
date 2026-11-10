@@ -186,12 +186,13 @@ class AccountAgent:
     ) -> dict[str, Any]:
         messages = [*history, Message(role=Role.USER, contents=[Content.from_text(request.query)])]
         agent_start = time.perf_counter()
-        result = await asyncio.wait_for(
-            self.account_agent.run(
-                messages=messages,
-                client_kwargs={"timeout": AccountAgentConfig.A2A_AGENT_TIMEOUT},
-            ),
-            timeout=AccountAgentConfig.A2A_AGENT_TIMEOUT,
+        # Note: asyncio.wait_for() around this call previously caused a ContextVar
+        # reset ValueError under Python 3.11 due to an interaction between wait_for's
+        # internal Task wrapping and agent_framework's observability instrumentation.
+        # The client_kwargs timeout below already bounds the underlying HTTP call.
+        result = await self.account_agent.run(
+            messages=messages,
+            client_kwargs={"timeout": AccountAgentConfig.A2A_AGENT_TIMEOUT},
         )
         agent_time = time.perf_counter() - agent_start
 

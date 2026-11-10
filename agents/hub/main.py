@@ -34,10 +34,12 @@ def main() -> None:
     if not project_endpoint:
         raise RuntimeError("SERVICE_ENDPOINT is required.")
 
+    credential = DefaultAzureCredential()
+
     client = FoundryChatClient(
         project_endpoint=project_endpoint,
         model=model,
-        credential=DefaultAzureCredential(),
+        credential=credential,
     )
 
     agent = Agent(

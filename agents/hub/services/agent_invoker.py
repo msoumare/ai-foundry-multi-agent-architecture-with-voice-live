@@ -22,7 +22,7 @@ class AgentInvoker:
 
     def __init__(self) -> None:
         self._registry: dict[str, AgentConfig] = {
-            cfg.route_id: cfg for cfg in DOMAIN_AGENT_REGISTRY if cfg.enabled
+            cfg.agent_name: cfg for cfg in DOMAIN_AGENT_REGISTRY if cfg.enabled
         }
         self._forward_mode = HubAgentConfig.FORWARD_MODE
         if self._forward_mode not in {"foundry", "local"}:
@@ -119,7 +119,7 @@ class AgentInvoker:
         return QueryResponse(
             response=response_text,
             session_id=request.session_id or "",
-            agent=config.route_id,
+            agent=config.agent_name,
         )
 
     async def _invoke_local(
@@ -130,9 +130,10 @@ class AgentInvoker:
         timeout_seconds: float,
     ) -> QueryResponse:
         if not config.local_url:
+            env_var = config.agent_name.upper().replace("-", "_") + "_URL"
             raise RuntimeError(
-                f"Local forwarding URL is missing for agent '{config.route_id}'. "
-                f"Set {config.route_id.upper()}_AGENT_URL in .env."
+                f"Local forwarding URL is missing for agent '{config.agent_name}'. "
+                f"Set {env_var} in .env."
             )
 
         request_payload = {
@@ -159,7 +160,7 @@ class AgentInvoker:
         return QueryResponse(
             response="\n".join(response_chunks).strip(),
             session_id=request.session_id or "",
-            agent=config.route_id,
+            agent=config.agent_name,
         )
 
     @staticmethod

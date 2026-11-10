@@ -257,20 +257,20 @@ class HubAgent:
 
             updated_history = history + [
                 Message(role=Role.USER, contents=[Content.from_text(request.query)]),
-                Message(role=Role.ASSISTANT, contents=[Content.from_text(hub_agent_response.response)]),
+                Message(role=Role.ASSISTANT, contents=[Content.from_text(domain_agent_response.response)]),
             ]
             self._history[session_id] = updated_history[-(self._MAX_HISTORY * 2):]
 
             return QueryResponse(
-                response=hub_agent_response.response,
+                response=domain_agent_response.response,
                 session_id=session_id,
-                agent=hub_agent_response.agent or agent_id,
-                confidence=hub_agent_response.confidence or confidence, 
+                agent=domain_agent_response.agent or agent_id,
+                confidence=domain_agent_response.confidence or confidence, 
                 message_count=len(self._history[session_id]),
                 hub_agent_duration=hub_agent_duration,
-                domain_agent_duration=hub_agent_duration,
+                domain_agent_duration=domain_agent_duration,
                 processing_time=time.perf_counter() - start_time,
-                tool_results=hub_agent_response.tool_results,
+                tool_results=domain_agent_response.tool_results,
                 token_usage=total_token_usage,
             )
         except Exception as exc:
@@ -315,10 +315,10 @@ class HubAgent:
 
         agent_registry = self.agent_invoker.get_agent_registry()
         normalized_registry = {
-            self._normalize_agent_id(route_id): route_id
-            for route_id in agent_registry
+            self._normalize_agent_id(name): name
+            for name in agent_registry
         }
-        fallback = "CognigyAgent" if "CognigyAgent" in agent_registry else (agent_registry[0] if agent_registry else "unknown")
+        fallback = agent_registry[0] if agent_registry else "unknown"
 
         try:
             payload = json.loads(raw)

@@ -34,13 +34,10 @@ services:
             SERVICE_TELEMETRY: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
             FORWARD_MODE: foundry
             CARD_AGENT_NAME: card-agent
-            CARD_AGENT_ID: card-agent
             CARD_AGENT_URL: http://0.0.0.0:8089/responses
             ACCOUNT_AGENT_NAME: account-agent
-            ACCOUNT_AGENT_ID: account-agent
             ACCOUNT_AGENT_URL: http://0.0.0.0:8090/responses
             PAYMENT_AGENT_NAME: payment-agent
-            PAYMENT_AGENT_ID: payment-agent
             PAYMENT_AGENT_URL: http://0.0.0.0:8091/responses
             DOMAIN_AGENT_TIMEOUT: "30"
             AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
