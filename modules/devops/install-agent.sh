@@ -6,6 +6,15 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "[$(date)] Starting build tools installation..."
 
+# At first boot, DNS can lag behind cloud-init; with set -e one failed lookup would
+# abort setup and leave the agent without az/terraform. Wait for DNS and retry apt.
+echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
+for attempt in $(seq 1 30); do
+  getent hosts azure.archive.ubuntu.com >/dev/null && break
+  echo "[$(date)] Waiting for DNS (attempt $attempt/30)..."
+  sleep 10
+done
+
 # Install base dependencies + Terraform repo in one pass (avoid duplicate apt-get update)
 apt-get update -o Acquire::ForceIPv4=true
 apt-get install -y wget unzip jq curl build-essential gnupg lsb-release --fix-missing -o Acquire::ForceIPv4=true
@@ -20,7 +29,7 @@ echo "[$(date)] Terraform installed: $(terraform version | head -1)"
 
 # Install Azure CLI (quick - ~30s)
 echo "[$(date)] Installing Azure CLI..."
-curl --connect-timeout 30 --max-time 300 -sL https://aka.ms/InstallAzureCLIDeb | bash
+curl --connect-timeout 30 --max-time 300 --retry 5 --retry-delay 10 -sL https://aka.ms/InstallAzureCLIDeb | bash
 echo "[$(date)] Azure CLI installed: $(az --version | head -1)"
 
 # Install kubectl (quick - ~15s)
