@@ -268,6 +268,7 @@ if (-not $TenantId) {
 if (-not $TenantId) {
     throw "A target Azure tenant ID is required (AZURE_TENANT_ID)."
 }
+$services = @()
 foreach ($folder in $AgentFolders) {
     $agentFolder = $folder.Trim()
     Write-Host "`nAgent folder: $agentFolder" -ForegroundColor Green

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 import uuid
 from collections.abc import AsyncIterable
@@ -16,6 +17,8 @@ from models.query_response import QueryResponse
 from models.roles import Role
 from services.agent_invoker import AgentInvoker
 from services.telemetry import log_attributes, log_orchestration_attributes, log_status_error, telemetry
+
+logger = logging.getLogger(__name__)
 
 
 class HubAgent:
@@ -39,6 +42,112 @@ class HubAgent:
         self.hub_agent = hub_agent
         self.agent_invoker = AgentInvoker()
         self._history: dict[str, list[Message]] = {}
+
+    # ------------------------------------------------------------------
+    # Voice Live invocation protocol
+    # ------------------------------------------------------------------
+
+    async def process_event(self, event: dict[str, Any], session_id: str) -> AsyncIterable[dict[str, Any]]:
+        """Adapt Voice Live inputs to routing and emit speech separately from metadata."""
+        try:
+            payload = self._extract_event_payload(event)
+            action = payload.get("action")
+            if action is not None:
+                self._handle_control_action(payload, session_id)
+                return
+
+            if "query" in payload:
+                request = QueryRequest.model_validate(payload)
+            else:
+                text = payload.get("text") or payload.get("input")
+                if not isinstance(text, str) or not text.strip():
+                    raise ValueError(HubAgentResponseMessages.EMPTY_MESSAGE)
+                request = self._build_request(text)
+                if isinstance(payload.get("context"), dict):
+                    request.context.update(payload["context"])
+
+            # The invocation's transport session is authoritative, not user-supplied JSON.
+            request.session_id = session_id
+            result = await self._execute(request=request)
+            yield {
+                "type": "hubagent.conversation",
+                "data": {"conversationId": session_id, "sessionId": session_id},
+            }
+            if result.response:
+                yield {"type": "output_audio_transcription.delta", "delta": result.response}
+            yield {"type": "output_audio_transcription.done", "text": result.response}
+            yield {
+                "type": "hubagent.metadata",
+                "data": result.model_dump(mode="json", exclude={"response"}),
+            }
+        except ValueError as exc:
+            logger.warning("Rejected invocation session=%s: %s", session_id, exc)
+            yield {"type": "hubagent.event.rejected", "message": str(exc)}
+        except Exception:
+            logger.exception("Invocation failed session=%s", session_id)
+            yield {
+                "type": "hubagent.event.rejected",
+                "message": HubAgentResponseMessages.PROCESSING_ERROR,
+            }
+        finally:
+            yield {"type": "done"}
+
+    @staticmethod
+    def _extract_event_payload(event: dict[str, Any]) -> dict[str, Any]:
+        event_type = event.get("type")
+        if event_type not in (None, "response.create", "input_audio.transcription"):
+            raise ValueError("Event type not supported.")
+
+        payload = event
+        response = event.get("response")
+        if isinstance(response, dict):
+            for key in ("invoke_input", "invokeInput"):
+                if key in response:
+                    payload = response[key]
+                    if not isinstance(payload, dict):
+                        raise ValueError("Invocation input must be an object.")
+                    break
+
+        # Voice Live may forward controls as JSON in the staged conversation text.
+        for key in ("input", "text"):
+            candidate = payload.get(key)
+            if isinstance(candidate, str) and candidate.lstrip().startswith("{"):
+                try:
+                    parsed = json.loads(candidate)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(parsed, dict) and "action" in parsed:
+                    return parsed
+        return payload
+
+    def _handle_control_action(self, payload: dict[str, Any], session_id: str) -> None:
+        action = payload["action"]
+        history = self._history.get(session_id, [])
+        if action == "assistant_item_bind":
+            assistant_item = payload.get("assistantItem")
+            item_id = assistant_item.get("itemId") if isinstance(assistant_item, dict) else None
+            if not isinstance(item_id, str) or not item_id.strip():
+                raise ValueError("assistant_item_bind requires assistantItem.itemId.")
+            if any(message.additional_properties.get("voice_live_item_id") == item_id for message in history):
+                return
+            for message in reversed(history):
+                if message.role == Role.ASSISTANT and "voice_live_item_id" not in message.additional_properties:
+                    message.additional_properties["voice_live_item_id"] = item_id
+                    return
+            raise ValueError("No unbound assistant message in this session.")
+
+        if action == "interruption":
+            interruption = payload.get("interruption")
+            item_id = interruption.get("itemId") if isinstance(interruption, dict) else None
+            if not isinstance(item_id, str) or not item_id.strip():
+                raise ValueError("interruption requires interruption.itemId.")
+            for message in reversed(history):
+                if message.role == Role.ASSISTANT and message.additional_properties.get("voice_live_item_id") == item_id:
+                    message.additional_properties["interruption"] = dict(interruption)
+                    return
+            raise ValueError("No assistant message bound to this item in this session.")
+
+        raise ValueError("Interruption action not recognized.")
 
     # ------------------------------------------------------------------
     # Agent framework interface

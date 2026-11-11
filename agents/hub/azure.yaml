@@ -13,10 +13,10 @@ services:
         kind: hosted
         language: docker
         protocols:
-            - protocol: responses
+            - protocol: invocations
               version: 1.0.0
-        # metadata:
-        #     voiceLiveCompatible: "true"
+        metadata:
+            voiceLiveCompatible: "true"
         docker:
             remoteBuild: true
         container:

@@ -10,6 +10,63 @@ This document captures **exactly** what was required to make the hub agent's
 
 ---
 
+## Hub HTTP invocation contract
+
+The hub in [`../agents/hub`](../agents/hub) now serves **only `invocations`**
+(`POST /invocations`), not `responses` or `invocations_ws`. The browser continues
+to connect to Voice Live using its existing Foundry Agent configuration; Voice
+Live calls the hub over HTTP. Redeploy the hub so its protocol declaration and
+`voiceLiveCompatible: "true"` metadata take effect.
+
+Accepted JSON bodies include:
+
+```json
+{"type":"input_audio.transcription","input":"Check my card"}
+{"input":"Check my card"}
+{"type":"response.create","response":{"invoke_input":{"text":"Check my card","context":{"channel":"web"}}}}
+{"query":"Check my card"}
+```
+
+`invokeInput` is also accepted. Reuse `agent_session_id` in the invocation query
+string (or the platform's `FOUNDRY_AGENT_SESSION_ID`) for multi-turn history.
+The host resolves the session and returns it in `x-agent-session-id`; this
+transport session takes precedence over `session_id` in the JSON body.
+
+Responses are `text/event-stream`, with each JSON event framed as
+`data: <JSON>\n\n`:
+
+1. `hubagent.conversation` identifies the session.
+2. `output_audio_transcription.delta` contains **only the domain answer text**.
+3. `output_audio_transcription.done` contains the completed answer in `text`.
+4. `hubagent.metadata` contains routing details, timings, usage and tool results.
+5. `done` terminates the invocation.
+
+Voice Live synthesizes speech from the transcription events and forwards custom
+hub events to the browser as `response.invocation.delta`. The HTTP hub must not
+wrap its transcript events in that envelope or speak the serialized
+`QueryResponse` JSON. The existing routing pipeline completes before the answer
+is emitted as one text delta; this does not add token-by-token downstream streaming.
+
+The app's `assistant_item_bind` and `interruption` controls are accepted as
+wrapped, flattened, or JSON-encoded `input`/`text` payloads. They update assistant
+message metadata in the hub's **in-memory session history**, emit no speech, and
+end with `done`. Unlike the reference sample, this hub does not persist controls
+or conversations to Cosmos DB. History is lost on restart and limited to the
+most recent turns. Unknown events, invalid controls and empty turns emit
+`hubagent.event.rejected` followed by `done`; malformed JSON/non-object HTTP
+bodies return HTTP 400.
+
+Run the focused checks from the hub directory with:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+The historical reference-sample notes below describe its Cosmos-backed behavior,
+not persistence guarantees of this hub.
+
+---
+
 ## What this app does
 
 - Connects to a Foundry **hosted agent** (`hub-agent`) over Voice Live using the
