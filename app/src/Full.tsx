@@ -2,21 +2,12 @@ import React, { useCallback, useRef, useState } from "react";
 import { VoiceLiveClient } from "@azure/ai-voicelive";
 import type { AccessToken, TokenCredential } from "@azure/core-auth";
 
-const DEFAULT_VOICE_LIVE_ENDPOINT =
-  import.meta.env.VITE_VOICE_LIVE_ENDPOINT ??
-  "wss://015427-vaaatar-gwc-tuc-vl.services.ai.azure.com/voice-live/realtime";
-const DEFAULT_API_VERSION =
-  import.meta.env.VITE_VOICE_LIVE_API_VERSION ?? "2026-04-10";
-const DEFAULT_PROJECT_ENDPOINT =
-  import.meta.env.VITE_FOUNDRY_PROJECT_ENDPOINT ??
-  "https://015427-vaaatar-gwc-tuc-fnd.services.ai.azure.com/api/projects/015427-vaaatar-gwc-tuc-fnd-project";
-const DEFAULT_RESOURCE_OVERRIDE =
-  import.meta.env.VITE_FOUNDRY_RESOURCE_OVERRIDE_DEFAULT ??
-  "015427-vaaatar-gwc-tuc-fnd";
-const DEFAULT_AGENT_NAME =
-  import.meta.env.VITE_EXPECTED_AGENT_NAME ?? "hub-agent";
-const DEFAULT_TOKEN_TTL_MS =
-  Number(import.meta.env.VITE_TOKEN_TIMEOUT_SECONDS ?? "3600") * 1000;
+const DEFAULT_VOICE_LIVE_ENDPOINT = import.meta.env.VITE_VOICE_LIVE_ENDPOINT;
+const DEFAULT_API_VERSION = import.meta.env.VITE_VOICE_LIVE_API_VERSION;
+const DEFAULT_PROJECT_ENDPOINT = import.meta.env.VITE_FOUNDRY_PROJECT_ENDPOINT;
+const DEFAULT_RESOURCE_OVERRIDE = import.meta.env.VITE_FOUNDRY_RESOURCE_OVERRIDE_DEFAULT;
+const DEFAULT_AGENT_NAME = import.meta.env.VITE_EXPECTED_AGENT_NAME;
+const DEFAULT_TOKEN_TTL_MS = Number(import.meta.env.VITE_TOKEN_TIMEOUT_SECONDS ?? "3600") * 1000;
 const TURN_TIMEOUT_MS = 45_000;
 const PCM_SAMPLE_RATE = 24_000;
 

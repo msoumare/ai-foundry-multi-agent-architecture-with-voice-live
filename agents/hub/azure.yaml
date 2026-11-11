@@ -29,8 +29,8 @@ services:
             SERVICE_HOST: 0.0.0.0
             SERVICE_PORT: "8088"
             # Sourced from the azd environment set by deploy_hosted_agents_azd.ps1
-            SERVICE_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
-            SERVICE_MODEL: ${AGENTHUB_MODEL_DEPLOYMENT}
+            SERVICE_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
+            SERVICE_MODEL_DEPLOYMENT: ${AGENTHUB_MODEL_DEPLOYMENT}
             SERVICE_TELEMETRY: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
             FORWARD_MODE: foundry
             CARD_AGENT_NAME: card-agent

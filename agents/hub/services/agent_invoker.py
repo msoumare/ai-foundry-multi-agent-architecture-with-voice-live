@@ -69,11 +69,11 @@ class AgentInvoker:
         request: QueryRequest,
         timeout_seconds: float,
     ) -> QueryResponse:
-        project_endpoint = HubAgentConfig.SERVICE_ENDPOINT
-        model = HubAgentConfig.SERVICE_MODEL
+        project_endpoint = HubAgentConfig.SERVICE_PROJECT_ENDPOINT
+        model = HubAgentConfig.SERVICE_MODEL_DEPLOYMENT
         if not model:
             raise RuntimeError(
-                "SERVICE_MODEL is required when FORWARD_MODE=foundry."
+                "SERVICE_MODEL_DEPLOYMENT is required when FORWARD_MODE=foundry."
             )
 
         agent_kwargs: dict[str, object] = {

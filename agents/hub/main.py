@@ -28,11 +28,11 @@ def main() -> None:
         reason = telemetry.last_error or "missing APPLICATIONINSIGHTS_CONNECTION_STRING (Foundry reserved keyword)"
         print(f"[telemetry] disabled: {reason}")
 
-    project_endpoint = HubAgentConfig.SERVICE_ENDPOINT
-    model = HubAgentConfig.SERVICE_MODEL
+    project_endpoint = HubAgentConfig.SERVICE_PROJECT_ENDPOINT
+    model = HubAgentConfig.SERVICE_MODEL_DEPLOYMENT
 
     if not project_endpoint:
-        raise RuntimeError("SERVICE_ENDPOINT is required.")
+        raise RuntimeError("SERVICE_PROJECT_ENDPOINT is required.")
 
     credential = DefaultAzureCredential()
 
