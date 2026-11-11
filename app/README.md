@@ -38,7 +38,7 @@ was used as the authoritative template. Both clients now behave identically.
 | `vite`                   | `^5.4.10`          | Dev server. **Reads `.env` only at startup** (see Gotchas).      |
 | **Voice Live api-version** | `2026-06-01-preview` | Set via `VITE_VOICE_LIVE_API_VERSION` in `.env`. Both clients run this. |
 
-### Agent (`dbs-vaa-hub-agent`)
+### Agent (`hub-agent`)
 
 | Component                        | Version         | Notes                                              |
 | -------------------------------- | --------------- | -------------------------------------------------- |
@@ -423,13 +423,13 @@ Environment variables (see `.env` / `.env.example`):
 
 | Variable                                | Value (working)                                                                 |
 | --------------------------------------- | ------------------------------------------------------------------------------- |
-| `VITE_VOICE_LIVE_ENDPOINT`              | `wss://015427-vaaatar-gwc-tuc-vl.services.ai.azure.com/voice-live/realtime`      |
+| `VITE_VOICE_LIVE_ENDPOINT`              | `wss://ai-rtag-agenthubspoke-dev-gwc.services.ai.azure.com/voice-live/realtime`  |
 | `VITE_VOICE_LIVE_API_VERSION`           | `2026-06-01-preview`                                                             |
 | `VITE_TOKEN_TIMEOUT_SECONDS`            | `60`                                                                             |
 | `VITE_VOICE_LIVE_DEBUG_LOGGING`         | `true`                                                                           |
-| `VITE_FOUNDRY_PROJECT_ENDPOINT`         | `https://015427-vaaatar-gwc-tuc-fnd.services.ai.azure.com/api/projects/015427-vaaatar-gwc-tuc-fnd-project` |
+| `VITE_FOUNDRY_PROJECT_ENDPOINT`         | `https://ai-agenthubspoke-dev-gwc.services.ai.azure.com/api/projects/proj-agenthubspoke-dev-gwc` |
 | `VITE_EXPECTED_AGENT_NAME`              | `hub-agent`                                                                      |
-| `VITE_FOUNDRY_RESOURCE_OVERRIDE_DEFAULT`| `015427-vaaatar-gwc-tuc-fnd`                                                     |
+| `VITE_FOUNDRY_RESOURCE_OVERRIDE_DEFAULT`| `ai-agenthubspoke-dev-gwc`                                                     |
 
 A bearer token is pasted into the UI at runtime (not stored in `.env`).
 
@@ -479,5 +479,5 @@ and the **HubAgent Metadata** card populates — matching `frontend_v2`.
 | Robust `normalizeInvocationDelta` (object or `data:` string)  | `src/App.tsx`                         |
 | Add `.env` matching `frontend_v2` (api-version + endpoints)   | `.env`, `.env.example`                |
 | Client SDK pinned to `1.1.0-beta.1`                           | `package.json`                        |
-| Agent SDK bumped `azure-ai-voicelive` `>=1.0.0b1` → `>=1.3.0b1` | `dbs-vaa-hub-agent/requirements.txt` |
+| Agent SDK bumped `azure-ai-voicelive` `>=1.0.0b1` → `>=1.3.0b1` | `hub-agent/requirements.txt` |
 </content>
