@@ -11,7 +11,7 @@ services:
         language: docker
         docker:
             image: payment-agent
-            remoteBuild: false
+            remoteBuild: true
         container:
             resources:
                 cpu: "0.25"
@@ -19,8 +19,8 @@ services:
         env:
             SERVICE_NAME: "payment-agent"
             SERVICE_HOST: "0.0.0.0"
-            SERVICE_PROJECT_ENDPOINT: "https://aifd-coba-poc-managed-dev-03.services.ai.azure.com/api/projects/aifd-coba-poc-managed-dev-03-project-alpha"
-            SERVICE_MODEL_DEPLOYMENT: "gpt-5.1-managed"
+            SERVICE_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
+            SERVICE_MODEL_DEPLOYMENT: ${AGENTHUB_MODEL_DEPLOYMENT}
             HUB_AGENT_NAME: "hub-agent"
             AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED: "true"
         kind: hosted
