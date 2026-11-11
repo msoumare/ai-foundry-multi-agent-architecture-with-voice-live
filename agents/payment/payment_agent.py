@@ -17,6 +17,18 @@ from models.query_response import QueryResponse
 from models.roles import Role
 from services.telemetry import log_attributes, log_event, log_status_error, telemetry
 
+# Key of the JSON object the hub reads from the trailing reasoning item.
+DOMAIN_METADATA_KEY = "domain_metadata"
+_ERROR_TEXT = "I encountered an error processing your payment request. Please try again."
+
+
+def _normalize_usage(usage: Any) -> dict[str, int]:
+    return {
+        "input_tokens": usage.get("input_token_count") or 0,
+        "output_tokens": usage.get("output_token_count") or 0,
+        "total_tokens": usage.get("total_token_count") or 0,
+    }
+
 
 class PaymentAgent:
     """Payment domain agent: handles transfers, standing orders, direct debits, and payment history."""
@@ -76,12 +88,59 @@ class PaymentAgent:
         )
 
     async def _build_response_stream(self, request: QueryRequest, **kwargs: Any) -> AsyncIterable[AgentResponseUpdate]:
-        query_response = await self._execute(request=request)
+        """Stream answer text as generated, then metadata as a separate reasoning item."""
+        start_time = time.perf_counter()
+        session_id = request.session_id or self.fallback_session_id
+        history = self._history_from_request(request=request, session_id=session_id)
+        span = trace.get_current_span()
+        messages = [*history, Message(role=Role.USER, contents=[Content.from_text(request.query)])]
+        chunks: list[str] = []
+        token_usage: dict[str, int] | None = None
+        failed = False
+
+        try:
+            async for update in self.payment_agent.run(
+                messages=messages,
+                stream=True,
+                client_kwargs={"timeout": PaymentAgentConfig.A2A_AGENT_TIMEOUT},
+            ):
+                for content in update.contents:
+                    if content.type == "text" and content.text:
+                        chunks.append(content.text)
+                        yield self._text_update(content.text)
+                    elif content.type == "usage" and content.usage_details:
+                        token_usage = _normalize_usage(content.usage_details)
+        except Exception as exc:
+            failed = True
+            log_status_error(span, exc)
+            log_event(span, "payment.processing.failed", {"session.id": session_id})
+            if not chunks:
+                chunks.append(_ERROR_TEXT)
+                yield self._text_update(_ERROR_TEXT)
+
+        agent_time = time.perf_counter() - start_time
+        if not failed and not request.history:
+            self._store_turn(session_id=session_id, query=request.query, answer="".join(chunks))
+
+        metadata = QueryResponse(
+            response="",
+            session_id=session_id,
+            agent="payment-agent",
+            message_count=len(self._history.get(session_id, [])),
+            confidence=None if failed else "high",
+            payment_agent_response_time=agent_time,
+            processing_time=agent_time,
+            token_usage=token_usage,
+        ).model_dump(mode="json", exclude={"response"})
         yield AgentResponseUpdate(
-            contents=[Content.from_text(query_response.model_dump_json())],
+            contents=[Content.from_text_reasoning(text=json.dumps({DOMAIN_METADATA_KEY: metadata}))],
             role=Role.ASSISTANT,
             author_name="payment-agent",
         )
+
+    @staticmethod
+    def _text_update(text: str) -> AgentResponseUpdate:
+        return AgentResponseUpdate(contents=[Content.from_text(text)], role=Role.ASSISTANT, author_name="payment-agent")
 
     @telemetry.trace_function(span_name="PaymentAgent._execute")
     async def _execute(self, *, request: QueryRequest) -> QueryResponse:
@@ -130,7 +189,7 @@ class PaymentAgent:
             log_status_error(span, exc)
             log_event(span, "payment.processing.failed", {"session.id": session_id})
             return QueryResponse(
-                response="I encountered an error processing your payment request. Please try again.",
+                response=_ERROR_TEXT,
                 session_id=session_id,
                 agent="payment-agent",
                 processing_time=time.perf_counter() - start_time,

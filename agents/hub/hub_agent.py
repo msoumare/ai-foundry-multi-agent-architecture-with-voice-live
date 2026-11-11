@@ -5,7 +5,7 @@ import json
 import logging
 import time
 import uuid
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, AsyncIterator
 from typing import Any
 
 from agent_framework import Agent, AgentResponse, AgentResponseUpdate, Content, Message
@@ -68,13 +68,18 @@ class HubAgent:
 
             # The invocation's transport session is authoritative, not user-supplied JSON.
             request.session_id = session_id
-            result = await self._execute(request=request)
             yield {
                 "type": "hubagent.conversation",
                 "data": {"conversationId": session_id, "sessionId": session_id},
             }
-            if result.response:
-                yield {"type": "output_audio_transcription.delta", "delta": result.response}
+            result: QueryResponse | None = None
+            async for item in self._stream_execute(request=request):
+                if isinstance(item, QueryResponse):
+                    result = item
+                else:
+                    yield {"type": "output_audio_transcription.delta", "delta": item}
+            if result is None:
+                raise RuntimeError("Hub pipeline ended without a final response.")
             yield {"type": "output_audio_transcription.done", "text": result.response}
             yield {
                 "type": "hubagent.metadata",
@@ -301,63 +306,108 @@ class HubAgent:
     # Execution Pipeline
     # ------------------------------------------------------------------
 
-    @telemetry.trace_function(span_name="HubAgent._execute")
     async def _execute(
         self,
         *,
         request: QueryRequest,
     ) -> QueryResponse:
-        span = trace.get_current_span()
-        start_time = time.perf_counter()
-        session_id = request.session_id
+        result: QueryResponse | None = None
+        async for item in self._stream_execute(request=request):
+            if isinstance(item, QueryResponse):
+                result = item
+        if result is None:
+            raise RuntimeError("Hub pipeline ended without a final response.")
+        return result
 
-        try:
-            history = self._history_from_request(request=request, session_id=session_id)
+    async def _stream_execute(
+        self,
+        *,
+        request: QueryRequest,
+    ) -> AsyncIterator[str | QueryResponse]:
+        """Route the query, then yield answer chunks followed by one final QueryResponse."""
+        with telemetry.stream_span("HubAgent._stream_execute") as span:
+            start_time = time.perf_counter()
+            session_id = request.session_id
+            chunks: list[str] = []
+            domain_agent_response: QueryResponse | None = None
 
-            log_attributes(
-                span,
-                {
-                    "agent.name": "hub-agent",
-                    "session.id": session_id,
-                    "user.id": request.user_id,
-                    "query.length": len(request.query),
-                },
-            )
+            try:
+                history = self._history_from_request(request=request, session_id=session_id)
 
-            # Step 1 — classify intent
-            hub_agent_start = time.perf_counter()
-            hub_agent_response = await self._process_query(request, history)
-            hub_agent_duration = time.perf_counter() - hub_agent_start
+                log_attributes(
+                    span,
+                    {
+                        "agent.name": "hub-agent",
+                        "session.id": session_id,
+                        "user.id": request.user_id,
+                        "query.length": len(request.query),
+                    },
+                )
 
-            agent_id = hub_agent_response.get("agent_id")
-            confidence = hub_agent_response.get("confidence")
-            hub_token_usage = hub_agent_response.get("token_usage")
+                # Step 1 — classify intent
+                hub_agent_start = time.perf_counter()
+                hub_agent_response = await self._process_query(request, history)
+                hub_agent_duration = time.perf_counter() - hub_agent_start
 
-            log_attributes(
-                span,
-                {
-                    "hub_agent_duration": hub_agent_duration,
-                    "hub_agent_response": hub_agent_response,
-                    "hub_agent_token_usage": hub_token_usage,
-                },
-            )
+                agent_id = hub_agent_response.get("agent_id")
+                confidence = hub_agent_response.get("confidence")
+                hub_token_usage = hub_agent_response.get("token_usage")
 
-            # Step 2 — forward to domain agent; follow suggested_next_agent hints (hub decides)
-            domain_agent_start = time.perf_counter()
-            domain_agent_response = await self.agent_invoker.invoke(
-                agent_id=agent_id,
-                request=request,
-                history=history,
-            )
+                log_attributes(
+                    span,
+                    {
+                        "hub_agent_duration": hub_agent_duration,
+                        "hub_agent_response": hub_agent_response,
+                        "hub_agent_token_usage": hub_token_usage,
+                    },
+                )
 
-            domain_agent_duration = time.perf_counter() - domain_agent_start
-            domain_token_usage = domain_agent_response.token_usage
+                # Step 2 — stream the domain agent's answer as it is generated
+                domain_agent_start = time.perf_counter()
+                first_chunk_latency: float | None = None
+                async for item in self.agent_invoker.invoke_stream(
+                    agent_id=agent_id,
+                    request=request,
+                    history=history,
+                ):
+                    if isinstance(item, QueryResponse):
+                        domain_agent_response = item
+                    else:
+                        if first_chunk_latency is None:
+                            first_chunk_latency = time.perf_counter() - start_time
+                        chunks.append(item)
+                        yield item
+                domain_agent_duration = time.perf_counter() - domain_agent_start
+            except Exception as exc:
+                log_status_error(span, exc)
+                if chunks:
+                    # Spoken text cannot be retracted; finish the turn with what was streamed.
+                    logger.exception("Domain stream interrupted session=%s", session_id)
+                else:
+                    response_text = (
+                        str(exc)
+                        if isinstance(exc, ValueError)
+                        else HubAgentResponseMessages.PROCESSING_ERROR
+                    )
+                    yield response_text
+                    yield QueryResponse(
+                        response=response_text,
+                        session_id=session_id,
+                        agent="hub-agent",
+                        processing_time=time.perf_counter() - start_time,
+                    )
+                    return
+                domain_agent_duration = time.perf_counter() - domain_agent_start
+
+            answer = "".join(chunks)
+            domain_token_usage = domain_agent_response.token_usage if domain_agent_response else None
             total_token_usage = self._combine_token_usage(hub_token_usage, domain_token_usage)
 
             log_attributes(
                 span,
                 {
                     "domain_agent_duration": domain_agent_duration,
+                    "first_chunk_latency": first_chunk_latency,
                     "domain_agent_response": domain_agent_response,
                     "domain_agent_token_usage": domain_token_usage,
                     "total_token_usage": total_token_usage,
@@ -366,34 +416,21 @@ class HubAgent:
 
             updated_history = history + [
                 Message(role=Role.USER, contents=[Content.from_text(request.query)]),
-                Message(role=Role.ASSISTANT, contents=[Content.from_text(domain_agent_response.response)]),
+                Message(role=Role.ASSISTANT, contents=[Content.from_text(answer)]),
             ]
             self._history[session_id] = updated_history[-(self._MAX_HISTORY * 2):]
 
-            return QueryResponse(
-                response=domain_agent_response.response,
+            yield QueryResponse(
+                response=answer,
                 session_id=session_id,
-                agent=domain_agent_response.agent or agent_id,
-                confidence=domain_agent_response.confidence or confidence, 
+                agent=(domain_agent_response.agent if domain_agent_response else None) or agent_id,
+                confidence=(domain_agent_response.confidence if domain_agent_response else None) or confidence,
                 message_count=len(self._history[session_id]),
                 hub_agent_duration=hub_agent_duration,
                 domain_agent_duration=domain_agent_duration,
                 processing_time=time.perf_counter() - start_time,
-                tool_results=domain_agent_response.tool_results,
+                tool_results=domain_agent_response.tool_results if domain_agent_response else [],
                 token_usage=total_token_usage,
-            )
-        except Exception as exc:
-            log_status_error(span, exc)
-            response_text = (
-                str(exc)
-                if isinstance(exc, ValueError)
-                else HubAgentResponseMessages.PROCESSING_ERROR
-            )
-            return QueryResponse(
-                response=response_text,
-                session_id=session_id,
-                agent="hub-agent",
-                processing_time=time.perf_counter() - start_time,
             )
 
     # ------------------------------------------------------------------

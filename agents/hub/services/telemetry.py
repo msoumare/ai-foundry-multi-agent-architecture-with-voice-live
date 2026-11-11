@@ -6,7 +6,8 @@ import inspect
 import json
 import os
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from functools import wraps
 from typing import Any
 
@@ -159,6 +160,15 @@ class TelemetryManager:
 
     def is_enabled(self) -> bool:
         return self._initialized and self.tracer is not None
+
+    @contextmanager
+    def stream_span(self, name: str) -> Iterator[Any]:
+        """Span for async generators, which ``trace_function`` cannot wrap."""
+        if not self.is_enabled():
+            yield trace.get_current_span()
+            return
+        with self.get_tracer().start_as_current_span(name) as span:
+            yield span
 
     def trace_function(
         self,

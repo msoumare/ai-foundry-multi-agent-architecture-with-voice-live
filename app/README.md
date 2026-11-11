@@ -35,8 +35,9 @@ transport session takes precedence over `session_id` in the JSON body.
 Responses are `text/event-stream`, with each JSON event framed as
 `data: <JSON>\n\n`:
 
-1. `hubagent.conversation` identifies the session.
-2. `output_audio_transcription.delta` contains **only the domain answer text**.
+1. `hubagent.conversation` identifies the session; it is sent immediately.
+2. `output_audio_transcription.delta` events carry **only the domain answer
+   text**, forwarded chunk by chunk as the domain agent generates it.
 3. `output_audio_transcription.done` contains the completed answer in `text`.
 4. `hubagent.metadata` contains routing details, timings, usage and tool results.
 5. `done` terminates the invocation.
@@ -44,8 +45,29 @@ Responses are `text/event-stream`, with each JSON event framed as
 Voice Live synthesizes speech from the transcription events and forwards custom
 hub events to the browser as `response.invocation.delta`. The HTTP hub must not
 wrap its transcript events in that envelope or speak the serialized
-`QueryResponse` JSON. The existing routing pipeline completes before the answer
-is emitted as one text delta; this does not add token-by-token downstream streaming.
+`QueryResponse` JSON.
+
+### Streaming from domain agents
+
+The hub classifies the intent first (one model call), then calls the selected
+domain agent with `stream: true` over the Responses protocol:
+
+- The domain agent streams its answer as normal `output_text` deltas, which the
+  hub forwards immediately as `output_audio_transcription.delta`.
+- After the text, the domain agent sends one **reasoning item** whose text is
+  `{"domain_metadata": {...}}` (agent, confidence, tool results, token usage).
+  The hub reads it into `hubagent.metadata`; it is never spoken. A reasoning item
+  is used because the hosting adapter drops custom fields and usage otherwise.
+- Non-streaming calls to a domain agent still return the full `QueryResponse`
+  JSON, and the hub still accepts that legacy reply from agents not yet
+  redeployed (it is held back and only its `response` text is spoken).
+- If the domain stream fails after text was spoken, the turn ends with the text
+  already streamed; if it fails before any text, a short error message is spoken.
+
+Speech can therefore start once routing finishes and the domain model emits its
+first tokens, instead of after the whole answer. `FORWARD_MODE=local` still uses
+the non-streaming call. In a Foundry Playground, a streamed domain agent shows
+the metadata as a reasoning item.
 
 The app's `assistant_item_bind` and `interruption` controls are accepted as
 wrapped, flattened, or JSON-encoded `input`/`text` payloads. They update assistant

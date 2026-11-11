@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import unittest
@@ -15,6 +16,12 @@ from agent_framework import AgentResponse, Content, Message
 import main
 from hub_agent import HubAgent
 from models.query_response import QueryResponse
+from services.agent_invoker import AgentInvoker
+
+
+async def _updates(*contents):
+    for content in contents:
+        yield Mock(contents=[content])
 
 
 class InvocationTests(unittest.IsolatedAsyncioTestCase):
@@ -29,13 +36,16 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
             self.hub = HubAgent(self.classifier)
             self.invoker = invoker_class.return_value
         self.invoker.get_agent_registry.return_value = ["card-agent"]
-        self.invoker.invoke = AsyncMock(
-            return_value=QueryResponse(
-                response="Your card is active.",
-                session_id="voice-session",
-                agent="card-agent",
-                tool_results=[{"status": "active"}],
-            )
+        self.invoker.invoke_stream = Mock(side_effect=self.domain_stream)
+
+    async def domain_stream(self, **kwargs):
+        for chunk in ("Your card ", "is active."):
+            yield chunk
+        yield QueryResponse(
+            response="Your card is active.",
+            session_id="voice-session",
+            agent="card-agent",
+            tool_results=[{"status": "active"}],
         )
 
     async def events(self, payload, session_id="voice-session"):
@@ -59,16 +69,17 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
                     [
                         "hubagent.conversation",
                         "output_audio_transcription.delta",
+                        "output_audio_transcription.delta",
                         "output_audio_transcription.done",
                         "hubagent.metadata",
                         "done",
                     ],
                 )
-                self.assertEqual(events[1]["delta"], "Your card is active.")
-                self.assertEqual(events[2]["text"], "Your card is active.")
-                self.assertEqual(events[3]["data"]["tool_results"], [{"status": "active"}])
-                self.assertNotIn("response", events[3]["data"])
-                request = self.invoker.invoke.call_args.kwargs["request"]
+                self.assertEqual([events[1]["delta"], events[2]["delta"]], ["Your card ", "is active."])
+                self.assertEqual(events[3]["text"], "Your card is active.")
+                self.assertEqual(events[4]["data"]["tool_results"], [{"status": "active"}])
+                self.assertNotIn("response", events[4]["data"])
+                request = self.invoker.invoke_stream.call_args.kwargs["request"]
                 self.assertEqual(request.query, "Check my card")
                 self.assertEqual(request.session_id, "voice-session")
 
@@ -77,11 +88,11 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
         await self.events(
             {"response": {"invoke_input": {"text": "Second turn", "context": {"channel": "web"}}}}
         )
-        history = self.invoker.invoke.call_args.kwargs["history"]
+        history = self.invoker.invoke_stream.call_args.kwargs["history"]
         self.assertEqual([message.text for message in history], ["First turn", "Your card is active."])
-        self.assertEqual(self.invoker.invoke.call_args.kwargs["request"].context, {"channel": "web"})
+        self.assertEqual(self.invoker.invoke_stream.call_args.kwargs["request"].context, {"channel": "web"})
         await self.events({"input": "Other session"}, "other-session")
-        self.assertEqual(self.invoker.invoke.call_args.kwargs["history"], [])
+        self.assertEqual(self.invoker.invoke_stream.call_args.kwargs["history"], [])
 
     async def test_bind_and_interruption_are_silent_and_session_scoped(self) -> None:
         await self.events({"input": "Check my card"})
@@ -101,7 +112,7 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
             {"action": "interruption", "interruption": interruption}, "other-session"
         )
         self.assertEqual(rejected[0]["type"], "hubagent.event.rejected")
-        self.invoker.invoke.assert_awaited_once()
+        self.invoker.invoke_stream.assert_called_once()
 
     async def test_invalid_events_reject_without_routing_and_finish(self) -> None:
         for payload in (
@@ -116,7 +127,7 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
                 events = await self.events(payload)
                 self.assertEqual(events[0]["type"], "hubagent.event.rejected")
                 self.assertEqual(events[-1], {"type": "done"})
-        self.invoker.invoke.assert_not_awaited()
+        self.invoker.invoke_stream.assert_not_called()
 
     async def test_http_sse_session_affinity_and_invocations_only(self) -> None:
         with patch.object(main, "_hub_agent", self.hub):
@@ -137,7 +148,7 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
                 json.loads(frame.removeprefix("data: "))
                 for frame in response.text.strip().split("\n\n")
             ]
-            self.assertEqual(frames[1]["delta"], "Your card is active.")
+            self.assertEqual([frames[1]["delta"], frames[2]["delta"]], ["Your card ", "is active."])
             self.assertEqual(frames[-1], {"type": "done"})
             for body in ("not json", "[]"):
                 rejected = await client.post("/invocations", content=body)
@@ -151,6 +162,83 @@ class InvocationTests(unittest.IsolatedAsyncioTestCase):
         payload = json.loads(result.text)
         self.assertEqual(payload["response"], "Your card is active.")
         self.assertEqual(payload["session_id"], "framework-session")
+
+    async def test_chunks_are_forwarded_before_domain_stream_completes(self) -> None:
+        release = asyncio.Event()
+
+        async def gated_stream(**kwargs):
+            yield "First part. "
+            await release.wait()
+            yield "Second part."
+            yield QueryResponse(response="", session_id="voice-session", agent="card-agent")
+
+        self.invoker.invoke_stream = Mock(side_effect=gated_stream)
+        events = self.hub.process_event({"input": "Check my card"}, "voice-session")
+        self.assertEqual((await anext(events))["type"], "hubagent.conversation")
+        first = await asyncio.wait_for(anext(events), timeout=1)
+        self.assertEqual(first, {"type": "output_audio_transcription.delta", "delta": "First part. "})
+        release.set()
+        rest = [event async for event in events]
+        self.assertEqual(rest[0]["delta"], "Second part.")
+        self.assertEqual(rest[1]["text"], "First part. Second part.")
+
+    async def test_interrupted_stream_keeps_spoken_text(self) -> None:
+        async def failing_stream(**kwargs):
+            yield "Partial answer"
+            raise RuntimeError("connection reset")
+
+        self.invoker.invoke_stream = Mock(side_effect=failing_stream)
+        events = await self.events({"input": "Check my card"})
+        self.assertEqual(
+            [event["type"] for event in events],
+            [
+                "hubagent.conversation",
+                "output_audio_transcription.delta",
+                "output_audio_transcription.done",
+                "hubagent.metadata",
+                "done",
+            ],
+        )
+        self.assertEqual(events[2]["text"], "Partial answer")
+        self.assertEqual(self.hub._history["voice-session"][-1].text, "Partial answer")
+
+
+class DomainStreamParsingTests(unittest.IsolatedAsyncioTestCase):
+    async def collect(self, *contents):
+        return [
+            item
+            async for item in AgentInvoker.consume_stream(
+                _updates(*contents), agent_name="card-agent", session_id="s1", timeout_seconds=30
+            )
+        ]
+
+    async def test_text_is_streamed_and_reasoning_metadata_stays_out_of_speech(self) -> None:
+        metadata = {
+            "domain_metadata": {
+                "agent": "card-agent",
+                "confidence": "high",
+                "tool_results": [{"status": "active"}],
+                "token_usage": {"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+            }
+        }
+        items = await self.collect(
+            Content.from_text("Your card "),
+            Content.from_text("is active."),
+            Content.from_text_reasoning(text=json.dumps(metadata)),
+        )
+        self.assertEqual(items[:2], ["Your card ", "is active."])
+        final = items[2]
+        self.assertIsInstance(final, QueryResponse)
+        self.assertEqual(final.response, "Your card is active.")
+        self.assertEqual(final.tool_results, [{"status": "active"}])
+        self.assertEqual(final.token_usage["total_tokens"], 12)
+
+    async def test_legacy_json_reply_is_never_spoken_verbatim(self) -> None:
+        legacy = json.dumps({"response": "Your card is active.", "session_id": "s1", "agent": "card-agent"})
+        items = await self.collect(Content.from_text(legacy[:20]), Content.from_text(legacy[20:]))
+        self.assertEqual(items[0], "Your card is active.")
+        self.assertEqual(items[1].agent, "card-agent")
+        self.assertEqual(len(items), 2)
 
 
 if __name__ == "__main__":

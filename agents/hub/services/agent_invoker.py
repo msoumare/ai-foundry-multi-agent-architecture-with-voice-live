@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
+from collections.abc import AsyncIterable, AsyncIterator
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -15,6 +18,9 @@ from config import AgentConfig, DOMAIN_AGENT_REGISTRY, HubAgentConfig
 from models.roles import Role
 from models.query_request import QueryRequest
 from models.query_response import QueryResponse
+
+# Must match the key domain agents use for their trailing reasoning item.
+DOMAIN_METADATA_KEY = "domain_metadata"
 
 
 class AgentInvoker:
@@ -62,6 +68,141 @@ class AgentInvoker:
 
         return await self._invoke_foundry(config=config, request=delegated_request, timeout_seconds=effective_timeout)
 
+    async def invoke_stream(
+        self,
+        *,
+        agent_id: str,
+        request: QueryRequest,
+        history: list[Message] | None = None,
+        timeout_seconds: float | None = None,
+    ) -> AsyncIterator[str | QueryResponse]:
+        """Stream the domain agent's answer.
+
+        Yields answer text chunks as they arrive, then exactly one final
+        ``QueryResponse`` carrying the full text and the domain metadata.
+        """
+        config = self._registry.get(agent_id)
+        if config is None:
+            available = ", ".join(self._registry) or "<none>"
+            raise KeyError(
+                f"Unknown or disabled domain agent '{agent_id}'. Available: {available}"
+            )
+
+        effective_timeout = timeout_seconds if timeout_seconds is not None else config.timeout_seconds
+        if self._forward_mode == "local":
+            # Local forwarding uses the non-streaming Responses call.
+            response = await self._invoke_local(config=config, request=request, timeout_seconds=effective_timeout)
+            if response.response:
+                yield response.response
+            yield response
+            return
+
+        agent = self._build_foundry_agent(config)
+        updates = agent.run(
+            self._outbound_messages(request),
+            stream=True,
+            # Bounds connecting and each read; consume_stream bounds the total duration.
+            client_kwargs={"timeout": effective_timeout},
+        )
+        async for item in self.consume_stream(
+            updates,
+            agent_name=config.agent_name,
+            session_id=request.session_id or "",
+            timeout_seconds=effective_timeout,
+        ):
+            yield item
+
+    @classmethod
+    async def consume_stream(
+        cls,
+        updates: AsyncIterable[Any],
+        *,
+        agent_name: str,
+        session_id: str,
+        timeout_seconds: float,
+    ) -> AsyncIterator[str | QueryResponse]:
+        """Split a domain Responses stream into spoken text and trailing metadata."""
+        deadline = time.monotonic() + timeout_seconds
+        chunks: list[str] = []
+        reasoning: list[str] = []
+        # Domains not yet redeployed still send one QueryResponse JSON document as text;
+        # hold JSON-looking output so it is never forwarded to speech verbatim.
+        buffering_json: bool | None = None
+
+        async for update in updates:
+            for content in update.contents:
+                if content.type == "text" and content.text:
+                    chunks.append(content.text)
+                    if buffering_json is None:
+                        stripped = "".join(chunks).lstrip()
+                        if not stripped:
+                            continue
+                        buffering_json = stripped.startswith("{")
+                        if not buffering_json:
+                            yield "".join(chunks)
+                    elif not buffering_json:
+                        yield content.text
+                elif content.type == "text_reasoning" and content.text:
+                    reasoning.append(content.text)
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"Domain agent '{agent_name}' exceeded {timeout_seconds}s.")
+
+        full_text = "".join(chunks)
+        if buffering_json:
+            legacy = cls._try_parse_query_response(full_text)
+            if legacy is not None:
+                if legacy.response:
+                    yield legacy.response
+                yield legacy
+                return
+            yield full_text
+
+        metadata = cls._parse_domain_metadata("".join(reasoning))
+        yield QueryResponse(
+            response=full_text,
+            session_id=metadata.get("session_id") or session_id,
+            agent=metadata.get("agent") or agent_name,
+            confidence=metadata.get("confidence"),
+            tool_results=metadata.get("tool_results") or [],
+            token_usage=metadata.get("token_usage"),
+        )
+
+    @staticmethod
+    def _parse_domain_metadata(text: str) -> dict[str, Any]:
+        try:
+            payload = json.loads(text)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+        metadata = payload.get(DOMAIN_METADATA_KEY) if isinstance(payload, dict) else None
+        return metadata if isinstance(metadata, dict) else {}
+
+    @staticmethod
+    def _outbound_messages(request: QueryRequest) -> list[Message]:
+        return [
+            Message(
+                role=Role.USER,
+                contents=[Content.from_text(json.dumps(request.model_dump(mode="json")))],
+            )
+        ]
+
+    @staticmethod
+    def _build_foundry_agent(config: AgentConfig) -> FoundryAgent:
+        model = HubAgentConfig.SERVICE_MODEL_DEPLOYMENT
+        if not model:
+            raise RuntimeError(
+                "SERVICE_MODEL_DEPLOYMENT is required when FORWARD_MODE=foundry."
+            )
+        # allow_preview=True routes to the agent's specific endpoint:
+        # {project_endpoint}/agents/{agent_name}/endpoint/protocols/openai
+        # Without it, the call goes to /openai/v1 which returns 403 for hosted agents.
+        return FoundryAgent(
+            project_endpoint=HubAgentConfig.SERVICE_PROJECT_ENDPOINT,
+            agent_name=config.agent_name,
+            credential=DefaultAzureCredential(),
+            default_options={"model": model},
+            allow_preview=True,
+        )
+
     async def _invoke_foundry(
         self,
         *,
@@ -69,35 +210,9 @@ class AgentInvoker:
         request: QueryRequest,
         timeout_seconds: float,
     ) -> QueryResponse:
-        project_endpoint = HubAgentConfig.SERVICE_PROJECT_ENDPOINT
-        model = HubAgentConfig.SERVICE_MODEL_DEPLOYMENT
-        if not model:
-            raise RuntimeError(
-                "SERVICE_MODEL_DEPLOYMENT is required when FORWARD_MODE=foundry."
-            )
-
-        agent_kwargs: dict[str, object] = {
-            "project_endpoint": project_endpoint,
-            "agent_name": config.agent_name,
-            "credential": DefaultAzureCredential(),
-            "default_options": {"model": model},
-        }
-        # allow_preview=True routes to the agent's specific endpoint:
-        # {project_endpoint}/agents/{agent_name}/endpoint/protocols/openai
-        # Without it, the call goes to /openai/v1 which returns 403 for hosted agents.
-        agent_kwargs["allow_preview"] = True
-
-        agent = FoundryAgent(
-            **agent_kwargs,
-        )
-        outbound_messages = [
-            Message(
-                role=Role.USER,
-                contents=[Content.from_text(json.dumps(request.model_dump(mode="json")))],
-            )
-        ]
+        agent = self._build_foundry_agent(config)
         response = await asyncio.wait_for(
-            agent.run(outbound_messages),
+            agent.run(self._outbound_messages(request)),
             timeout=timeout_seconds,
         )
 

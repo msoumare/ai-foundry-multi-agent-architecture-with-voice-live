@@ -22,6 +22,17 @@ from models.query_response import QueryResponse
 from models.roles import Role
 from services.telemetry import log_attributes, log_event, log_status_error, telemetry
 
+# Key of the JSON object the hub reads from the trailing reasoning item.
+DOMAIN_METADATA_KEY = "domain_metadata"
+
+
+def _normalize_usage(usage: Any) -> dict[str, int]:
+    return {
+        "input_tokens": usage.get("input_token_count") or 0,
+        "output_tokens": usage.get("output_token_count") or 0,
+        "total_tokens": usage.get("total_token_count") or 0,
+    }
+
 
 class AccountAgent:
     """Account domain agent: processes account-related banking queries."""
@@ -126,10 +137,65 @@ class AccountAgent:
         request: QueryRequest,
         **kwargs: Any,
     ) -> AsyncIterable[AgentResponseUpdate]:
-        query_response = await self._execute(request=request)
-        payload = query_response.model_dump_json()
+        """Stream answer text as generated, then metadata as a separate reasoning item.
+
+        The hub speaks the text deltas and reads the trailing ``domain_metadata``
+        JSON from the reasoning item, so metadata is never mixed into speech.
+        """
+        start_time = time.perf_counter()
+        session_id = request.session_id or self.fallback_session_id
+        history = self._history_from_request(request=request, session_id=session_id)
+        span = trace.get_current_span()
+        messages = [*history, Message(role=Role.USER, contents=[Content.from_text(request.query)])]
+        chunks: list[str] = []
+        token_usage: dict[str, int] | None = None
+        failed = False
+
+        try:
+            async for update in self.account_agent.run(
+                messages=messages,
+                stream=True,
+                client_kwargs={"timeout": AccountAgentConfig.A2A_AGENT_TIMEOUT},
+            ):
+                for content in update.contents:
+                    if content.type == "text" and content.text:
+                        chunks.append(content.text)
+                        yield self._text_update(content.text)
+                    elif content.type == "usage" and content.usage_details:
+                        token_usage = _normalize_usage(content.usage_details)
+        except Exception as exc:
+            failed = True
+            log_status_error(span, exc)
+            log_event(span, "account.processing.failed", {"session.id": session_id})
+            if not chunks:
+                error_text = self._build_error_response(session_id=session_id, started_at=start_time).response
+                chunks.append(error_text)
+                yield self._text_update(error_text)
+
+        agent_time = time.perf_counter() - start_time
+        if not failed and not request.history:
+            self._store_turn(session_id=session_id, query=request.query, answer="".join(chunks))
+
+        metadata = QueryResponse(
+            response="",
+            session_id=session_id,
+            agent="account-agent",
+            message_count=len(self._history.get(session_id, [])),
+            confidence=None if failed else "high",
+            account_agent_response_time=agent_time,
+            processing_time=agent_time,
+            token_usage=token_usage,
+        ).model_dump(mode="json", exclude={"response"})
         yield AgentResponseUpdate(
-            contents=[Content.from_text(payload)],
+            contents=[Content.from_text_reasoning(text=json.dumps({DOMAIN_METADATA_KEY: metadata}))],
+            role=Role.ASSISTANT,
+            author_name="account-agent",
+        )
+
+    @staticmethod
+    def _text_update(text: str) -> AgentResponseUpdate:
+        return AgentResponseUpdate(
+            contents=[Content.from_text(text)],
             role=Role.ASSISTANT,
             author_name="account-agent",
         )
